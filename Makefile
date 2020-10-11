@@ -22,7 +22,10 @@ clean:
 	rm -f bin/*
 
 install:
-	cp bin/libcord.so /usr/local/lib/libcord.so
+	cp bin/libcord.so /usr/lib/libcord.so
+	cp src/cord.h /usr/local/include/cord.h
+	cp src/discord.h /usr/local/include/discord.h
+	cp src/http.h /usr/local/include/http.h
 
 uninstall:
 	rm -f /usr/local/lib/libcord.so

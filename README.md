@@ -1,32 +1,59 @@
-# Cord 
-Cord is a general purpose discord library written in C (99). The goal
-of the project is to provide an easy to use library for creating applications
-that take advantage of the Discord API
+# Cord
+Cord is a library for interfacing with the [Discord API](https://discord.com/developers/docs/intro) using HTTP and Websockets.
+The goal of the project is to provide an easy to use library for developing
+discord applications such as bots using C. The library depends on [Jansson](https://github.com/akheron/jansson)
+for JSON serialization/desirialization, [libuwsc](https://github.com/zhaojh329/libuwsc), for websocket communication
+and [libcurl](https://github.com/curl/curl) to perform HTTP requests.
 
-## Features
-* Easy to use API
-* Built-in persistent store/model creation
-* Support for async I/O by utilizing libev
+NOTE: The library is still in early development stage and many features are missing
 
 ## Example
 The following example bot uses cord to create a simple echo bot
-`#include <cord.h>`
-For a more advanced example see Discordia the discord bot i wrote using cord
+`
+#include <stdlib.h>
+#include <string.h>
+#include "cord.h"
 
+void on_message(discord_t *disc, discord_message_t *msg) {
+	if (strcmp(msg->content, "ping") == 0) {
+		discord_message_t *response = malloc(sizeof(discord_message_t));
+		response->channel_id = calloc(1, 256);
+		strcpy(response->channel_id, msg->channel_id);
+
+		discord_message_set_content(response, "Pong!");
+		discord_send_message(disc, response);
+	}
+}
+
+int main(void) {
+	const char *url = "wss://gateway.discord.gg/?v=6&encoding=json";
+	cord_t *context = cord_create();
+
+	cord_on_message(context, on_message);
+
+	cord_connect(context, url);
+	cord_destroy(context);
+	return 0;
+}
+`
 ## Documentation
-The doxygen generated documentation can be found inside the doc directory
+To be written
 
 ## Building
-To build the library you first need to download the dependencies
-`sudo apt update`
-`sudo apt install libjansson-dev lubssl-dev`
-Clone the repository
-Create the build and bin directories
-``
+Build and install [libuwsc](https://github.com/zhaojh329/libuwsc)
 
-## Installing
-See building instructions
-Navigate to the the root directory and run
+Install the dependencies
+`sudo apt install libcurl4-openssl-dev libjansson-dev`
+
+Build and install the library
+`
+git clone https://github.com/oikpanagiotis/cord
+cd cord && mkdir bin build
+make
+`
+
+Install the library
 `sudo make install`
-To uninstall simply run
-`sudo make uninstall`
+
+## License
+
