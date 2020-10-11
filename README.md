@@ -46,17 +46,15 @@ Build and install [libuwsc](https://github.com/zhaojh329/libuwsc)
 Install the dependencies  
 `sudo apt install libcurl4-openssl-dev libjansson-dev`
 
-Build and install the library  
+Build and install the library
 ```
 git clone https://github.com/oikpanagiotis/cord  
 cd cord && mkdir bin build
 make
+sudo make install
 ```
 
-Install the library  
-`sudo make install`
-
-Before using make sure to set the following enviroment variables  
+Before using the library in your program make sure to set the following enviroment variables
 ```
 DISCORD_APPLICATION_TOKEN
 DISCORD_APPLICATION_DEVICE
