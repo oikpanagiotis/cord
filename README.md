@@ -47,11 +47,11 @@ Install the dependencies
 `sudo apt install libcurl4-openssl-dev libjansson-dev`
 
 Build and install the library  
-`
+```
 git clone https://github.com/oikpanagiotis/cord  
 cd cord && mkdir bin build
 make
-`
+```
 
 Install the library  
 `sudo make install`
