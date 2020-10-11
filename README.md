@@ -9,8 +9,7 @@ NOTE: The library is still in early development stage and many features are miss
 
 ## Example
 The following example bot uses cord to create a simple echo bot  
-`
-
+```
 void on_message(discord_t *disc, discord_message_t *msg) {    
     if (strcmp(msg->content, "ping") == 0) {  
         discord_message_t *response = malloc(sizeof(discord_message_t));  
@@ -29,8 +28,7 @@ int main(void) {
     cord_destroy(context);  
     return 0;  
 }
-
-`
+```
 ## Documentation
 To be written
 
@@ -51,12 +49,12 @@ Install the library
 `sudo make install`
 
 Before using make sure to set the following enviroment variables  
-`
-DISCORD_APPLICATION_TOKEN<br />
-DISCORD_APPLICATION_DEVICE<br />
-DISCORD_APPLICATION_OS<br />
-DISCORD_APPLICATION_LIBRARY<br />  
-`
+```
+DISCORD_APPLICATION_TOKEN
+DISCORD_APPLICATION_DEVICE
+DISCORD_APPLICATION_OS
+DISCORD_APPLICATION_LIBRARY  
+```
 
 ## Roadmap
 To be written  
