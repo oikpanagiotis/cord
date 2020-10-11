@@ -1,8 +1,6 @@
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include "cord.h"
-#include "log.h"
 
 
 void on_message(discord_t *disc, discord_message_t *msg) {
@@ -24,6 +22,5 @@ int main(void) {
 
 	cord_connect(context, url);
 	cord_destroy(context);
-
 	return 0;
 }
