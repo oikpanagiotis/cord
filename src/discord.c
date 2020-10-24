@@ -315,11 +315,14 @@ static void on_message(struct uwsc_client *ws_client, void *data, size_t len, bo
 		case OP_DISPATCH:
 			if (!string_is_empty(payload->t)) {
 				log_info("Received Event: %s", payload->t);
+				json_debug_print(payload->d);
 				if (string_is_equal(payload->t, "CHANNEL_CREATE")) {
 
 				} else if (string_is_equal(payload->t, "MESSAGE_CREATE")) {
 					discord_message_t *msg = message_from_json(payload->d);
 					disc->on_message_callback(disc, msg);
+					// TODO: Figure out how to free tha payload?
+					// where is double free coming from?
 				} else if (string_is_equal(payload->t, "PRESENCE_UPDATE")) {
 					// update cached data
 				}

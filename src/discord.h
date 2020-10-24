@@ -53,6 +53,14 @@ typedef struct discord_message_t {
 	void *attachments;
 } discord_message_t;
 
+typedef struct discord_guild_t {
+	char *id; // snowflake
+	char *name;
+	char *icon; // string/null
+	char *splash; //string/null
+	char *discovery_splash; // string/null
+} discord_guild_t;
+
 // Load these from enviroment variables
 typedef struct identification {
 	char *token;
