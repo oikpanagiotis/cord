@@ -79,6 +79,13 @@ enum {
 typedef struct discord_t discord_t;
 typedef void (*on_msg)(discord_t *disc, discord_message_t *msg);
 
+typedef struct discord_event_t {
+	int type;
+	char *token;
+	int token_length;
+
+} discord_event_t;
+
 typedef struct discord_t {
 	// should be the first field in the struct	
 	struct uwsc_client *ws_client;

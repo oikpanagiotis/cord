@@ -2,7 +2,6 @@
 #include <string.h>
 #include "cord.h"
 
-
 void on_message(discord_t *disc, discord_message_t *msg) {
 	if (strcmp(msg->content, "ping") == 0) {
 		discord_message_t *response = malloc(sizeof(discord_message_t));
@@ -11,6 +10,8 @@ void on_message(discord_t *disc, discord_message_t *msg) {
 
 		discord_message_set_content(response, "Pong!");
 		discord_send_message(disc, response);
+
+		discord_message_destroy(response);
 	}
 }
 

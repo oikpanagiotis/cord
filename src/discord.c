@@ -274,15 +274,82 @@ static discord_message_t *message_from_json(json_t *data) {
 
 void discord_message_destroy(discord_message_t *msg) {
 	if (msg) {
-		if (msg->timestamp) free(msg->timestamp);
-		if (msg->nonce) free(msg->nonce);
 		if (msg->id) free(msg->id);
 		if (msg->content) free(msg->content);
-		if (msg->channel_id) free(msg->channel_id);
-		if (msg->guild_id) free(msg->guild_id);
 
 		free(msg);
 	}
+}
+
+static int handle_incoming_event(discord_t *context, char *event, json_t *data) {
+	if (string_is_equal(event, "CHANNEL_CREATE")) {
+		// Sent when a new guild channel is created, relevant to the current user
+	} else if (string_is_equal(event, "CHANNEL_UPDATE")) {
+		// Sent when a channel is updated. The inner payload is a channel object. This is not sent when the field last_message_id is altered. To keep track of the last_message_id changes, you must listen for Message Create events.
+	} else if (string_is_equal(event, "CHANNEL_DELETE")) {
+		// Sent when a channel relevant to the current user is deleted. The inner payload is a channel object.
+	} else if (string_is_equal(event, "CHANNEL_PINS_UPDATE")) {
+		// Sent when a message is pinned or unpinned in a text channel. This is not sent when a pinned message is deleted.
+	} else if (string_is_equal(event, "GUILD_CREATE")) {
+
+	} else if (string_is_equal(event, "GUILD_UPDATE")) {
+
+	} else if (string_is_equal(event, "GUILD_DELETE")) {
+
+	} else if (string_is_equal(event, "GUILD_BAN_ADD")) {
+
+	} else if (string_is_equal(event, "GUILD_BAN_REMOVE")) {
+
+	} else if (string_is_equal(event, "GUILD_EMOJIS_UPDATE")) {
+
+	} else if (string_is_equal(event, "GUILD_INTEGRATIONS_UPDATE")) {
+
+	} else if (string_is_equal(event, "GUILD_MEMBER_ADD")) {
+
+	} else if (string_is_equal(event, "GUILD_MEMBER_REMOVE")) {
+
+	} else if (string_is_equal(event, "GUILD_MEMBER_UPDATE")) {
+
+	} else if (string_is_equal(event, "GUILD_MEMBERS_CHUNK")) {
+		// response to Request Guild Members
+	} else if (string_is_equal(event, "GUILD_ROLE_CREATE")) {
+
+	} else if (string_is_equal(event, "GUILD_ROLE_UPDATE")) {
+
+	} else if (string_is_equal(event, "GUILD_ROLE_DELETE")) {
+
+	} else if (string_is_equal(event, "INVITE_CREATE")) {
+
+	} else if (string_is_equal(event, "INVITE_DELETE")) {
+
+	} else if (string_is_equal(event, "MESSAGE_CREATE")) {
+		discord_message_t *msg = message_from_json(data);
+		context->on_message_callback(context, msg);
+		discord_message_destroy(msg);
+
+		// TODO: Figure out how to free tha payload?
+		// where is double free coming from?
+	} else if (string_is_equal(event, "MESSAGE_UPDATE")) {
+
+	} else if (string_is_equal(event, "MESSAGE_DELETE")) {
+
+	} else if (string_is_equal(event, "MESSAGE_DELETE_BULK")) {
+
+	} else if (string_is_equal(event, "MESSAGE_REACTION_ADD")) {
+
+	} else if (string_is_equal(event, "MESSAGE_REACTION_REMOVE")) {
+
+	} else if (string_is_equal(event, "MESSAGE_REACTION_REMOVE_ALL")) {
+
+	} else if (string_is_equal(event, "MESSAGE_REACTION_REMOVE_EMOJI")) {
+
+	} else if (string_is_equal(event, "PRESENCE_UPDATE")) {
+		// update cached data
+	} else {
+		return 1;
+	}
+
+	return 0;
 }
 
 static void on_message(struct uwsc_client *ws_client, void *data, size_t len, bool binary) {
@@ -310,22 +377,18 @@ static void on_message(struct uwsc_client *ws_client, void *data, size_t len, bo
 	// decreased by 1, so the whole object tree can be cleaned up
 	json_decref(raw_payload);
 
+	char *event = payload->t;
 	switch (payload->op) {
-		// Dispatch means we've received an event	
+		// Dispatch is returned if we've received an event from the gateway	
 		case OP_DISPATCH:
-			if (!string_is_empty(payload->t)) {
-				log_info("Received Event: %s", payload->t);
-				json_debug_print(payload->d);
-				if (string_is_equal(payload->t, "CHANNEL_CREATE")) {
-
-				} else if (string_is_equal(payload->t, "MESSAGE_CREATE")) {
-					discord_message_t *msg = message_from_json(payload->d);
-					disc->on_message_callback(disc, msg);
-					// TODO: Figure out how to free tha payload?
-					// where is double free coming from?
-				} else if (string_is_equal(payload->t, "PRESENCE_UPDATE")) {
-					// update cached data
+			if (!string_is_empty(event)) {
+				log_info("Received Event: %s", event);
+				// json_debug_print(payload->d);
+				int rc = handle_incoming_event(disc, event, payload->d);
+				if (rc != 0) {
+					log_warning("Couldn't identify dispatch event(%s)", event);
 				}
+				// free payload
 			}	
 			break;
 		case OP_HEARTBEAT:
