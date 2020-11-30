@@ -281,75 +281,71 @@ void discord_message_destroy(discord_message_t *msg) {
 	}
 }
 
-static int handle_incoming_event(discord_t *context, char *event, json_t *data) {
-	if (string_is_equal(event, "CHANNEL_CREATE")) {
-		// Sent when a new guild channel is created, relevant to the current user
-	} else if (string_is_equal(event, "CHANNEL_UPDATE")) {
-		// Sent when a channel is updated. The inner payload is a channel object. This is not sent when the field last_message_id is altered. To keep track of the last_message_id changes, you must listen for Message Create events.
-	} else if (string_is_equal(event, "CHANNEL_DELETE")) {
-		// Sent when a channel relevant to the current user is deleted. The inner payload is a channel object.
-	} else if (string_is_equal(event, "CHANNEL_PINS_UPDATE")) {
-		// Sent when a message is pinned or unpinned in a text channel. This is not sent when a pinned message is deleted.
-	} else if (string_is_equal(event, "GUILD_CREATE")) {
+typedef void (*event_handler)(discord_t *ctx, json_t *obj, char *event);
 
-	} else if (string_is_equal(event, "GUILD_UPDATE")) {
+#define MAX_EVENT_NAME_LEN 32
+typedef struct receiving_event {
+	char name[MAX_EVENT_NAME_LEN];
+	event_handler handler;
+} receiving_event;
 
-	} else if (string_is_equal(event, "GUILD_DELETE")) {
+// (string, event_handler) dictionary to dispatch receiving events
+receiving_event receiving_events[] = {
+	{ "CHANNEL_CREATE", NULL },
+	{ "CHANNEL_UPDATE", NULL },
+	{ "CHANNEL_DELETE", NULL },
+	{ "CHANNEL_PINS_UPDATE", NULL },
+	{ "GUILD_CREATE", NULL },
+	{ "GUILD_UPDATE", NULL },
+	{ "GUILD_DELETE", NULL },
+	{ "GUILD_BAN_ADD", NULL },
+	{ "GUILD_BAN_REMOVE", NULL },
+	{ "GUILD_EMOJIS_UPDATE", NULL },
+	{ "GUILD_MEMBER_ADD", NULL },
+	{ "GUILD_MEMBER_UPDATE", NULL },
+	{ "GUILD_MEMBERS_CHUNK", NULL },
+	{ "GUILD_ROLE_CREATE", NULL },
+	{ "GUILD_ROLE_UPDATE", NULL },
+	{ "GUILD_ROLE_DELETE", NULL },
+	{ "INVITE_CREATE", NULL },
+	{ "INVITE_DELETE", NULL },
+	{ "MESSAGE_CREATE", NULL },
+	{ "MESSAGE_UPDATE", NULL },
+	{ "MESSAGE_DELETE_BULK", NULL },
+	{ "MESSAGE_REACTION_ADD", NULL },
+	{ "MESSAGE_REACTION_REMOVE", NULL },
+	{ "MESSAGE_REACTION_REMOVE_ALL", NULL },
+	{ "MESSAGE_REACTION_REMOVE_EMOJI", NULL },
+	{ "PRESENCE_UPDATE", NULL },
 
-	} else if (string_is_equal(event, "GUILD_BAN_ADD")) {
+	{ "", NULL }
+};
 
-	} else if (string_is_equal(event, "GUILD_BAN_REMOVE")) {
-
-	} else if (string_is_equal(event, "GUILD_EMOJIS_UPDATE")) {
-
-	} else if (string_is_equal(event, "GUILD_INTEGRATIONS_UPDATE")) {
-
-	} else if (string_is_equal(event, "GUILD_MEMBER_ADD")) {
-
-	} else if (string_is_equal(event, "GUILD_MEMBER_REMOVE")) {
-
-	} else if (string_is_equal(event, "GUILD_MEMBER_UPDATE")) {
-
-	} else if (string_is_equal(event, "GUILD_MEMBERS_CHUNK")) {
-		// response to Request Guild Members
-	} else if (string_is_equal(event, "GUILD_ROLE_CREATE")) {
-
-	} else if (string_is_equal(event, "GUILD_ROLE_UPDATE")) {
-
-	} else if (string_is_equal(event, "GUILD_ROLE_DELETE")) {
-
-	} else if (string_is_equal(event, "INVITE_CREATE")) {
-
-	} else if (string_is_equal(event, "INVITE_DELETE")) {
-
-	} else if (string_is_equal(event, "MESSAGE_CREATE")) {
-		discord_message_t *msg = message_from_json(data);
-		context->on_message_callback(context, msg);
-		discord_message_destroy(msg);
-
-		// TODO: Figure out how to free tha payload?
-		// where is double free coming from?
-	} else if (string_is_equal(event, "MESSAGE_UPDATE")) {
-
-	} else if (string_is_equal(event, "MESSAGE_DELETE")) {
-
-	} else if (string_is_equal(event, "MESSAGE_DELETE_BULK")) {
-
-	} else if (string_is_equal(event, "MESSAGE_REACTION_ADD")) {
-
-	} else if (string_is_equal(event, "MESSAGE_REACTION_REMOVE")) {
-
-	} else if (string_is_equal(event, "MESSAGE_REACTION_REMOVE_ALL")) {
-
-	} else if (string_is_equal(event, "MESSAGE_REACTION_REMOVE_EMOJI")) {
-
-	} else if (string_is_equal(event, "PRESENCE_UPDATE")) {
-		// update cached data
-	} else {
-		return 1;
+static receiving_event *get_receiving_event(receiving_event *events, char *key) {
+	receiving_event *iter = events;
+	while (!string_is_empty(iter->name)) {
+		if (string_is_equal(iter->name, key)) {
+			return iter;
+		}
+		iter++;
 	}
 
-	return 0;
+	return NULL;
+}
+
+static void on_message_create(discord_t *ctx, json_t *data, char *event) {
+	discord_message_t *msg = message_from_json(data);
+	ctx->on_message_callback(ctx, msg);
+	discord_message_destroy(msg);
+}
+
+static bool event_has_handler(receiving_event *event) {
+	if (event) {
+		if (event->handler) {
+			return true;
+		}
+	}
+	return false;
 }
 
 static void on_message(struct uwsc_client *ws_client, void *data, size_t len, bool binary) {
@@ -383,12 +379,13 @@ static void on_message(struct uwsc_client *ws_client, void *data, size_t len, bo
 		case OP_DISPATCH:
 			if (!string_is_empty(event)) {
 				log_info("Received Event: %s", event);
-				// json_debug_print(payload->d);
-				int rc = handle_incoming_event(disc, event, payload->d);
-				if (rc != 0) {
-					log_warning("Couldn't identify dispatch event(%s)", event);
+				
+				receiving_event *ev = get_receiving_event(receiving_events, event);
+				if (event_has_handler(ev)) {
+					ev->handler(disc, payload->d, event);
+				} else {
+					log_warning("Invalid handler for event(%s)", event);
 				}
-				// free payload
 			}	
 			break;
 		case OP_HEARTBEAT:
@@ -462,6 +459,12 @@ discord_t *discord_create(void) {
 	disc->sequence = -1;
 	disc->sent_initial_heartbeat = false;
 	disc->loop = NULL;
+
+	// TODO: Move this somewhere else
+	// Assign callbacks
+	receiving_event *event = get_receiving_event(receiving_events, "MESSAGE_CREATE");
+	event->handler = on_message_create;
+
 	return disc;
 }
 
