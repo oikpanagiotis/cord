@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <uwsc/uwsc.h>
 #include <ev.h>
+#include <jansson.h>
 
 #include "http.h"
 
@@ -107,6 +108,8 @@ discord_t *discord_create(void);
 // do these need to be in a header file?
 int discord_connect(discord_t *disc, const char *url);
 void discord_destroy(discord_t *disc);
+
+discord_message_t *message_from_json(json_t *data);
 
 int discord_send_message(discord_t *disc, discord_message_t *msg);
 void discord_message_set_content(discord_message_t *msg, char *content);

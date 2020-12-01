@@ -1,7 +1,7 @@
 CC=gcc
 CFLAGS=-ggdb3 -Wall -Wextra -fPIC -fsanitize=undefined
 LIBS=-lcrypto -lev -luwsc -ljansson -lcurl
-OBJECTS=build/cord.o build/discord.o build/http.o
+OBJECTS=build/cord.o build/discord.o build/http.o build/events.o build/util.o
 TARGET=bin/libcord.so
 
 $(TARGET): $(OBJECTS)
@@ -12,6 +12,12 @@ build/cord.o: src/cord.c src/cord.h
 
 build/discord.o: src/discord.c src/discord.h
 	$(CC) -c $(CFLAGS) src/discord.c $(LIBS) -o build/discord.o
+
+build/events.o: src/events.c src/events.h
+	$(CC) -c $(CFLAGS) src/events.c $(LIBS) -o build/events.o
+
+build/util.o: src/util.c src/util.h
+	$(CC) -c $(CFLAGS) src/util.c -o build/util.o
 
 build/http.o: src/http.c src/http.h
 	$(CC) -c $(CFLAGS) src/http.c -lcurl -o build/http.o

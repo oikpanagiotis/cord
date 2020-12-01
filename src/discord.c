@@ -1,9 +1,12 @@
 #include "discord.h"
+#include "events.h"
+#include "log.h"
+#include "util.h"
+
 #include <stdio.h>
 #include <jansson.h>
 #include <ev.h>
 #include <assert.h>
-#include "log.h"
 
 static void load_identification_info(identification *id) {
 	id->token = getenv("DISCORD_APPLICATION_TOKEN");
@@ -15,14 +18,6 @@ static void load_identification_info(identification *id) {
 // Assumes that sequence is initialized to -1
 static bool is_valid_sequence(int s) {
 	return (s >= 0) ? true : false;
-}
-
-static bool string_is_empty(const char *s) {
-	return (strlen(s) == 0) ? true : false;
-}
-
-static inline bool string_is_equal(const char *s1, const char *s2) {
-	return (strcmp(s1, s2) == 0);
 }
 
 static void free_buf_and_json(char *buf, json_t *json) {
@@ -228,7 +223,7 @@ int discord_send_message(discord_t *disc, discord_message_t *msg) {
 		} \
 } while (0)								
 
-static discord_message_t *message_from_json(json_t *data) {
+discord_message_t *message_from_json(json_t *data) {
 	discord_message_t *msg = malloc(sizeof(discord_message_t));
 	if (!msg) {
 		log_error("Failed to allocate discord message");
@@ -281,73 +276,6 @@ void discord_message_destroy(discord_message_t *msg) {
 	}
 }
 
-typedef void (*event_handler)(discord_t *ctx, json_t *obj, char *event);
-
-#define MAX_EVENT_NAME_LEN 32
-typedef struct receiving_event {
-	char name[MAX_EVENT_NAME_LEN];
-	event_handler handler;
-} receiving_event;
-
-// (string, event_handler) dictionary to dispatch receiving events
-receiving_event receiving_events[] = {
-	{ "CHANNEL_CREATE", NULL },
-	{ "CHANNEL_UPDATE", NULL },
-	{ "CHANNEL_DELETE", NULL },
-	{ "CHANNEL_PINS_UPDATE", NULL },
-	{ "GUILD_CREATE", NULL },
-	{ "GUILD_UPDATE", NULL },
-	{ "GUILD_DELETE", NULL },
-	{ "GUILD_BAN_ADD", NULL },
-	{ "GUILD_BAN_REMOVE", NULL },
-	{ "GUILD_EMOJIS_UPDATE", NULL },
-	{ "GUILD_MEMBER_ADD", NULL },
-	{ "GUILD_MEMBER_UPDATE", NULL },
-	{ "GUILD_MEMBERS_CHUNK", NULL },
-	{ "GUILD_ROLE_CREATE", NULL },
-	{ "GUILD_ROLE_UPDATE", NULL },
-	{ "GUILD_ROLE_DELETE", NULL },
-	{ "INVITE_CREATE", NULL },
-	{ "INVITE_DELETE", NULL },
-	{ "MESSAGE_CREATE", NULL },
-	{ "MESSAGE_UPDATE", NULL },
-	{ "MESSAGE_DELETE_BULK", NULL },
-	{ "MESSAGE_REACTION_ADD", NULL },
-	{ "MESSAGE_REACTION_REMOVE", NULL },
-	{ "MESSAGE_REACTION_REMOVE_ALL", NULL },
-	{ "MESSAGE_REACTION_REMOVE_EMOJI", NULL },
-	{ "PRESENCE_UPDATE", NULL },
-
-	{ "", NULL }
-};
-
-static receiving_event *get_receiving_event(receiving_event *events, char *key) {
-	receiving_event *iter = events;
-	while (!string_is_empty(iter->name)) {
-		if (string_is_equal(iter->name, key)) {
-			return iter;
-		}
-		iter++;
-	}
-
-	return NULL;
-}
-
-static void on_message_create(discord_t *ctx, json_t *data, char *event) {
-	discord_message_t *msg = message_from_json(data);
-	ctx->on_message_callback(ctx, msg);
-	discord_message_destroy(msg);
-}
-
-static bool event_has_handler(receiving_event *event) {
-	if (event) {
-		if (event->handler) {
-			return true;
-		}
-	}
-	return false;
-}
-
 static void on_message(struct uwsc_client *ws_client, void *data, size_t len, bool binary) {
 	(void)binary;
 
@@ -380,7 +308,8 @@ static void on_message(struct uwsc_client *ws_client, void *data, size_t len, bo
 			if (!string_is_empty(event)) {
 				log_info("Received Event: %s", event);
 				
-				receiving_event *ev = get_receiving_event(receiving_events, event);
+				receiving_event *all_events = get_all_receicing_events();
+				receiving_event *ev = get_receiving_event(all_events, event);
 				if (event_has_handler(ev)) {
 					ev->handler(disc, payload->d, event);
 				} else {
@@ -462,7 +391,8 @@ discord_t *discord_create(void) {
 
 	// TODO: Move this somewhere else
 	// Assign callbacks
-	receiving_event *event = get_receiving_event(receiving_events, "MESSAGE_CREATE");
+	receiving_event *all_events = get_all_receicing_events();
+	receiving_event *event = get_receiving_event(all_events, "MESSAGE_CREATE");
 	event->handler = on_message_create;
 
 	return disc;
