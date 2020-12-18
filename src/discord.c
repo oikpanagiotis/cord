@@ -1,15 +1,22 @@
 #include "discord.h"
 #include "events.h"
+#include "types.h"
 #include "log.h"
 #include "util.h"
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <jansson.h>
 #include <ev.h>
 #include <assert.h>
 
 static void load_identification_info(identification *id) {
 	id->token = getenv("DISCORD_APPLICATION_TOKEN");
+	if (!id->token) {
+		log_error("Bot token not found. Please set DISCORD_APPLICATION_TOKEN enviroment variable.");
+		exit(1);
+	}
+
 	id->device = getenv("DISCORD_APPLICATION_DEVICE");
 	id->os = getenv("DISCORD_APPLICATION_OS");
 	id->library = getenv("DISCORD_APPLICATION_LIBRARY");
@@ -216,13 +223,14 @@ int discord_send_message(discord_t *disc, discord_message_t *msg) {
 	return 0;
 }
 
-#define _map_msg_prop(msg, prop, prop_str, key, val) \
+#define M_msg_prop(msg, prop, prop_str, key, val) \
 	do { \
 		if (string_is_equal(key, prop_str)) { \
 			msg->prop = val; \
 		} \
 } while (0)								
 
+// Used from events module
 discord_message_t *message_from_json(json_t *data) {
 	discord_message_t *msg = malloc(sizeof(discord_message_t));
 	if (!msg) {
@@ -236,19 +244,26 @@ discord_message_t *message_from_json(json_t *data) {
 	json_object_foreach(data, key, value) {
 		if (json_is_string(value)) {
 			const char *str = json_string_value(value);
-			char *copy = strdup(str);
-			_map_msg_prop(msg, timestamp, "timestamp", key, copy);
-			_map_msg_prop(msg, nonce, "nonce", key, copy);
-			_map_msg_prop(msg, id, "id", key, copy);
-			_map_msg_prop(msg, content, "content", key, copy);
-			_map_msg_prop(msg, channel_id, "channel_id", key, copy);
-			_map_msg_prop(msg, guild_id, "guild_id", key, copy);
+			
+			char *value_copy = strdup(str);
+			M_msg_prop(msg, id, "id", key, value_copy);
+			M_msg_prop(msg, content, "content", key, value_copy);
+			M_msg_prop(msg, channel_id, "channel_id", key, value_copy);
+			M_msg_prop(msg, guild_id, "guild_id", key, value_copy);
+			M_msg_prop(msg, timestamp, "timestamp", key, value_copy);
+			M_msg_prop(msg, nonce, "nonce", key, value_copy);
+
+			// Serialize author object
+			if (string_is_equal(key, "author")) {
+
+			}
+
 
 		} else if (json_is_boolean(value)) {
 			bool val = json_boolean_value(value);
-			_map_msg_prop(msg, tts, "tts", key, val);
-			_map_msg_prop(msg, pinned, "pinned", key, val);
-			_map_msg_prop(msg, mention_everyone, "mention_everyone", key, val);
+			M_msg_prop(msg, tts, "tts", key, val);
+			M_msg_prop(msg, pinned, "pinned", key, val);
+			M_msg_prop(msg, mention_everyone, "mention_everyone", key, val);
 
 		} else if (json_is_array(value)) {
 			// todo
@@ -258,7 +273,7 @@ discord_message_t *message_from_json(json_t *data) {
 		} else if (json_is_integer(value)) {
 			json_int_t val = json_integer_value(value);
 			int num = (int)val; // long long -> int
-			_map_msg_prop(msg, type, "type", key, num);
+			M_msg_prop(msg, type, "type", key, num);
 		} else if (json_is_null(value)) {
 
 		}

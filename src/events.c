@@ -1,6 +1,7 @@
 #include "events.h"
 #include "discord.h"
 #include "util.h"
+#include "types.h"
 
 // (string, event_handler) dictionary to dispatch receiving events
 static receiving_event receiving_events[] = {
@@ -60,7 +61,12 @@ receiving_event *get_receiving_event(receiving_event *events, char *key) {
 }
 
 void on_message_create(discord_t *ctx, json_t *data, char *event) {
-	discord_message_t *msg = message_from_json(data);
+	//discord_message_t *msg = message_from_json(data);
+	discord_message_t *msg = NULL;
+	
+	if (serialize_message(msg, data) < 0) {
+		log_error("Failed to serialize message");
+	}
 	ctx->on_message_callback(ctx, msg);
 	discord_message_destroy(msg);
 }

@@ -6,11 +6,3 @@ Libuwsc repository: https://github.com/zhaojh329/libuwsc
 Discord Gateway documentation: https://discord.com/developers/docs/topics/gateway
 
 Check unit testing framework: https://libcheck.github.io/check/doc/check_html/check_3.html
-
-Cord module should depend on Discord module
-but Discord module should not depend on Cord.
-To achieve this we need to create a pseudo interface
-that Discord module will provide to the external program
-and Cord will wrap it.
-
-Cord should be a thin layer over discord client for the first release

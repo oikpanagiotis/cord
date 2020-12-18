@@ -27,6 +27,10 @@ clean:
 	rm -f build/*
 	rm -f bin/*
 
+examples: examples/ping_pong.c examples/simple.c
+	gcc -ggdb3 examples/ping_pong.c -lcord $(LIBS) -o bin/ping_pong
+	gcc -ggdb3 examples/simple.c -lcord $(LIBS) -o bin/simple
+
 install:
 	cp bin/libcord.so /usr/lib/libcord.so
 	cp src/cord.h /usr/local/include/cord.h

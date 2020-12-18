@@ -7,7 +7,9 @@
 #include <ev.h>
 #include <jansson.h>
 
+#include "str/sds.h"
 #include "http.h"
+#include "types.h"
 
 #define PAYLOAD_KEY_OPCODE "op"
 #define PAYLOAD_KEY_DATA "d"
@@ -25,42 +27,6 @@
 #define OP_INVALID_SESSION 9
 #define OP_HELLO 10
 #define OP_HEARTBEAT_ACK 11
-
-typedef struct discord_author_t {
-	char *name;
-	char *id;
-	char *discriminator;
-	char *avatar;
-	int public_flags;
-} discord_author_t;
-
-typedef struct discord_message_t {
-	int type;
-	bool tts;
-	char *id;
-	char *content;
-	char *channel_id;
-	char *guild_id;
-	char *timestamp;
-	void *edited_timestamp;
-	void *referenced_message;
-	bool pinned;
-	char *nonce;
-	void *mentions;
-	void *mention_roles;
-	bool mention_everyone;
-	int flags;
-	void *embeds;
-	void *attachments;
-} discord_message_t;
-
-typedef struct discord_guild_t {
-	char *id; // snowflake
-	char *name;
-	char *icon; // string/null
-	char *splash; //string/null
-	char *discovery_splash; // string/null
-} discord_guild_t;
 
 // Load these from enviroment variables
 typedef struct identification {
@@ -82,7 +48,7 @@ typedef void (*on_msg)(discord_t *disc, discord_message_t *msg);
 
 typedef struct discord_event_t {
 	int type;
-	char *token;
+	sds token;
 	int token_length;
 
 } discord_event_t;
@@ -112,9 +78,10 @@ void discord_destroy(discord_t *disc);
 discord_message_t *message_from_json(json_t *data);
 
 int discord_send_message(discord_t *disc, discord_message_t *msg);
-void discord_message_set_content(discord_message_t *msg, char *content);
-
+void discord_message_set_content(discord_message_t *msg, sds content);
+void discord_message_set_content_c(discord_message_t *msg, char *content);
 void discord_message_destroy(discord_message_t *msg);
+
 // Events
 enum {
 	CHANNEL_CREATE,
