@@ -12,8 +12,8 @@
 } while (0)
 
 
-int discord_user_init(discord_user_t *user) {
-    user = malloc(sizeof(discord_user_t));
+int cord_user_init(cord_user_t *user) {
+    user = malloc(sizeof(cord_user_t));
     if (!user) {
         return ERR_MALLOC;
     }
@@ -34,7 +34,7 @@ int discord_user_init(discord_user_t *user) {
     return ERR_NONE;
 }
 
-int serialize_user(discord_user_t *author, json_t *data) {
+int cord_user_serialize(cord_user_t *author, json_t *data) {
     int err = discord_user_init(author);
     if (err != ERR_NONE) {
         return err;
@@ -68,7 +68,7 @@ int serialize_user(discord_user_t *author, json_t *data) {
     return ERR_NONE;
 }
 
-void discord_user_free(discord_user_t *user) {
+void cord_user_free(cord_user_t *user) {
     sdsfree(user->id);
     sdsfree(user->username);
     sdsfree(user->discriminator);
@@ -78,8 +78,8 @@ void discord_user_free(discord_user_t *user) {
 }
 
 
-int discord_guild_member_init(discord_guild_member_t *member) {
-    member = malloc(sizeof(discord_guild_member_t));
+int cord_guild_member_init(cord_guild_member_t *member) {
+    member = malloc(sizeof(cord_guild_member_t));
     if (!member) {
         return ERR_MALLOC;
     }
@@ -95,7 +95,7 @@ int discord_guild_member_init(discord_guild_member_t *member) {
     return ERR_NONE;
 }
 
-int serialize_guild_member(discord_guild_member_t *member, json_t *data) {
+int cord_guild_member_serialize(cord_guild_member_t *member, json_t *data) {
     int err = discord_guild_member_init(member);
     if (err != ERR_NONE) {
         return err;
@@ -117,7 +117,7 @@ int serialize_guild_member(discord_guild_member_t *member, json_t *data) {
             map_property(member, mute, "mute", key, val);
             map_property(member, pending, "pending", key, val);
         } else if (json_is_object(value)) {
-            discord_user_t *user = NULL;
+            cord_user_t *user = NULL;
             if (serialize_user(user, value) < 0) {
                 return ERR_USER_SERIALIZATION;
             }
@@ -127,7 +127,7 @@ int serialize_guild_member(discord_guild_member_t *member, json_t *data) {
     return ERR_NONE;
 }
 
-void discord_guild_member_free(discord_guild_member_t *member) {
+void cord_guild_member_free(cord_guild_member_t *member) {
     discord_user_free(member->user);
     sdsfree(member->nick);
     sdsfree(member->joined_at);
@@ -135,8 +135,8 @@ void discord_guild_member_free(discord_guild_member_t *member) {
 }
 
 
-int discord_role_init(discord_role_t *role) {
-    role = malloc(sizeof(discord_role_t));
+int cord_role_init(cord_role_t *role) {
+    role = malloc(sizeof(cord_role_t));
     if (!role) {
         return ERR_MALLOC;
     }
@@ -152,7 +152,7 @@ int discord_role_init(discord_role_t *role) {
     return ERR_NONE;
 }
 
-int serialize_discord_role(discord_role_t *role, json_t *data) {
+int cord_role_serialize(cord_role_t *role, json_t *data) {
     int err = discord_role_init(role);
     if (err != ERR_NONE) {
         return err;
@@ -181,15 +181,15 @@ int serialize_discord_role(discord_role_t *role, json_t *data) {
     return ERR_NONE;
 }
 
-void discord_role_free(discord_role_t *role) {
+void cord_role_free(cord_role_t *role) {
     sdsfree(role->id);
     sdsfree(role->name);
     sdsfree(role->permissions);
 }
 
 
-int channel_mention_init(channel_mention_t *mention) {
-    mention = malloc(sizeof(channel_mention_t));
+int cord_channel_mention_init(cord_channel_mention_t *mention) {
+    mention = malloc(sizeof(cord_channel_mention_t));
     if (!mention) {
         return ERR_MALLOC;
     }
@@ -198,10 +198,10 @@ int channel_mention_init(channel_mention_t *mention) {
     mention->guild_id = NULL;
     mention->type = 0;
     mention->name = NULL;
-    return ERR_NONE:
+    return ERR_NONE;
 }
 
-int channel_mention_serialize(channel_mention_t *mention, json_t *data) {
+int cord_channel_mention_serialize(cord_channel_mention_t *mention, json_t *data) {
     int err = channel_mention_init(mention);
     if (err != ERR_NONE) {
         return err;
@@ -224,16 +224,350 @@ int channel_mention_serialize(channel_mention_t *mention, json_t *data) {
     return ERR_NONE;
 }
 
-void channel_mention_free(channel_mention_t *mention) {
+void cord_channel_mention_free(cord_channel_mention_t *mention) {
     sdsfree(mention->id);
     sdsfree(mention->guild_id);
     sdsfree(mention->name);
 }
 
 
+int cord_attachment_init(cord_attachment_t *at) {
+    at = malloc(sizeof(cord_attachment_t));
+    if (!at) {
+        return ERR_MALLOC;
+    }
 
-int discord_message_init(discord_message_t *msg) {
-    msg = malloc(sizeof(discord_message_t));
+    at->id = NULL;
+    at->filename = NULL;
+    at->size = 0;
+    at->url = NULL;
+    at->proxy_url = NULL;
+    at->height = 0;
+    at->width = 0;
+    return ERR_NONE;
+}
+
+int cord_attachment_serialize(cord_attachment_t *at, json_t *data) {
+    int err = cord_attachment_init(at);
+    if (err != ERR_NONE) {
+        return err;
+    }
+
+    const char *key = NULL;
+    json_t *value = NULL;
+
+    json_object_foreach(data, key, value) {
+        if (json_is_string(value)) {
+            sds value_copy = sdsnew(json_string_value(value));
+            map_property(at, id, "id", key, value_copy);
+            map_property(at, filename, "filename", key, value_copy);
+            map_property(at, url, "url", key, value_copy);
+            map_property(at, proxy_url, "proxy_url", key, value_copy);
+        } else if (json_is_integer(value)) {
+            int val = (int)json_integer_value(value);
+            map_property(at, size, "size", key, val);
+            map_property(at, height, "height", key, val);
+            map_property(at, width, "width", key, val);
+        }
+    }
+    return ERR_NONE;
+}
+
+void cord_attachment_free(cord_attachment_t *at) {
+    sdsfree(at->id);
+    sdsfree(at->filename);
+    sdsfree(at->url);
+    sdsfree(at->proxy_url);
+}
+
+int cord_embed_footer_init(cord_embed_footer_t *ft) {
+    ft = malloc(sizeof(ft));
+    if (!ft) {
+        return ERR_MALLOC;
+    }
+
+    ft->text = NULL;
+    ft->icon_url = NULL;
+    ft->proxy_icon_url = NULL;
+}
+
+int cord_embed_footer_serialize(cord_embed_footer_t *ft, json_t *data) {
+    int err = cord_embed_footer_init(ft);
+    if (err != ERR_NONE) {
+        return err;
+    }
+
+    const char *key = NULL;
+    json_t *value = NULL;
+
+    json_object_foreach(data, key, value) {
+        if (json_is_string(value)) {
+            sds value_copy = sdsnew(json_string_value(value));
+            map_property(ft, text, "text", key, value_copy);
+            map_property(ft, icon_url, "icon_url", key, value_copy);
+            map_property(ft, proxy_icon_url, "proxy_icon_url", key, value_copy);
+        }
+    }
+    return ERR_NONE;
+}
+
+void cord_embed_footer_free(cord_embed_footer_t *ft) {
+    sdsfree(ft->text);
+    sdsfree(ft->icon_url);
+    sdsfree(ft->proxy_icon_url);
+}
+
+int cord_embed_image_init(cord_embed_image_t *img) {
+    img = malloc(sizeof(cord_embed_image_t));
+    if (!img) {
+        return ERR_MALLOC;
+    }
+
+    img->url = NULL;
+    img->proxy_url = NULL;
+    img->height = 0;
+    img->width = 0;
+    return ERR_NONE;
+}
+
+int cord_embed_image_serialize(cord_embed_image_t *img, json_t *data) {
+    int err = cord_embed_image_init(img);
+    if (err != ERR_NONE) {
+        return err;
+    }
+
+    const char *key = NULL;
+    json_t *value = NULL;
+
+    json_object_foreach(data, key, value) {
+        if (json_is_string(value)) {
+            sds value_copy = sdsnew(json_string_value(value));
+            map_property(img, url, "url", key, value_copy);
+            map_property(img, proxy_url, "proxy_url", key, value_copy);
+        } else if (json_is_integer(value)) {
+            int val = (int)json_integer_value(value);
+            map_property(img, height, "height", key, val);
+            map_property(img, width, "width", key, val);
+        }
+    }
+    return ERR_NONE;
+}
+
+void cord_embed_image_free(cord_embed_image_t *img) {
+    sdsfree(img->url);
+    sdsfree(img->proxy_url);
+}
+
+int cord_embed_thumbnail_init(cord_embed_thumbnail_t *tn) {
+    tn = malloc(sizeof(cord_embed_thumbnail_t));
+    if (!tn) {
+        return ERR_MALLOC;
+    }
+
+    tn->url = NULL;
+    tn->proxy_url = NULL;
+    tn->height = 0;
+    tn->width = 0;
+    return ERR_NONE;
+}
+
+int cord_embed_thumbnail_serialize(cord_embed_thumbnail_t *tn, json_t *data) {
+    int err = cord_embed_thumbnail_init(tn);
+    if (err != ERR_NONE) {
+        return err;
+    }
+
+    const char *key = NULL;
+    json_t *value = NULL;
+
+    json_object_foreach(data, key, value) {
+        if (json_is_string(value)) {
+            sds value_copy = sdsnew(json_string_value(value));
+            map_property(tn, url, "url", key, value_copy);
+            map_property(tn, proxy_url, "proxy_url", key, value_copy);
+        } else if (json_is_integer(value)) {
+            int val = (int)json_integer_value(value);
+            map_property(tn, height, "height", key, val);
+            map_property(tn, width, "width", key, val);
+        }
+    }
+    return ERR_NONE;
+}
+
+void cord_embed_thumbnail_free(cord_embed_thumbnail_t *tn) {
+    sdsfree(tn->url);
+    sdsfree(tn->proxy_url);
+}
+
+int cord_embed_video_init(cord_embed_video_t *evid) {
+    evid = malloc(sizeof(cord_embed_video_t));
+    if (!evid) {
+        return ERR_MALLOC;
+    }
+
+    evid->url = NULL;
+    evid->height = 0;
+    evid->width = 0;
+    return ERR_NONE;
+}
+
+int cord_embed_video_serialize(cord_embed_video_t *evid, json_t *data) {
+    int err = cord_embed_video_init(evid);
+    if (err != ERR_NONE) {
+        return err;
+    }
+
+    const char *key = NULL;
+    json_t *value = NULL;
+
+    json_object_foreach(data, key, value) {
+        if (json_is_string(value)) {
+            sds value_copy = sdsnew(json_string_value(value));
+            map_property(evid, url, "url", key, value_copy);
+        } else if (json_is_integer(value)) {
+            int val = (int)json_integer_value(value);
+            map_property(evid, height, "height", key, val);
+            map_property(evid, width, "width", key, val);
+        }
+    }
+}
+
+void cord_embed_video_free(cord_embed_video_t *evid) {
+    sdsfree(evid->url);
+}
+
+int cord_embed_provider_init(cord_embed_provider_t *epr) {
+    epr = malloc(sizeof(cord_embed_provider_t));
+    if (!epr) {
+        return ERR_MALLOC;
+    }
+
+    epr->name = NULL;
+    epr->url = NULL;
+    return ERR_NONE;
+}
+
+int cord_embed_provider_serialize(cord_embed_provider_t *epr, json_t *data) {
+    int err = cord_embed_provider_init(epr);
+    if (err != ERR_NONE) {
+        return err;
+    }
+
+    const char *key = NULL;
+    json_t *value = NULL;
+
+    json_object_foreach(data, key, value) {
+        if (json_is_string(value)) {
+            sds value_copy = sdsnew(json_string_value(value));
+            map_property(epr, name, "name", key, value_copy);
+            map_property(epr, url, "url", key, value_copy);
+        }
+    }
+    return ERR_NONE;
+}
+
+void cord_embed_provider_free(cord_embed_provider_t *epr) {
+    sdsfree(epr->name);
+    sdsfree(epr->url);
+}
+
+int cord_embed_author_init(cord_embed_author_t *eauth) {
+    eauth = malloc(sizeof(cord_embed_author_t));
+    if (!eauth) {
+        return ERR_MALLOC;
+    }
+
+    eauth->name = NULL;
+    eauth->url = NULL;
+    eauth->icon_url = NULL;
+    eauth->proxy_icon_url = NULL;
+    return ERR_NONE;
+}
+
+int cord_embed_author_serialize(cord_embed_author_t *eauth, json_t *data) {
+    int err = cord_embed_author_init(eauth);
+    if (err != ERR_NONE) {
+        return err;
+    }
+
+    const char *key = NULL;
+    json_t *value = NULL;
+
+    json_object_foreach(data, key, value) {
+        if (json_is_string(value)) {
+            sds value_copy = sdsnew(json_string_value(value));
+            map_property(eauth, name, "name", key, value_copy);
+            map_property(eauth, url, "url", key, value_copy);
+            map_property(eauth, icon_url, "icon_url", key, value_copy);
+            map_property(eauth, proxy_icon_url, "proxy_icon_url", key, value_copy);
+        }
+    }
+    return ERR_NONE;
+}
+
+void cord_embed_author_free(cord_embed_author_t *eauth) {
+    sdsfree(eauth->name);
+    sdsfree(eauth->url);
+    sdsfree(eauth->icon_url);
+    sdsfree(eauth->proxy_icon_url);
+}
+
+int cord_embed_field_init(cord_embed_field_t *efield) {
+    efield = malloc(sizoef(cord_embed_field_t));
+    if (!efield) {
+        return ERR_MALLOC;
+    }
+
+    efield->name = NULL;
+    efield->value = NULL;
+    efield->inline_ = false;
+    return ERR_NONE;
+}
+
+int cord_embed_field_serialize(cord_embed_field_t *efield, json_t *data) {
+    int err = cord_embed_field_init(efield);
+    if (err != ERR_NONE) {
+        return err;
+    }
+
+    const char *key = NULL;
+    json_t *value = NULL;
+
+    json_object_foreach(data, key, value) {
+        if (json_is_string(value)) {
+            sds value_copy = sdsnew(json_string_value(value));
+            map_property(efield, name, "name", key, value_copy);
+            map_property(efield, value, "value", key, value_copy);
+        } else if (json_is_boolean(value)) {
+            bool val = json_boolean_value(value);
+            map_property(efield, inline_, "inline", key, val);
+        }
+    }
+    return ERR_NONE;
+}
+
+void cord_embed_field_free(cord_embed_field_t *efield) {
+    sdsfree(efield->name);
+    sdsfree(efield->value);
+}
+
+
+int cord_embed_init(cord_embed_t *emb) {
+    // TODO: Implement
+}
+
+int cord_embed_serialize(cord_embed_t *emb, json_t *data) {
+    // TODO: Implement
+}
+
+void cord_embed_free(cord_embed_t *emb) {
+    // TODO: Implement
+}
+
+
+
+int cord_message_init(cord_message_t *msg) {
+    msg = malloc(sizeof(cord_message_t));
     if (!msg) {
         return ERR_MALLOC;
     }
@@ -242,8 +576,8 @@ int discord_message_init(discord_message_t *msg) {
     return ERR_NONE;
 }
 
-int serialize_message(discord_message_t *msg, json_t *data) {
-   	msg = malloc(sizeof(discord_message_t));
+int cord_message_serialize(cord_message_t *msg, json_t *data) {
+   	msg = malloc(sizeof(cord_message_t));
 	if (!msg) {
 		return ERR_MALLOC;
 	}
@@ -289,7 +623,7 @@ int serialize_message(discord_message_t *msg, json_t *data) {
 		} else if (json_is_object(value)) {
             // BUG, BUG!! We need to run foreach here and put these inside the block
             if (string_is_equal(key, "member")) {
-                discord_user_t *author = NULL;
+                cord_user_t *author = NULL;
                 if (serialize_user(author, value) < 0) {
                     log_warning("Failed to serialize author object");
                 }
@@ -318,4 +652,8 @@ int serialize_message(discord_message_t *msg, json_t *data) {
         }
 	}
     return ERR_NONE;
+}
+
+void cord_message_free(cord_message_t *msg) {
+    // TODO: Implement
 }

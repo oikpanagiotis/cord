@@ -6,7 +6,7 @@
 #include "str/sds.h"
 
 // https://discord.com/developers/docs/resources/user#user-object
-typedef struct discord_user_t {
+typedef struct cord_user_t {
 	sds id;
 	sds username;
 	sds discriminator;
@@ -20,15 +20,15 @@ typedef struct discord_user_t {
 	int flags;
 	int premium_type;
 	int public_flags;	
-} discord_user_t;
+} cord_user_t;
 
-int discord_user_init(discord_user_t *user);
-int serialize_user(discord_user_t *author, json_t *data);
-void discord_user_free(discord_user_t *user);
+int cord_user_init(cord_user_t *user);
+int cord_user_serialize(cord_user_t *author, json_t *data);
+void cord_user_free(cord_user_t *user);
 
 // https://discord.com/developers/docs/resources/guild#guild-member-object
-typedef struct discord_guild_member_t {
-    discord_user_t *user;
+typedef struct cord_guild_member_t {
+    cord_user_t *user;
     sds nick;
     sds *roles; // array
     sds joined_at;
@@ -36,14 +36,14 @@ typedef struct discord_guild_member_t {
     bool deaf;
     bool mute;
     bool pending;    
-} discord_guild_member_t;
+} cord_guild_member_t;
 
-int discord_guild_member_init(discord_guild_member_t *member);
-int serialize_guild_member(discord_guild_member_t *member, json_t *data);
-void discord_guild_member_free(discord_guild_member_t *member);
+int cord_guild_member_init(cord_guild_member_t *member);
+int cord_guild_member_serialize(cord_guild_member_t *member, json_t *data);
+void cord_guild_member_free(cord_guild_member_t *member);
 
 // https://discord.com/developers/docs/topics/permissions#role-object
-typedef struct discord_role_t {
+typedef struct cord_role_t {
     sds id;
     sds name;
     int color;
@@ -52,42 +52,158 @@ typedef struct discord_role_t {
     sds permissions;
     bool managed;
     bool mentionable;
-    //discord_role_tags_t tag;
-} discord_role_t;
+    //cord_role_tags_t tag;
+} cord_role_t;
 
-int discord_role_init(discord_role_t *role);
-int serialize_discord_role(discord_role_t *role, json_t *data);
-void discord_role_free(discord_role_t *role);
+int cord_role_init(cord_role_t *role);
+int cord_role_serialize(cord_role_t *role, json_t *data);
+void cord_role_free(cord_role_t *role);
 
 // https://discord.com/developers/docs/resources/channel#channel-mention-object
-typedef struct channel_mention_t {
+typedef struct cord_channel_mention_t {
     sds id;
     sds guild_id;
     int type;
     sds name;
-} channel_mention_t;
+} cord_channel_mention_t;
 
-int channel_mention_init(channel_mention_t *mention);
-int channel_mention_serialize(channel_mention_t *mention, json_t *data);
-void channel_mention_free(channel_mention_t *mention);
+int cord_channel_mention_init(cord_channel_mention_t *mention);
+int cord_channel_mention_serialize(cord_channel_mention_t *mention, json_t *data);
+void cord_channel_mention_free(cord_channel_mention_t *mention);
+
+// https://discord.com/developers/docs/resources/channel#attachment-object
+typedef struct cord_attachment_t {
+	sds id;
+	sds filename;
+	int size;
+	sds url;
+	sds proxy_url;
+	int height;
+	int width;
+} cord_attachment_t;
+
+int cord_attachment_init(cord_attachment_t *at);
+int cord_attachment_serialize(cord_attachment_t *at, json_t *data);
+void cord_attachment_free(cord_attachment_t *at);
+
+// https://discord.com/developers/docs/resources/channel#embed-object-embed-footer-structure
+typedef struct cord_embed_footer_t {
+	sds text;
+	sds icon_url;
+	sds proxy_icon_url;
+} cord_embed_footer_t;
+
+int cord_embed_footer_init(cord_embed_footer_t *ft);
+int cord_embed_footer_serialize(cord_embed_footer_t *ft, json_t *data);
+void cord_embed_footer_free(cord_embed_footer_t *ft);
+
+// https://discord.com/developers/docs/resources/channel#embed-object-embed-image-structure
+typedef struct cord_embed_image_t {
+	sds url;
+	sds proxy_url;
+	int height;
+	int width;
+} cord_embed_image_t;
+
+int cord_embed_image_init(cord_embed_image_t *img);
+int cord_embed_image_serialize(cord_embed_image_t *img, json_t *data);
+void cord_embed_image_free(cord_embed_image_t *img);
+
+// https://discord.com/developers/docs/resources/channel#embed-object-embed-thumbnail-structure
+typedef struct cord_embed_thumbnail_t {
+	sds url;
+	sds proxy_url;
+	int height;
+	int width;
+} cord_embed_thumbnail_t;
+
+int cord_embed_thumbnail_init(cord_embed_thumbnail_t *tn);
+int cord_embed_thumbnail_serialize(cord_embed_thumbnail_t *tn, json_t *data);
+void cord_embed_thumbnail_free(cord_embed_thumbnail_t *tn);
+
+// https://discord.com/developers/docs/resources/channel#embed-object-embed-video-structure
+typedef struct cord_embed_video_t {
+	sds url;
+	int height;
+	int width;
+} cord_embed_video_t;
+
+int cord_embed_video_init(cord_embed_video_t *evid);
+int cord_embed_video_serialize(cord_embed_video_t *evid, json_t *data);
+void cord_embed_video_free(cord_embed_video_t *evid);
+
+// https://discord.com/developers/docs/resources/channel#embed-object-embed-provider-structure
+typedef struct cord_embed_provider_t {
+	sds name;
+	sds url;
+} cord_embed_provider_t;
+
+int cord_embed_provider_init(cord_embed_provider_t *epr);
+int cord_embed_provider_serialize(cord_embed_provider_t *epr, json_t *data);
+void cord_embed_provider_free(cord_embed_provider_t *epr);
+
+// https://discord.com/developers/docs/resources/channel#embed-object-embed-author-structure
+typedef struct cord_embed_author_t {
+	sds name;
+	sds url;
+	sds icon_url;
+	sds proxy_icon_url;
+} cord_embed_author_t;
+
+int cord_embed_author_init(cord_embed_author_t *eauth);
+int cord_embed_author_serialize(cord_embed_author_t *eauth, json_t *data);
+void cord_embed_author_free(cord_embed_author_t *eauth);
+
+// https://discord.com/developers/docs/resources/channel#embed-object-embed-field-structure
+typedef struct cord_embed_field_t {
+	sds name;
+	sds value;
+	bool inline_;
+} cord_embed_field_t;
+
+int cord_embed_field_init(cord_embed_field_t *efield);
+int cord_embed_field_serialize(cord_embed_field_t *efield, json_t *data);
+void cord_embed_field_free(cord_embed_field_t *efield);
+
+// https://discord.com/developers/docs/resources/channel#embed-object
+typedef struct cord_embed_t {
+	sds title;
+	sds type;
+	sds description;
+	sds url;
+	sds timestamp;
+	int color;
+	cord_embed_footer_t *footer;
+	cord_embed_image_t *image;
+	cord_embed_thumbnail_t *thumbnail;
+	cord_embed_video_t *video;
+	cord_embed_provider_t *provider;
+	cord_embed_author_t *author;
+
+	cord_embed_field_t *fields; // TODO: array
+} cord_embed_t;
+
+int cord_embed_init(cord_embed_t *emb);
+int cord_embed_serialize(cord_embed_t *emb, json_t *data);
+void cord_embed_free(cord_embed_t *emb);
 
 // https://discord.com/developers/docs/resources/channel#message-object
-typedef struct discord_message_t {
+typedef struct cord_message_t {
 	sds id;
 	sds channel_id;
 	sds guild_id;
-	discord_user_t *author;
-	discord_guild_member_t *member;
+	cord_user_t *author;
+	cord_guild_member_t *member;
 	sds content;
 	sds timestamp;
 	sds edited_timestamp;
 	bool tts;
 	bool mention_everyone;
-	discord_guild_member_t *mentions;
-	discord_role_t *mention_roles;
-	channel_mention_t *mention_channels;
-	//discord_attachment *attachments;
-	//discord_embed_t *embeds;
+	cord_guild_member_t *mentions;
+	cord_role_t *mention_roles;
+	cord_channel_mention_t *mention_channels;
+	cord_attachment_t *attachments;
+	cord_embed_t *embeds;
 	//discord_reaction_t *reactions;
 	int nonce; // or string?
     bool pinned;
@@ -98,12 +214,12 @@ typedef struct discord_message_t {
 	//discord_message_reference_t *message_reference;
 	int flags; // combined as a bitfield(check bitwise operators on how to check the fieldset)
 	//discord_sticker_t *stickers;
-	//discord_message_t *referenced_message;
-} discord_message_t;
+	//cord_message_t *referenced_message;
+} cord_message_t;
 
-int discord_message_init(discord_message_t *msg);
-int serialize_message(discord_message_t *msg, json_t *data);
-void discord_message_free(discord_message_t *msg);
+int cord_message_init(cord_message_t *msg);
+int cord_message_serialize(cord_message_t *msg, json_t *data);
+void cord_message_free(cord_message_t *msg);
 
 // TODO: Implement these
 int serialize_message_activity(void *ptr, json_t *data);
