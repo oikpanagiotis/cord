@@ -187,7 +187,68 @@ int cord_embed_init(cord_embed_t *emb);
 int cord_embed_serialize(cord_embed_t *emb, json_t *data);
 void cord_embed_free(cord_embed_t *emb);
 
-// https://discord.com/developers/docs/resources/channel#message-object
+// (Emoji) - https://discord.com/developers/docs/resources/emoji#emoji-object
+// Look at types.c for example on how to serialize json_t sub-objects
+typedef struct cord_emoji_t {
+	sds id;
+	sds name;
+	cord_role_t *roles; // array
+	cord_user_t *user;
+	bool require_colons;
+	bool managed;
+	bool animated;
+	bool available;
+} cord_emoji_t;
+
+int cord_emoji_init(cord_emoji_t *emj);
+int cord_emoji_serialize(cord_emoji_t *emj, json_t *data);
+void cord_emoji_free(cord_emoji_t *emj);
+
+typedef struct cord_reaction_t {
+	int count;
+	bool me;
+	cord_emoji_t *emoji;
+} cord_reaction_t;
+
+int cord_reaction_init(cord_reaction_t *react);
+int cord_reaction_serialize(cord_reaction_t *react, json_t *data);
+void cord_reaction_free(cord_reaction_t *react);
+
+// (Message Activity) - https://discord.com/developers/docs/resources/channel#message-object-message-activity-structure
+typedef struct cord_message_activity_t {
+	int type;
+	sds party_id;
+} cord_message_activity_t;
+
+int cord_message_activity_init(cord_message_activity_t *ma);
+int cord_message_activity_serialize(cord_message_activity_t *ma, json_t *data);
+void cord_cord_message_activity_free(cord_message_activity_t *ma);
+
+// (Message Application) - https://discord.com/developers/docs/resources/channel#message-object-message-application-structure
+typedef struct cord_message_application_t {
+	sds id;
+	sds cover_image;
+	sds description;
+	sds icon;
+	sds name;
+} cord_message_application_t;
+
+int cord_message_application_init(cord_message_application_t *app);
+int cord_message_application_serialize(cord_message_application_t *app, json_t *data);
+void cord_message_application_free(cord_message_application_t *app);
+
+// (Message Reference) - https://discord.com/developers/docs/resources/channel#message-object-message-reference-structure
+typedef struct cord_message_reference_t {
+	sds message_id;
+	sds channel_id;
+	sds guild_id;
+} cord_message_reference_t;
+
+int cord_message_reference_init(cord_message_reference_t *mr);
+int cord_message_reference_serialize(cord_message_reference_t *mr, json_t *data);
+void cord_message_reference_free(cord_message_reference_t *mr);
+
+// (Message) - https://discord.com/developers/docs/resources/channel#message-object
 typedef struct cord_message_t {
 	sds id;
 	sds channel_id;
@@ -204,16 +265,16 @@ typedef struct cord_message_t {
 	cord_channel_mention_t *mention_channels;
 	cord_attachment_t *attachments;
 	cord_embed_t *embeds;
-	//discord_reaction_t *reactions;
+	cord_reaction_t *reactions; // array
 	int nonce; // or string?
     bool pinned;
 	sds webhook_id;
 	int type;
-	//discord_message_activity_t *activity;
-	//discord_message_application_t *application;
-	//discord_message_reference_t *message_reference;
+	cord_message_activity_t *activity;
+	cord_message_application_t *application;
+	cord_message_reference_t *message_reference;
 	int flags; // combined as a bitfield(check bitwise operators on how to check the fieldset)
-	//discord_sticker_t *stickers;
+	//cord_sticker_t *stickers;
 	//cord_message_t *referenced_message;
 } cord_message_t;
 
