@@ -44,7 +44,7 @@ enum {
 };
 
 typedef struct discord_t discord_t;
-typedef void (*on_msg)(discord_t *disc, discord_message_t *msg);
+typedef void (*on_msg)(discord_t *disc, cord_message_t *msg);
 
 typedef struct discord_event_t {
 	int type;
@@ -75,12 +75,12 @@ discord_t *discord_create(void);
 int discord_connect(discord_t *disc, const char *url);
 void discord_destroy(discord_t *disc);
 
-discord_message_t *message_from_json(json_t *data);
+cord_message_t *message_from_json(json_t *data);
 
-int discord_send_message(discord_t *disc, discord_message_t *msg);
-void discord_message_set_content(discord_message_t *msg, sds content);
-void discord_message_set_content_c(discord_message_t *msg, char *content);
-void discord_message_destroy(discord_message_t *msg);
+int discord_send_message(discord_t *disc, cord_message_t *msg);
+void discord_message_set_content(cord_message_t *msg, sds content);
+void discord_message_set_content_c(cord_message_t *msg, char *content);
+void discord_message_destroy(cord_message_t *msg);
 
 // Events
 enum {

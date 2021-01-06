@@ -199,7 +199,7 @@ static void json_debug_print(json_t *json) {
 	free(buf);
 }
 
-void discord_message_set_content(discord_message_t *msg, char *content) {
+void discord_message_set_content(cord_message_t *msg, char *content) {
 	char *json_content_template = "{\"content\": \"%s\"}";
 
 	int len = strlen(content);
@@ -209,7 +209,7 @@ void discord_message_set_content(discord_message_t *msg, char *content) {
 
 
 char *DISCORD_API_URL = "https://discordapp.com/api";
-int discord_send_message(discord_t *disc, discord_message_t *msg) {
+int discord_send_message(discord_t *disc, cord_message_t *msg) {
 	// TODO: Prefix the channel and ids based on our cache
 	const int URL_LEN = 512;
 	char *final_url = calloc(1, URL_LEN);
@@ -231,8 +231,8 @@ int discord_send_message(discord_t *disc, discord_message_t *msg) {
 } while (0)								
 
 // Used from events module
-discord_message_t *message_from_json(json_t *data) {
-	discord_message_t *msg = malloc(sizeof(discord_message_t));
+cord_message_t *message_from_json(json_t *data) {
+	cord_message_t *msg = malloc(sizeof(cord_message_t));
 	if (!msg) {
 		log_error("Failed to allocate discord message");
 		return NULL;
@@ -282,7 +282,7 @@ discord_message_t *message_from_json(json_t *data) {
 	return msg;
 }
 
-void discord_message_destroy(discord_message_t *msg) {
+void discord_message_destroy(cord_message_t *msg) {
 	if (msg) {
 		if (msg->id) free(msg->id);
 		if (msg->content) free(msg->content);

@@ -248,6 +248,22 @@ int cord_message_reference_init(cord_message_reference_t *mr);
 int cord_message_reference_serialize(cord_message_reference_t *mr, json_t *data);
 void cord_message_reference_free(cord_message_reference_t *mr);
 
+// (Message Sticker) - https://discord.com/developers/docs/resources/channel#message-object-message-sticker-structure
+typedef struct cord_message_sticker_t {
+	sds id;
+	sds pack_id;
+	sds name;
+	sds description;
+	sds tags;
+	sds asset;
+	sds preview_asset;
+	int format_type;
+} cord_message_sticker_t;
+
+int cord_message_sticker_init(cord_message_sticker_t *ms);
+int cord_message_sticker_serialize(cord_message_sticker_t *ms, json_t *data);
+void cord_message_sticker_free(cord_message_sticker_t *ms);
+
 // (Message) - https://discord.com/developers/docs/resources/channel#message-object
 typedef struct cord_message_t {
 	sds id;
@@ -266,7 +282,8 @@ typedef struct cord_message_t {
 	cord_attachment_t *attachments;
 	cord_embed_t *embeds;
 	cord_reaction_t *reactions; // array
-	int nonce; // or string?
+	//int nonce; // or string?
+	sds nonce;
     bool pinned;
 	sds webhook_id;
 	int type;
@@ -274,26 +291,31 @@ typedef struct cord_message_t {
 	cord_message_application_t *application;
 	cord_message_reference_t *message_reference;
 	int flags; // combined as a bitfield(check bitwise operators on how to check the fieldset)
-	//cord_sticker_t *stickers;
-	//cord_message_t *referenced_message;
+	cord_message_sticker_t *stickers;
+
+	/*
+	This field is only returned for messages with a type of 19 (REPLY).
+	If the message is a reply but the referenced_message field is not present,
+	the backend did not attempt to fetch the message that was being replied to,
+	so its state is unknown. If the field exists but is null, the referenced message was deleted.
+	*/
+	struct cord_message_t *referenced_message;
 } cord_message_t;
 
 int cord_message_init(cord_message_t *msg);
 int cord_message_serialize(cord_message_t *msg, json_t *data);
 void cord_message_free(cord_message_t *msg);
 
-// TODO: Implement these
-int serialize_message_activity(void *ptr, json_t *data);
-int serialize_message_application(void *ptr, json_t *data);
-int serialize_message_reference(void *ptr, json_t *data);
-int serialize_referenced_message(void *ptr, json_t *value);
-
-typedef struct discord_guild_t {
+typedef struct cord_guild_t {
 	sds id;
 	sds name;
 	sds icon;
 	sds splash;
 	sds discovery_splash;
-} discord_guild_t;
+} cord_guild_t;
+
+int cord_guild_init(cord_guild_t *g);
+int cord_guild_serialize(cord_guild_t *g, json_t *data);
+void cord_guild_free(cord_guild_t *g);
 
 #endif

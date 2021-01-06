@@ -4,10 +4,10 @@
 // Library's API return values
 typedef enum {
     // Success
-    ERR_NONE = 0,
+    CORD_OK = 0,
 
     // Malloc failed
-    ERR_MALLOC,
+    CORD_ERR_MALLOC,
 
     // Object serialization errors
     ERR_USER_SERIALIZATION,

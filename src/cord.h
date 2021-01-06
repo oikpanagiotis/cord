@@ -5,19 +5,7 @@
 
 typedef struct cord_t cord_t;
 
-typedef struct cord_user_t {
-
-} cord_user_t;
-
-typedef struct cord_message_t {
-
-} cord_message_t;
-
-typedef struct cord_guild_t {
-
-} cord_guild_t;
-
-typedef void (*on_msg_cb)(discord_t *c, discord_message_t *msg);
+typedef void (*on_msg_cb)(discord_t *c, cord_message_t *msg);
 typedef struct cord_t {
 	// should be the first field in the struct	
 	discord_t *disc;
