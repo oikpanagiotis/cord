@@ -961,42 +961,6 @@ void cord_message_free(cord_message_t *msg) {
     // TODO: Implement
 }
 
-int cord_message_activity_init(cord_message_activity_t *ma) {
-
-}
-
-int cord_message_activity_serialize(cord_message_activity_t *ma, json_t *data) {
-
-}
-
-void cord_message_activity_free(cord_message_activity_t *ma) {
-
-}
-
-int cord_message_application_init(cord_message_application_t *ma) {
-
-}
-
-int cord_message_application_serialize(cord_message_application_t *ma, json_t *data) {
-
-}
-
-void cord_message_application_free(cord_message_application_t *ma) {
-
-}
-
-int cord_message_reference_init(cord_message_reference_t *mr) {
-
-}
-
-int cord_message_reference_serialze(cord_message_reference_t *mr, json_t *data) {
-
-}
-
-void cord_message_reference_free(cord_message_reference_t * mr) {
-
-}
-
 int cord_guild_init(cord_guild_t *g) {
 
 }

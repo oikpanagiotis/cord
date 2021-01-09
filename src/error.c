@@ -6,9 +6,9 @@ typedef struct api_error {
 } api_error;
 
 static api_error errors[] = {
-    { ERR_NONE, "" },
+    { CORD_OK, "" },
 
-    { ERR_MALLOC, "Memory allocation failed" },
+    { CORD_ERR_MALLOC, "Memory allocation failed" },
     
     { ERR_USER_SERIALIZATION, "Failed to serialize user object" },
     { ERR_GUILD_MEMBER_SERIALIZATION, "Failed to serialize guild member object" },

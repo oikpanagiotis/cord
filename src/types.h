@@ -2,6 +2,7 @@
 #define TYPES_H
 
 #include <stdbool.h>
+#include <jansson.h>
 
 #include "str/sds.h"
 

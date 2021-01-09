@@ -2,10 +2,10 @@
 #include <string.h>
 #include <cord.h>
 
-void on_message(discord_t *disc, discord_message_t *msg) {
+void on_message(discord_t *disc, cord_message_t *msg) {
 	if (strcmp(msg->content, "ping") == 0) {
 		// Allocate a response
-		discord_message_t *response = malloc(sizeof(discord_message_t));
+		cord_message_t *response = malloc(sizeof(cord_message_t));
 		response->channel_id = calloc(1, 256);
 		strcpy(response->channel_id, msg->channel_id);
 
