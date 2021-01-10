@@ -1,6 +1,8 @@
 #include "types.h"
 #include "log.h"
 #include "error.h"
+#include "sds.h"
+#include "util.h"
 
 #include <jansson.h>
 
@@ -35,7 +37,7 @@ int cord_user_init(cord_user_t *user) {
 }
 
 int cord_user_serialize(cord_user_t *author, json_t *data) {
-    int err = discord_user_init(author);
+    int err = cord_user_init(author);
     if (err != CORD_OK) {
         return err;
     }
@@ -97,7 +99,7 @@ int cord_guild_member_init(cord_guild_member_t *member) {
 }
 
 int cord_guild_member_serialize(cord_guild_member_t *member, json_t *data) {
-    int err = discord_guild_member_init(member);
+    int err = cord_guild_member_init(member);
     if (err != CORD_OK) {
         return err;
     }
@@ -119,7 +121,7 @@ int cord_guild_member_serialize(cord_guild_member_t *member, json_t *data) {
             map_property(member, pending, "pending", key, val);
         } else if (json_is_object(value)) {
             cord_user_t *user = NULL;
-            if (serialize_user(user, value) < 0) {
+            if (cord_user_serialize(user, value) < 0) {
                 return ERR_USER_SERIALIZATION;
             }
         }
@@ -129,7 +131,7 @@ int cord_guild_member_serialize(cord_guild_member_t *member, json_t *data) {
 }
 
 void cord_guild_member_free(cord_guild_member_t *member) {
-    discord_user_free(member->user);
+    cord_user_free(member->user);
     sdsfree(member->nick);
     sdsfree(member->joined_at);
     sdsfree(member->premium_since);
@@ -155,7 +157,7 @@ int cord_role_init(cord_role_t *role) {
 }
 
 int cord_role_serialize(cord_role_t *role, json_t *data) {
-    int err = discord_role_init(role);
+    int err = cord_role_init(role);
     if (err != CORD_OK) {
         return err;
     }
@@ -205,7 +207,7 @@ int cord_channel_mention_init(cord_channel_mention_t *mention) {
 }
 
 int cord_channel_mention_serialize(cord_channel_mention_t *mention, json_t *data) {
-    int err = channel_mention_init(mention);
+    int err = cord_channel_mention_init(mention);
     if (err != CORD_OK) {
         return err;
     }
@@ -745,7 +747,7 @@ int cord_message_application_serialize(cord_message_application_t *app, json_t *
     const char *key = NULL;
     json_t *value = NULL;
 
-    json_object_foreach(app, key, value) {
+    json_object_foreach(data, key, value) {
         if (json_is_string(value)) {
             sds copy_val = sdsnew(json_string_value(value));
             map_property(app, id, "id", key, copy_val);
@@ -927,28 +929,28 @@ int cord_message_serialize(cord_message_t *msg, json_t *data) {
             // BUG, BUG!! We need to run foreach here and put these inside the block
             if (string_is_equal(key, "member")) {
                 cord_user_t *author = NULL;
-                if (serialize_user(author, value) < 0) {
+                if (cord_user_serialize(author, value) < 0) {
                     log_warning("Failed to serialize author object");
                 }
                 msg->author = author;
             } else if (string_is_equal(key, "activity")) {
                 void *ptr = NULL;
-                if (serialize_message_activity(ptr, value) < 0) {
+                if (cord_message_activity_serialize(ptr, value) < 0) {
                     log_warning("Failed to serialize message activity object");
                 }
             } else if (string_is_equal(key, "message_application")) {
                 void *ptr = NULL;
-                if (serialize_message_application(ptr, value) < 0) {
+                if (cord_message_application_serialize(ptr, value) < 0) {
                     log_warning("Failed to serialize message application object");
                 }
             } else if (string_is_equal(key, "message_reference")) {
                 void *ptr = NULL;
-                if (serialize_message_application(ptr, value) < 0) {
+                if (cord_message_reference_serialize(ptr, value) < 0) {
                     log_warning("Failed to serialize message reference object");
                 }
             } else if (string_is_equal(key, "referenced_message")) {
                 void *ptr = NULL;
-                if (serialize_referenced_message(ptr, value) < 0) {
+                if (cord_message_reference_serialize(ptr, value) < 0) {
                     log_warning("Failed to serialize referenced message object");
                 }
             }

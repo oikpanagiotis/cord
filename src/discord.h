@@ -7,7 +7,7 @@
 #include <ev.h>
 #include <jansson.h>
 
-#include "str/sds.h"
+#include "sds.h"
 #include "http.h"
 #include "types.h"
 

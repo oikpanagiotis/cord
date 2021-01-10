@@ -4,7 +4,7 @@
 #include <stdbool.h>
 #include <jansson.h>
 
-#include "str/sds.h"
+#include "sds.h"
 
 // https://discord.com/developers/docs/resources/user#user-object
 typedef struct cord_user_t {

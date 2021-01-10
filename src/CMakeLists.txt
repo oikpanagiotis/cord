@@ -8,6 +8,7 @@ set(Sources
     http.c
     types.c
     util.c
+    sds.c
 )
 
 set(Libraries
@@ -17,6 +18,7 @@ set(Libraries
     jansson
     curl
 )
+
 
 add_library(cord SHARED ${Sources})
 

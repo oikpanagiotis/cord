@@ -2,7 +2,7 @@
 #define ERROR_H
 
 // Library's API return values
-typedef enum {
+typedef enum cord_status {
     // Success
     CORD_OK = 0,
 
@@ -15,7 +15,7 @@ typedef enum {
     ERR_MSG_SERIALIZATION,
 
     ERR_COUNT
-};
+} cord_status;
 
 char *cord_error(int type);
 
