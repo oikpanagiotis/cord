@@ -714,7 +714,7 @@ int cord_message_activity_serialize(cord_message_activity_t *ma, json_t *data) {
     return CORD_OK;
 }
 
-void cord_cord_message_activity_free(cord_message_activity_t *ma) {
+void cord_message_activity_free(cord_message_activity_t *ma) {
     sdsfree(ma->party_id);
     free(ma);
 }
