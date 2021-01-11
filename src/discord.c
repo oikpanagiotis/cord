@@ -10,16 +10,18 @@
 #include <ev.h>
 #include <assert.h>
 
+static char *library_name = "cord";
+
 static void load_identification_info(identification *id) {
-	id->token = getenv("DISCORD_APPLICATION_TOKEN");
+	id->token = getenv("CORD_APPLICATION_TOKEN");
 	if (!id->token) {
-		log_error("Bot token not found. Please set DISCORD_APPLICATION_TOKEN enviroment variable.");
+		log_error("Bot token not found. Please set CORD_APPLICATION_TOKEN enviroment variable.");
 		exit(1);
 	}
 
-	id->device = getenv("DISCORD_APPLICATION_DEVICE");
-	id->os = getenv("DISCORD_APPLICATION_OS");
-	id->library = getenv("DISCORD_APPLICATION_LIBRARY");
+	id->os = system("uname -mrs");
+	id->device = library_name;
+	id->library = library_name;
 }
 
 // Assumes that sequence is initialized to -1

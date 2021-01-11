@@ -59,12 +59,9 @@ make
 sudo make install
 ```
 
-Before using the library in your program make sure to set the following enviroment variables
+Before using the library in your program make sure to set the following enviroment variable
 ```
-DISCORD_APPLICATION_TOKEN
-DISCORD_APPLICATION_DEVICE
-DISCORD_APPLICATION_OS
-DISCORD_APPLICATION_LIBRARY  
+CORD_APPLICATION_TOKEN
 ```
 
 ## Roadmap
