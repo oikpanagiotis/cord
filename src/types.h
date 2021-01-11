@@ -223,7 +223,7 @@ typedef struct cord_message_activity_t {
 
 int cord_message_activity_init(cord_message_activity_t *ma);
 int cord_message_activity_serialize(cord_message_activity_t *ma, json_t *data);
-void cord_cord_message_activity_free(cord_message_activity_t *ma);
+void cord_message_activity_free(cord_message_activity_t *ma);
 
 // (Message Application) - https://discord.com/developers/docs/resources/channel#message-object-message-application-structure
 typedef struct cord_message_application_t {
@@ -265,6 +265,7 @@ int cord_message_sticker_init(cord_message_sticker_t *ms);
 int cord_message_sticker_serialize(cord_message_sticker_t *ms, json_t *data);
 void cord_message_sticker_free(cord_message_sticker_t *ms);
 
+#define MAX_ARRAY 128
 // (Message) - https://discord.com/developers/docs/resources/channel#message-object
 typedef struct cord_message_t {
 	sds id;
@@ -277,13 +278,20 @@ typedef struct cord_message_t {
 	sds edited_timestamp;
 	bool tts;
 	bool mention_everyone;
-	cord_guild_member_t *mentions;
-	cord_role_t *mention_roles;
-	cord_channel_mention_t *mention_channels;
-	cord_attachment_t *attachments;
-	cord_embed_t *embeds;
-	cord_reaction_t *reactions; // array
-	//int nonce; // or string?
+
+	cord_user_t *mentions[MAX_ARRAY];
+	int _mentions_count;
+	cord_role_t *mention_roles[MAX_ARRAY];
+	int _mention_roles_count;
+	cord_channel_mention_t *mention_channels[MAX_ARRAY];
+	int _mention_channels_count;
+	cord_attachment_t *attachments[MAX_ARRAY];
+	int _attachments_count;
+	cord_embed_t *embeds[MAX_ARRAY];
+	int _embeds_count;
+	cord_reaction_t *reactions[MAX_ARRAY];
+	int _reactions_count;
+
 	sds nonce;
     bool pinned;
 	sds webhook_id;
@@ -292,7 +300,9 @@ typedef struct cord_message_t {
 	cord_message_application_t *application;
 	cord_message_reference_t *message_reference;
 	int flags; // combined as a bitfield(check bitwise operators on how to check the fieldset)
-	cord_message_sticker_t *stickers;
+
+	cord_message_sticker_t *stickers[MAX_ARRAY];
+	int _stickers_count;
 
 	/*
 	This field is only returned for messages with a type of 19 (REPLY).

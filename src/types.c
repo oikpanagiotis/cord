@@ -831,6 +831,7 @@ int cord_message_sticker_init(cord_message_sticker_t *ms) {
     ms->asset = NULL;
     ms->preview_asset = NULL;
     ms->format_type = 0; // https://discord.com/developers/docs/resources/channel#message-object-message-sticker-format-types
+    return CORD_OK;
 }
 
 int cord_message_sticker_serialize(cord_message_sticker_t *ms, json_t *data) {
@@ -856,6 +857,7 @@ int cord_message_sticker_serialize(cord_message_sticker_t *ms, json_t *data) {
             map_property(ms, format_type, "format_type", key, val);
         }
     }
+    return CORD_OK;
 }
 
 void cord_message_sticker_free(cord_message_sticker_t *ms) {
@@ -874,8 +876,36 @@ int cord_message_init(cord_message_t *msg) {
     if (!msg) {
         return CORD_ERR_MALLOC;
     }
+    msg->id = NULL;
+    msg->channel_id = NULL;
+    msg->guild_id = NULL;
+    msg->author = NULL;
+    msg->member = NULL;
+    msg->content = NULL;
+    msg->timestamp = NULL;
+    msg->edited_timestamp = NULL;
+    msg->tts = false;
+    msg->mention_everyone = false;
 
-    // map->...
+    msg->_mentions_count = 0;
+    msg->_mention_roles_count = 0;
+    msg->_mention_channels_count = 0;
+    msg->_attachments_count = 0;
+    msg->_embeds_count = 0;
+    msg->_reactions_count = 0;
+    msg->_stickers_count = 0;
+
+    msg->nonce = NULL;
+    msg->pinned = false;
+    msg->webhook_id = NULL;
+    msg->type = 0; // WARNING: Check if 0 is a valid type
+    
+    msg->activity = NULL;
+    msg->application = NULL;
+    msg->message_reference = NULL;
+    msg->flags = 0;
+    msg->referenced_message = NULL;
+
     return CORD_OK;
 }
 
@@ -897,61 +927,138 @@ int cord_message_serialize(cord_message_t *msg, json_t *data) {
 			map_property(msg, content, "content", key, value_copy);
 			map_property(msg, timestamp, "timestamp", key, value_copy);
 			map_property(msg, edited_timestamp, "edited_timestamp", key, value_copy);
+            map_property(msg, nonce, "nonce", key, value_copy);
 			map_property(msg, webhook_id, "webhook_id", key, value_copy);
+            
 		} else if (json_is_boolean(value)) {
 			bool val = json_boolean_value(value);
 			map_property(msg, tts, "tts", key, val);
+            map_property(msg, mention_everyone, "mention_everyone", key, val);
 			map_property(msg, pinned, "pinned", key, val);
-			map_property(msg, mention_everyone, "mention_everyone", key, val);
+
 		} else if (json_is_array(value)) {
-			// TODO: Implement
+            int i = 0;
+            json_t *item = NULL;
+
             if (string_is_equal(key, "mentions")) {
-                
+                json_array_foreach(value, i, item) {
+                    int err = cord_user_serialize(msg->mentions[i], item);
+                    if (err != CORD_OK) {
+                        log_warning("Failed to serialize mentions-><cord_user_t>");
+                        cord_user_free(msg->mentions[i]);
+                        return err;
+                    }
+                    msg->_mentions_count++;
+                }
             } else if (string_is_equal(key, "mention_roles")) {
-
+                json_array_foreach(value, i, item) {
+                    int err = cord_role_serialize(msg->mention_roles[i], item);
+                    if (err != CORD_OK) {
+                        log_warning("Failed to serialize mention_roles-><cord_role_t>");
+                        cord_role_free(msg->mention_roles[i]);
+                        return err;
+                    }
+                    msg->_mention_roles_count++;
+                }
             } else if (string_is_equal(key, "mention_channels")) {
-
+                json_array_foreach(value, i, item) {
+                    int err = cord_channel_mention_serialize(msg->mention_channels[i], item);
+                    if (err != CORD_OK) {
+                        log_warning("Failed to serialize mention_channels-><cord_channel_mention_t>");
+                        cord_channel_mention_free(msg->mention_channels[i]);
+                        return err;
+                    }
+                    msg->_mention_channels_count++;
+                }
             } else if (string_is_equal(key, "attachments")) {
-
+                json_array_foreach(value, i, item) {
+                    int err = cord_attachment_serialize(msg->attachments[i], item);
+                    if (err != CORD_OK) {
+                        log_warning("Failed to serialize attachments-><cord_attachment_t>");
+                        cord_attachment_free(msg->attachments[i]);
+                        return err;
+                    }
+                    msg->_attachments_count++;
+                }
             } else if (string_is_equal(key, "embeds")) {
-
+                json_array_foreach(value, i, item) {
+                    int err = cord_embed_serialize(msg->embeds[i], item);
+                    if (err != CORD_OK) {
+                        log_warning("Failed to serialize embeds-><cord_embed_t>");
+                        cord_embed_free(msg->embeds[i]);
+                        return err;
+                    }
+                    msg->_embeds_count++;
+                }
             } else if (string_is_equal(key, "reactions")) {
-
+                json_array_foreach(value, i, item) {
+                    int err = cord_reaction_serialize(msg->reactions[i], item);
+                    if (err != CORD_OK) {
+                        log_warning("Failed to serialize reactions-><cord_reaction_t>");
+                        cord_reaction_free(msg->reactions[i]);
+                        return err;
+                    }
+                    msg->_reactions_count++;
+                }
             } else if (string_is_equal(key, "stickers")) {
-
+                json_array_foreach(value, i, item) {
+                    int err = cord_message_sticker_serialize(msg->stickers[i], item);
+                    if (err != CORD_OK) {
+                        log_warning("Failed to serialize sticklers-><cord_sticker_t>");
+                        cord_message_sticker_free(msg->stickers[i]);
+                        return err;
+                    }
+                    msg->_stickers_count++;
+                }
             }
 		} else if (json_is_integer(value)) {
 			json_int_t val = json_integer_value(value);
-			int num = (int)val; // long long -> int
+			int num = (int)val; // Cast: long long -> int
 			map_property(msg, type, "type", key, num);
 			map_property(msg, flags, "flags", key, num);
 		} else if (json_is_object(value)) {
-            // BUG, BUG!! We need to run foreach here and put these inside the block
-            if (string_is_equal(key, "member")) {
-                cord_user_t *author = NULL;
-                if (cord_user_serialize(author, value) < 0) {
-                    log_warning("Failed to serialize author object");
+            json_t *object = value;
+            if (string_is_equal(key, "author")) {
+                int err = cord_user_serialize(msg->author, object);
+                if (err != CORD_OK) {
+                    log_warning("Failed to serialize author-><cord_user_t>");
+                    cord_user_free(msg->author);
+                    return err;
                 }
-                msg->author = author;
+            } else if (string_is_equal(key, "member")) {
+                int err = cord_guild_member_serialize(msg->member, object);
+                if (err != CORD_OK) {
+                    log_warning("Failed to serialize member-><cord_guild_member_t>");
+                    cord_guild_member_free(msg->member);
+                    return err;
+                }
             } else if (string_is_equal(key, "activity")) {
-                void *ptr = NULL;
-                if (cord_message_activity_serialize(ptr, value) < 0) {
-                    log_warning("Failed to serialize message activity object");
+                int err = cord_message_activity_serialize(msg->activity, object);
+                if (err != CORD_OK) {
+                    log_warning("Failed to serialize activity-><cord_message_activity_t>");
+                    cord_message_activity_free(msg->activity);
+                    return err;
                 }
-            } else if (string_is_equal(key, "message_application")) {
-                void *ptr = NULL;
-                if (cord_message_application_serialize(ptr, value) < 0) {
-                    log_warning("Failed to serialize message application object");
+            } else if (string_is_equal(key, "application")) {
+                int err = cord_message_application_serialize(msg->application, object);
+                if (err != CORD_OK) {
+                    log_warning("Failed to serialize application-><cord_message_application_t>");
+                    cord_message_application_free(msg->application);
+                    return err;
                 }
             } else if (string_is_equal(key, "message_reference")) {
-                void *ptr = NULL;
-                if (cord_message_reference_serialize(ptr, value) < 0) {
-                    log_warning("Failed to serialize message reference object");
+                int err = cord_message_reference_serialize(msg->message_reference, object);
+                if (err != CORD_OK) {
+                    log_warning("Failed to serialize message_reference-><cord_message_reference_t>");
+                    cord_message_reference_free(msg->message_reference);
+                    return err;
                 }
             } else if (string_is_equal(key, "referenced_message")) {
-                void *ptr = NULL;
-                if (cord_message_reference_serialize(ptr, value) < 0) {
-                    log_warning("Failed to serialize referenced message object");
+                int err = cord_message_serialize(msg->referenced_message, object);
+                if (err != CORD_OK) {
+                    log_warning("Failed to serialize referenced_message-><cord_message_t>");
+                    cord_message_free(msg->referenced_message);
+                    return err;
                 }
             }
         }
@@ -960,17 +1067,59 @@ int cord_message_serialize(cord_message_t *msg, json_t *data) {
 }
 
 void cord_message_free(cord_message_t *msg) {
-    // TODO: Implement
+    sdsfree(msg->id);
+    sdsfree(msg->channel_id);
+    sdsfree(msg->guild_id);
+    sdsfree(msg->nonce);
+    sdsfree(msg->content);
+    sdsfree(msg->timestamp);
+    sdsfree(msg->edited_timestamp);
+    sdsfree(msg->webhook_id);
+    
+    cord_user_free(msg->author);
+    cord_guild_member_free(msg->member);
+    cord_message_activity_free(msg->activity);
+    cord_message_application_free(msg->application);
+    cord_message_reference_free(msg->message_reference);
+    cord_message_free(msg->referenced_message);
+    
+    for (int i = 0; i < msg->_mentions_count; i++) {
+        cord_user_free(msg->mentions[i]);
+    }
+
+    for (int i = 0; i < msg->_mention_roles_count; i++) {
+        cord_role_free(msg->mention_roles[i]);
+    }
+
+    for (int i = 0; i < msg->_mention_channels_count; i++) {
+        cord_channel_mention_free(msg->mention_channels[i]);
+    }
+
+    for (int i = 0; i < msg->_attachments_count; i++) {
+        cord_attachment_free(msg->attachments[i]);
+    }
+
+    for (int i = 0; i < msg->_embeds_count; i++) {
+        cord_embed_free(msg->embeds[i]);
+    }
+
+    for (int i = 0; i < msg->_reactions_count; i++) {
+        cord_reaction_free(msg->reactions[i]);
+    }
+
+    for (int i = 0; i < msg->_stickers_count; i++) {
+        cord_message_sticker_free(msg->stickers[i]);
+    }
 }
 
 int cord_guild_init(cord_guild_t *g) {
-
+    // TODO: Implement
 }
 
 int cord_guild_serialize(cord_guild_t *g, json_t *data) {
-
+    // TODO: Implement
 }
 
 void cord_guild_free(cord_guild_t *g) {
-
+    // TODO: Implement
 }

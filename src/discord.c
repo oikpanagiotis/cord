@@ -300,8 +300,7 @@ static void on_message(struct uwsc_client *ws_client, void *data, size_t len, bo
 	// Serialize payload
 	json_t *raw_payload = json_loadb(data, len, 0, &err);
 	if (!raw_payload) {
-		// TODO: Log more verbose message using json_error_t
-		log_error("Failed to serialize payload");
+		log_error("Failed to serialize payload: %s", err.text);
 		return;
 	}
 	gateway_payload *payload = malloc(sizeof(gateway_payload));
