@@ -63,7 +63,7 @@ receiving_event *get_receiving_event(receiving_event *events, char *key) {
 
 void on_message_create(discord_t *ctx, json_t *data, char *event) {
 	//discord_message_t *msg = message_from_json(data);
-	cord_message_t *msg = NULL;
+	cord_message_t *msg = message_from_json(data);
 	
 	if (cord_message_serialize(msg, data) < 0) {
 		log_error("Failed to serialize message");
