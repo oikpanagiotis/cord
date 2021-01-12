@@ -54,7 +54,8 @@ Install the dependencies
 Build and install the library
 ```
 git clone https://github.com/oikpanagiotis/cord  
-cd cord && mkdir bin build
+cd cord && mkdir build && cd build
+cmake ..
 make
 sudo make install
 ```
