@@ -3,6 +3,7 @@
 #include "types.h"
 #include "log.h"
 #include "util.h"
+#include "constants.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -10,18 +11,20 @@
 #include <ev.h>
 #include <assert.h>
 
-static char *library_name = "cord";
+static char *os_name = "Linux";
 
 static void load_identification_info(identification *id) {
 	id->token = getenv("CORD_APPLICATION_TOKEN");
+	assert(id->token);
 	if (!id->token) {
 		log_error("Bot token not found. Please set CORD_APPLICATION_TOKEN enviroment variable.");
 		exit(1);
 	}
 
-	id->os = system("uname -mrs");
-	id->device = library_name;
-	id->library = library_name;
+	// TODO: Implement os detection
+	id->os = os_name;
+	id->device = LIB_NAME;
+	id->library = LIB_NAME;
 }
 
 // Assumes that sequence is initialized to -1
@@ -195,12 +198,6 @@ int parse_gatway_payload(json_t *raw_payload, gateway_payload *payload) {
 	return 0;
 }
 
-static void json_debug_print(json_t *json) {
-	char *buf = json_dumps(json, 0);
-	printf("[DEBUG|JSON]: %s\n", buf);
-	free(buf);
-}
-
 void discord_message_set_content(cord_message_t *msg, char *content) {
 	char *json_content_template = "{\"content\": \"%s\"}";
 
@@ -357,7 +354,7 @@ static void on_message(struct uwsc_client *ws_client, void *data, size_t len, bo
 			break;
 	}
 	
-	json_decref(payload->d);
+	// json_decref(payload->d);
 	free(payload);
 }
 
@@ -387,7 +384,7 @@ discord_t *discord_create(void) {
 		return NULL;
 	}
 
-	disc->http = http_client_create(getenv("DISCORD_APPLICATION_TOKEN"));
+	disc->http = http_client_create(id.token);
 	if (!disc->http->bot_token) {
 		log_error("Failed to create bot token");
 		free(disc);
@@ -408,8 +405,8 @@ discord_t *discord_create(void) {
 	// TODO: Move this somewhere else
 	// Assign callbacks
 	receiving_event *all_events = get_all_receicing_events();
-	receiving_event *event = get_receiving_event(all_events, "MESSAGE_CREATE");
-	event->handler = on_message_create;
+	receiving_event *on_message_event = get_receiving_event(all_events, "MESSAGE_CREATE");
+	on_message_event->handler = on_message_create;
 
 	return disc;
 }

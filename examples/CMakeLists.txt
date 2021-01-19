@@ -8,6 +8,6 @@ set(Libraries
     curl
     cord
 )
-
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra -ggdb")
 add_executable(ping_pong ping_pong.c)
 target_link_libraries(ping_pong PUBLIC ${Libraries})
