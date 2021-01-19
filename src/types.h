@@ -4,6 +4,7 @@
 #include <stdbool.h>
 #include <jansson.h>
 
+#include "error.h"
 #include "sds.h"
 
 // https://discord.com/developers/docs/resources/user#user-object
@@ -27,22 +28,6 @@ int cord_user_init(cord_user_t *user);
 int cord_user_serialize(cord_user_t *author, json_t *data);
 void cord_user_free(cord_user_t *user);
 
-// https://discord.com/developers/docs/resources/guild#guild-member-object
-typedef struct cord_guild_member_t {
-    cord_user_t *user;
-    sds nick;
-    sds *roles; // array
-    sds joined_at;
-    sds premium_since;
-    bool deaf;
-    bool mute;
-    bool pending;    
-} cord_guild_member_t;
-
-int cord_guild_member_init(cord_guild_member_t *member);
-int cord_guild_member_serialize(cord_guild_member_t *member, json_t *data);
-void cord_guild_member_free(cord_guild_member_t *member);
-
 // https://discord.com/developers/docs/topics/permissions#role-object
 typedef struct cord_role_t {
     sds id;
@@ -59,6 +44,23 @@ typedef struct cord_role_t {
 int cord_role_init(cord_role_t *role);
 int cord_role_serialize(cord_role_t *role, json_t *data);
 void cord_role_free(cord_role_t *role);
+
+// https://discord.com/developers/docs/resources/guild#guild-member-object
+typedef struct cord_guild_member_t {
+    cord_user_t *user;
+    sds nick;
+    cord_role_t *roles[64];
+	int _roles_count;
+	sds joined_at;
+    sds premium_since;
+    bool deaf;
+    bool mute;
+    bool pending;    
+} cord_guild_member_t;
+
+int cord_guild_member_init(cord_guild_member_t *member);
+int cord_guild_member_serialize(cord_guild_member_t *member, json_t *data);
+void cord_guild_member_free(cord_guild_member_t *member);
 
 // https://discord.com/developers/docs/resources/channel#channel-mention-object
 typedef struct cord_channel_mention_t {
@@ -265,7 +267,7 @@ int cord_message_sticker_init(cord_message_sticker_t *ms);
 int cord_message_sticker_serialize(cord_message_sticker_t *ms, json_t *data);
 void cord_message_sticker_free(cord_message_sticker_t *ms);
 
-#define MAX_ARRAY 128
+#define MAX_ARRAY 4
 // (Message) - https://discord.com/developers/docs/resources/channel#message-object
 typedef struct cord_message_t {
 	sds id;
@@ -313,8 +315,8 @@ typedef struct cord_message_t {
 	struct cord_message_t *referenced_message;
 } cord_message_t;
 
-int cord_message_init(cord_message_t *msg);
-int cord_message_serialize(cord_message_t *msg, json_t *data);
+void cord_message_init(cord_message_t *msg);
+cord_message_t *cord_message_serialize(json_t *data, cord_err *err);
 void cord_message_free(cord_message_t *msg);
 
 typedef struct cord_guild_t {

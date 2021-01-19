@@ -8,7 +8,8 @@ typedef struct cord_t cord_t;
 typedef void (*on_msg_cb)(discord_t *c, cord_message_t *msg);
 typedef struct cord_t {
 	// should be the first field in the struct	
-	discord_t *disc;
+	discord_t *client;
+	
 	on_msg_cb msg_cb;
 } cord_t;
 

@@ -3,6 +3,9 @@
 #include "util.h"
 #include "types.h"
 #include "log.h"
+#include "error.h"
+
+#include <assert.h>
 
 // (string, event_handler) dictionary to dispatch receiving events
 static receiving_event receiving_events[] = {
@@ -62,12 +65,19 @@ receiving_event *get_receiving_event(receiving_event *events, char *key) {
 }
 
 void on_message_create(discord_t *ctx, json_t *data, char *event) {
-	//discord_message_t *msg = message_from_json(data);
-	cord_message_t *msg = message_from_json(data);
-	
-	if (cord_message_serialize(msg, data) < 0) {
-		log_error("Failed to serialize message");
+	(void)ctx;
+	(void)event;
+
+	cord_err err;
+	cord_message_t *msg = cord_message_serialize(data, &err);
+	if (!msg) {
+		log_error("Failed to serialize message: %s", cord_error(err));
+		return;
 	}
+
+	// Make sure we didn't corrupt the heap
+	assert(msg);
 	ctx->on_message_callback(ctx, msg);
-	cord_message_free(msg);
+	// BUG: Fix initialization function so cord_message_free doesn crash on NULL
+	// cord_message_free(msg);
 }
