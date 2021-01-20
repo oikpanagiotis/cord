@@ -311,7 +311,7 @@ void cord_attachment_free(cord_attachment_t *at) {
 }
 
 int cord_embed_footer_init(cord_embed_footer_t *ft) {
-    ft = malloc(sizeof(ft));
+    ft = malloc(sizeof(cord_embed_footer_t));
     if (!ft) {
         return CORD_ERR_MALLOC;
     }
