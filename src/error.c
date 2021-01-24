@@ -14,6 +14,7 @@ static api_error errors[] = {
     { ERR_GUILD_MEMBER_SERIALIZATION, "Failed to serialize guild member object" },
     { ERR_MSG_SERIALIZATION, "Failed to serialize message object" },
 
+    { CORD_ERR_EMOJI_SERIALIZATION, "Failed to serialize emoji object" },
 
 };
 

@@ -14,6 +14,8 @@ typedef enum cord_err {
     ERR_GUILD_MEMBER_SERIALIZATION,
     ERR_MSG_SERIALIZATION,
 
+    CORD_ERR_EMOJI_SERIALIZATION,
+
     ERR_COUNT
 } cord_err;
 

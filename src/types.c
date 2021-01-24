@@ -21,12 +21,7 @@ static void store_status(cord_err *err, cord_err code) {
     }
 }
 
-int cord_user_init(cord_user_t *user) {
-    user = malloc(sizeof(cord_user_t));
-    if (!user) {
-        return CORD_ERR_MALLOC;
-    }
-
+void cord_user_init(cord_user_t *user) {
     user->id = NULL;
     user->username = NULL;
     user->discriminator = NULL;
@@ -40,14 +35,16 @@ int cord_user_init(cord_user_t *user) {
     user->flags = 0;
     user->premium_type = 0;
     user->public_flags = 0;
-    return CORD_OK;
 }
 
-int cord_user_serialize(cord_user_t *author, json_t *data) {
-    int err = cord_user_init(author);
-    if (err != CORD_OK) {
-        return err;
-    }
+cord_user_t * cord_user_serialize(json_t *data, cord_err *err) {
+    cord_user_t *author = malloc(sizeof(cord_user_t));
+     if (!author) {
+        store_status(err, CORD_ERR_MALLOC);
+        return NULL;
+	}
+
+    cord_user_init(author);
 
     const char *key = NULL;
     json_t *value = NULL;
@@ -74,7 +71,7 @@ int cord_user_serialize(cord_user_t *author, json_t *data) {
             // map_property(author, public_flags, "public_flags", key, val);
         }
     }
-    return CORD_OK;
+    return author;
 }
 
 void cord_user_free(cord_user_t *user) {
@@ -88,12 +85,7 @@ void cord_user_free(cord_user_t *user) {
 }
 
 
-int cord_guild_member_init(cord_guild_member_t *member) {
-    member = malloc(sizeof(cord_guild_member_t));
-    if (!member) {
-        return CORD_ERR_MALLOC;
-    }
-
+void cord_guild_member_init(cord_guild_member_t *member) {
     member->user = NULL;
     member->nick = NULL;
     member->joined_at = NULL;
@@ -102,14 +94,16 @@ int cord_guild_member_init(cord_guild_member_t *member) {
     member->mute = false;
     member->pending = false;
     member->_roles_count = 0;
-    return CORD_OK;
 }
 
-int cord_guild_member_serialize(cord_guild_member_t *member, json_t *data) {
-    int err = cord_guild_member_init(member);
-    if (err != CORD_OK) {
-        return err;
+cord_guild_member_t *cord_guild_member_serialize(json_t *data, cord_err *err) {
+    cord_guild_member_t *member = malloc(sizeof(cord_guild_member_t));
+    if (!member) {
+        store_status(err, CORD_ERR_MALLOC);
+        return NULL;
     }
+
+    cord_guild_member_init(member);
 
     const char *key = NULL;
     json_t *value = NULL;
@@ -130,27 +124,32 @@ int cord_guild_member_serialize(cord_guild_member_t *member, json_t *data) {
             json_t *slot = NULL;
             if (string_is_equal(key, "roles")) {
                 json_array_foreach(value, i, slot) {
-                    int err = cord_role_serialize(member->roles[i], slot);
-                    if (err != CORD_OK) {
-                        log_error("Failed to serialize cord role");
-                        return err;
-                    }
-                    member->_roles_count++;
+                    // TODO: FIX AFTER REFACTOR
+                    // int err = cord_role_serialize(member->roles[i], slot);
+                    // if (err != CORD_OK) {
+                        // log_error("Failed to serialize cord role");
+                        // return NULL;
+                    // }
+                    // member->_roles_count++;
                 }
             }
 
         } else if (json_is_object(value)) {
             cord_user_t *user = NULL;
             if (string_is_equal(key, "user")) {
-                if (cord_user_serialize(user, value) < 0) {
-                    log_warning("%s", cord_error(ERR_USER_SERIALIZATION));
-                    return ERR_USER_SERIALIZATION;
-                }
+                // cord_user_t *usr = cord_user_serialize(user, value);
+                // if (!usr) log_err; store_status; return NULL;
+                // TODO: FIX AFTER REFACTOR
+                // if (cord_user_serialize(user, value) < 0) {
+                    // log_warning("%s", cord_error(ERR_USER_SERIALIZATION));
+                    // store_status(err, ERR_USER_SERIALIZATION);
+                    // return NULL;
+                // }
             }
         }
     }
 
-    return CORD_OK;
+    return member;
 }
 
 void cord_guild_member_free(cord_guild_member_t *member) {
@@ -162,12 +161,7 @@ void cord_guild_member_free(cord_guild_member_t *member) {
 }
 
 
-int cord_role_init(cord_role_t *role) {
-    role = malloc(sizeof(cord_role_t));
-    if (!role) {
-        return CORD_ERR_MALLOC;
-    }
-
+void cord_role_init(cord_role_t *role) {
     role->id = NULL;
     role->name = NULL;
     role->color = 0;
@@ -176,14 +170,16 @@ int cord_role_init(cord_role_t *role) {
     role->permissions = NULL;
     role->managed = false;
     role->mentionable = false;
-    return CORD_OK;
 }
 
-int cord_role_serialize(cord_role_t *role, json_t *data) {
-    int err = cord_role_init(role);
-    if (err != CORD_OK) {
-        return err;
+cord_role_t *cord_role_serialize(json_t *data, cord_err *err) {
+    cord_role_t *role = malloc(sizeof(cord_role_t));
+    if (!role) {
+        store_status(err, CORD_ERR_MALLOC);
+        return NULL;
     }
+    
+    cord_role_init(role);
 
     const char *key = NULL;
     json_t *value = NULL;
@@ -205,7 +201,7 @@ int cord_role_serialize(cord_role_t *role, json_t *data) {
             map_property(role, position, "position", key, val);
         }
     }
-    return CORD_OK;
+    return role;
 }
 
 void cord_role_free(cord_role_t *role) {
@@ -216,24 +212,21 @@ void cord_role_free(cord_role_t *role) {
 }
 
 
-int cord_channel_mention_init(cord_channel_mention_t *mention) {
-    mention = malloc(sizeof(cord_channel_mention_t));
-    if (!mention) {
-        return CORD_ERR_MALLOC;
-    }
-
+void cord_channel_mention_init(cord_channel_mention_t *mention) {
     mention->id = NULL;
     mention->guild_id = NULL;
     mention->type = 0;
     mention->name = NULL;
-    return CORD_OK;
 }
 
-int cord_channel_mention_serialize(cord_channel_mention_t *mention, json_t *data) {
-    int err = cord_channel_mention_init(mention);
-    if (err != CORD_OK) {
-        return err;
+cord_channel_mention_t *cord_channel_mention_serialize(json_t *data, cord_err *err) {
+    cord_channel_mention_t *mention = malloc(sizeof(cord_channel_mention_t));
+    if (!mention) {
+        store_status(err, CORD_ERR_MALLOC);
+        return NULL;
     }
+
+    cord_channel_mention_init(mention);
 
     const char *key = NULL;
     json_t *value = NULL;
@@ -249,7 +242,7 @@ int cord_channel_mention_serialize(cord_channel_mention_t *mention, json_t *data
             map_property(mention, type, "type", key, val);
         }
     }
-    return CORD_OK;
+    return mention;
 }
 
 void cord_channel_mention_free(cord_channel_mention_t *mention) {
@@ -260,12 +253,7 @@ void cord_channel_mention_free(cord_channel_mention_t *mention) {
 }
 
 
-int cord_attachment_init(cord_attachment_t *at) {
-    at = malloc(sizeof(cord_attachment_t));
-    if (!at) {
-        return CORD_ERR_MALLOC;
-    }
-
+void cord_attachment_init(cord_attachment_t *at) {
     at->id = NULL;
     at->filename = NULL;
     at->size = 0;
@@ -273,14 +261,16 @@ int cord_attachment_init(cord_attachment_t *at) {
     at->proxy_url = NULL;
     at->height = 0;
     at->width = 0;
-    return CORD_OK;
 }
 
-int cord_attachment_serialize(cord_attachment_t *at, json_t *data) {
-    int err = cord_attachment_init(at);
-    if (err != CORD_OK) {
-        return err;
+cord_attachment_t *cord_attachment_serialize(json_t *data, cord_err *err) {
+    cord_attachment_t *at = malloc(sizeof(cord_attachment_t));
+    if (!at) {
+        store_status(err, CORD_ERR_MALLOC);
+        return NULL;
     }
+
+    cord_attachment_init(at);
 
     const char *key = NULL;
     json_t *value = NULL;
@@ -299,7 +289,7 @@ int cord_attachment_serialize(cord_attachment_t *at, json_t *data) {
             map_property(at, width, "width", key, val);
         }
     }
-    return CORD_OK;
+    return at;
 }
 
 void cord_attachment_free(cord_attachment_t *at) {
@@ -310,23 +300,20 @@ void cord_attachment_free(cord_attachment_t *at) {
     free(at);
 }
 
-int cord_embed_footer_init(cord_embed_footer_t *ft) {
-    ft = malloc(sizeof(cord_embed_footer_t));
-    if (!ft) {
-        return CORD_ERR_MALLOC;
-    }
-
+void cord_embed_footer_init(cord_embed_footer_t *ft) {
     ft->text = NULL;
     ft->icon_url = NULL;
     ft->proxy_icon_url = NULL;
-    return CORD_OK;
 }
 
-int cord_embed_footer_serialize(cord_embed_footer_t *ft, json_t *data) {
-    int err = cord_embed_footer_init(ft);
-    if (err != CORD_OK) {
-        return err;
+cord_embed_footer_t *cord_embed_footer_serialize(json_t *data, cord_err *err) {
+    cord_embed_footer_t *ft = malloc(sizeof(cord_embed_footer_t));
+    if (!ft) {
+        store_status(err, CORD_ERR_MALLOC);
+        return NULL;
     }
+
+    cord_embed_footer_init(ft);
 
     const char *key = NULL;
     json_t *value = NULL;
@@ -339,7 +326,7 @@ int cord_embed_footer_serialize(cord_embed_footer_t *ft, json_t *data) {
             map_property(ft, proxy_icon_url, "proxy_icon_url", key, value_copy);
         }
     }
-    return CORD_OK;
+    return ft;
 }
 
 void cord_embed_footer_free(cord_embed_footer_t *ft) {
@@ -349,24 +336,21 @@ void cord_embed_footer_free(cord_embed_footer_t *ft) {
     free(ft);
 }
 
-int cord_embed_image_init(cord_embed_image_t *img) {
-    img = malloc(sizeof(cord_embed_image_t));
-    if (!img) {
-        return CORD_ERR_MALLOC;
-    }
-
+void cord_embed_image_init(cord_embed_image_t *img) {
     img->url = NULL;
     img->proxy_url = NULL;
     img->height = 0;
     img->width = 0;
-    return CORD_OK;
 }
 
-int cord_embed_image_serialize(cord_embed_image_t *img, json_t *data) {
-    int err = cord_embed_image_init(img);
-    if (err != CORD_OK) {
-        return err;
+cord_embed_image_t *cord_embed_image_serialize(json_t *data, cord_err *err) {
+    cord_embed_image_t *img = malloc(sizeof(cord_embed_image_t));
+    if (!img) {
+        store_status(err, CORD_ERR_MALLOC);
+        return NULL;
     }
+
+    cord_embed_image_init(img);
 
     const char *key = NULL;
     json_t *value = NULL;
@@ -382,7 +366,7 @@ int cord_embed_image_serialize(cord_embed_image_t *img, json_t *data) {
             map_property(img, width, "width", key, val);
         }
     }
-    return CORD_OK;
+    return img;
 }
 
 void cord_embed_image_free(cord_embed_image_t *img) {
@@ -391,24 +375,21 @@ void cord_embed_image_free(cord_embed_image_t *img) {
     free(img);
 }
 
-int cord_embed_thumbnail_init(cord_embed_thumbnail_t *tn) {
-    tn = malloc(sizeof(cord_embed_thumbnail_t));
-    if (!tn) {
-        return CORD_ERR_MALLOC;
-    }
-
+void cord_embed_thumbnail_init(cord_embed_thumbnail_t *tn) {
     tn->url = NULL;
     tn->proxy_url = NULL;
     tn->height = 0;
     tn->width = 0;
-    return CORD_OK;
 }
 
-int cord_embed_thumbnail_serialize(cord_embed_thumbnail_t *tn, json_t *data) {
-    int err = cord_embed_thumbnail_init(tn);
-    if (err != CORD_OK) {
-        return err;
+cord_embed_thumbnail_t *cord_embed_thumbnail_serialize(json_t *data, cord_err *err) {
+    cord_embed_thumbnail_t *tn = malloc(sizeof(cord_embed_thumbnail_t));
+    if (!tn) {
+        store_status(err, CORD_ERR_MALLOC);
+        return NULL;
     }
+
+    cord_embed_thumbnail_init(tn);
 
     const char *key = NULL;
     json_t *value = NULL;
@@ -424,7 +405,7 @@ int cord_embed_thumbnail_serialize(cord_embed_thumbnail_t *tn, json_t *data) {
             map_property(tn, width, "width", key, val);
         }
     }
-    return CORD_OK;
+    return tn;
 }
 
 void cord_embed_thumbnail_free(cord_embed_thumbnail_t *tn) {
@@ -433,23 +414,20 @@ void cord_embed_thumbnail_free(cord_embed_thumbnail_t *tn) {
     free(tn);
 }
 
-int cord_embed_video_init(cord_embed_video_t *evid) {
-    evid = malloc(sizeof(cord_embed_video_t));
-    if (!evid) {
-        return CORD_ERR_MALLOC;
-    }
-
+void cord_embed_video_init(cord_embed_video_t *evid) {
     evid->url = NULL;
     evid->height = 0;
     evid->width = 0;
-    return CORD_OK;
 }
 
-int cord_embed_video_serialize(cord_embed_video_t *evid, json_t *data) {
-    int err = cord_embed_video_init(evid);
-    if (err != CORD_OK) {
-        return err;
+cord_embed_video_t *cord_embed_video_serialize(json_t *data, cord_err *err) {
+    cord_embed_video_t *evid = malloc(sizeof(cord_embed_video_t));
+    if (!evid) {
+        store_status(err, CORD_ERR_MALLOC);
+        return NULL;
     }
+
+    cord_embed_video_init(evid);
 
     const char *key = NULL;
     json_t *value = NULL;
@@ -464,7 +442,7 @@ int cord_embed_video_serialize(cord_embed_video_t *evid, json_t *data) {
             map_property(evid, width, "width", key, val);
         }
     }
-    return CORD_OK;
+    return evid;
 }
 
 void cord_embed_video_free(cord_embed_video_t *evid) {
@@ -472,22 +450,19 @@ void cord_embed_video_free(cord_embed_video_t *evid) {
     free(evid);
 }
 
-int cord_embed_provider_init(cord_embed_provider_t *epr) {
-    epr = malloc(sizeof(cord_embed_provider_t));
-    if (!epr) {
-        return CORD_ERR_MALLOC;
-    }
-
+void cord_embed_provider_init(cord_embed_provider_t *epr) {
     epr->name = NULL;
     epr->url = NULL;
-    return CORD_OK;
 }
 
-int cord_embed_provider_serialize(cord_embed_provider_t *epr, json_t *data) {
-    int err = cord_embed_provider_init(epr);
-    if (err != CORD_OK) {
-        return err;
+cord_embed_provider_t *cord_embed_provider_serialize(json_t *data, cord_err *err) {
+    cord_embed_provider_t *epr = malloc(sizeof(cord_embed_provider_t));
+    if (!epr) {
+        store_status(err, CORD_ERR_MALLOC);
+        return NULL;
     }
+
+    cord_embed_provider_init(epr);
 
     const char *key = NULL;
     json_t *value = NULL;
@@ -499,7 +474,7 @@ int cord_embed_provider_serialize(cord_embed_provider_t *epr, json_t *data) {
             map_property(epr, url, "url", key, value_copy);
         }
     }
-    return CORD_OK;
+    return epr;
 }
 
 void cord_embed_provider_free(cord_embed_provider_t *epr) {
@@ -508,24 +483,21 @@ void cord_embed_provider_free(cord_embed_provider_t *epr) {
     free(epr);
 }
 
-int cord_embed_author_init(cord_embed_author_t *eauth) {
-    eauth = malloc(sizeof(cord_embed_author_t));
-    if (!eauth) {
-        return CORD_ERR_MALLOC;
-    }
-
+void cord_embed_author_init(cord_embed_author_t *eauth) {
     eauth->name = NULL;
     eauth->url = NULL;
     eauth->icon_url = NULL;
     eauth->proxy_icon_url = NULL;
-    return CORD_OK;
 }
 
-int cord_embed_author_serialize(cord_embed_author_t *eauth, json_t *data) {
-    int err = cord_embed_author_init(eauth);
-    if (err != CORD_OK) {
-        return err;
+cord_embed_author_t *cord_embed_author_serialize(json_t *data, cord_err *err) {
+    cord_embed_author_t *eauth = malloc(sizeof(cord_embed_author_t));
+    if (!eauth) {
+        store_status(err, CORD_ERR_MALLOC);
+        return NULL;
     }
+    
+    cord_embed_author_init(eauth);
 
     const char *key = NULL;
     json_t *value = NULL;
@@ -539,7 +511,7 @@ int cord_embed_author_serialize(cord_embed_author_t *eauth, json_t *data) {
             map_property(eauth, proxy_icon_url, "proxy_icon_url", key, value_copy);
         }
     }
-    return CORD_OK;
+    return eauth;
 }
 
 void cord_embed_author_free(cord_embed_author_t *eauth) {
@@ -550,23 +522,20 @@ void cord_embed_author_free(cord_embed_author_t *eauth) {
     free(eauth);
 }
 
-int cord_embed_field_init(cord_embed_field_t *efield) {
-    efield = malloc(sizeof(cord_embed_field_t));
-    if (!efield) {
-        return CORD_ERR_MALLOC;
-    }
-
+void cord_embed_field_init(cord_embed_field_t *efield) {
     efield->name = NULL;
     efield->value = NULL;
     efield->inline_ = false;
-    return CORD_OK;
 }
 
-int cord_embed_field_serialize(cord_embed_field_t *efield, json_t *data) {
-    int err = cord_embed_field_init(efield);
-    if (err != CORD_OK) {
-        return err;
+cord_embed_field_t *cord_embed_field_serialize(json_t *data, cord_err *err) {
+    cord_embed_field_t *efield = malloc(sizeof(cord_embed_field_t));
+    if (!efield) {
+        store_status(err, CORD_ERR_MALLOC);
+        return NULL;
     }
+
+    cord_embed_field_init(efield);
 
     const char *key = NULL;
     json_t *value = NULL;
@@ -581,7 +550,7 @@ int cord_embed_field_serialize(cord_embed_field_t *efield, json_t *data) {
             map_property(efield, inline_, "inline", key, val);
         }
     }
-    return CORD_OK;
+    return efield;
 }
 
 void cord_embed_field_free(cord_embed_field_t *efield) {
@@ -590,12 +559,7 @@ void cord_embed_field_free(cord_embed_field_t *efield) {
     free(efield);
 }
 
-int cord_emoji_init(cord_emoji_t *emj) {
-    emj = malloc(sizeof(cord_emoji_t));
-    if (!emj) {
-        return CORD_ERR_MALLOC;
-    }
-
+void cord_emoji_init(cord_emoji_t *emj) {
     emj->id = NULL;
     emj->name = NULL;
     emj->roles = NULL;
@@ -604,14 +568,16 @@ int cord_emoji_init(cord_emoji_t *emj) {
     emj->managed = false;
     emj->animated = false;
     emj->available = false;
-    return CORD_OK;
 }
 
-int cord_emoji_serialize(cord_emoji_t *emj, json_t *data) {
-    int err = cord_emoji_init(emj);
-    if (err != CORD_OK) {
-        return err;
+cord_emoji_t *cord_emoji_serialize(json_t *data, cord_err *err) {
+    cord_emoji_t *emj = malloc(sizeof(cord_emoji_t));
+    if (!emj) {
+        store_status(err, CORD_ERR_MALLOC);
+        return NULL;
     }
+
+    cord_emoji_init(emj);
 
     const char *key = NULL;
     json_t *value = NULL;
@@ -632,24 +598,25 @@ int cord_emoji_serialize(cord_emoji_t *emj, json_t *data) {
             if (string_is_equal(key, "roles")) {
                 // TODO: roles array
             } else if (string_is_equal(key, "user")) {
-                // Serializing sub object (User)
-                cord_user_t *user_obj = NULL;
-                int err = cord_user_init(user_obj);
-                if (err != CORD_OK) {
-                    return err;
-                }
-                err = cord_user_serialize(user_obj, obj);
-                if (err != CORD_OK) {
-                    return err;
-                }
+                // TODO: FIX AFTER REFACTOR
+
+                // cord_user_t *user_obj = NULL;
+                // int err = cord_user_init(user_obj);
+                // if (err != CORD_OK) {
+                    // return err;
+                // }
+                // err = cord_user_serialize(user_obj, obj);
+                // if (err != CORD_OK) {
+                    // return err;
+                // }
 
                 // In this case user is the name of the struct field
                 // and user_obj is the serialized object
-                map_property(emj, user, "user", key, user_obj);
+                // map_property(emj, user, "user", key, user_obj);
             }
         }
     }
-    return CORD_OK;
+    return emj;
 }
 
 void cord_emoji_free(cord_emoji_t *emj) {
@@ -660,23 +627,20 @@ void cord_emoji_free(cord_emoji_t *emj) {
     free(emj);
 }
 
-int cord_reaction_init(cord_reaction_t *react) {
-    react = malloc(sizeof(cord_reaction_t));
-    if (!react) {
-        return CORD_ERR_MALLOC;
-    }
-
+void cord_reaction_init(cord_reaction_t *react) {
     react->count = 0;
     react->me = false;
     react->emoji = NULL;
-    return CORD_OK;
 }
 
-int cord_reaction_serialize(cord_reaction_t *react, json_t *data) {
-    int err = cord_reaction_init(react);
-    if (err != CORD_OK) {
-        return err;
+cord_reaction_t *cord_reaction_serialize(json_t *data, cord_err *err) {
+    cord_reaction_t *react = malloc(sizeof(cord_reaction_t));
+    if (!react) {
+        store_status(err, CORD_ERR_MALLOC);
+        return NULL;
     }
+    
+    cord_reaction_init(react);
 
     const char *key = NULL;
     json_t *value = NULL;
@@ -691,38 +655,38 @@ int cord_reaction_serialize(cord_reaction_t *react, json_t *data) {
         } else if (json_is_object(value)) {
             json_t *obj = value;
             if (string_is_equal(key, "emoji")) {
-                cord_emoji_t *emoji_obj = NULL;
-                int err = cord_emoji_init(emoji_obj);
-                if (err != CORD_OK) {
-                    return err;
-                }
-                err = cord_emoji_serialize(emoji_obj, obj);
-                if (err != CORD_OK) {
-                    return err;
+                cord_err error = 0;
+                cord_emoji_t *emoji_obj = cord_emoji_serialize(obj, &error);
+                if (!emoji_obj) {
+                    log_error("%s", cord_error(error));
+                    store_status(err, error);
+                    return NULL;
                 }
                 map_property(react, emoji, "emoji", key, emoji_obj);
             }
         }
     }
-    return CORD_OK;
+    return react;
 }
 
-int cord_message_activity_init(cord_message_activity_t *ma) {
-    ma = malloc(sizeof(cord_message_activity_t));
-    if (!ma) {
-        return CORD_ERR_MALLOC;
-    }
+void cord_reaction_free(cord_reaction_t *react) {
+    cord_emoji_free(react->emoji);
+    free(react);
+}
 
+void cord_message_activity_init(cord_message_activity_t *ma) {
     ma->type = 0;
     ma->party_id = NULL;
-    return CORD_OK;
 }
 
-int cord_message_activity_serialize(cord_message_activity_t *ma, json_t *data) {
-    int err = cord_message_activity_init(ma);
-    if (err != CORD_OK) {
-        return err;
+cord_message_activity_t *cord_message_activity_serialize(json_t *data, cord_err *err) {
+    cord_message_activity_t *ma = malloc(sizeof(cord_message_activity_t));
+    if (!ma) {
+        store_status(err, CORD_ERR_MALLOC);
+        return NULL;
     }
+
+    cord_message_activity_init(ma);
 
     const char *key = NULL;
     json_t *value = NULL;
@@ -736,7 +700,7 @@ int cord_message_activity_serialize(cord_message_activity_t *ma, json_t *data) {
             map_property(ma, party_id, "party_id", key, copy_value);
         }
     }
-    return CORD_OK;
+    return ma;
 }
 
 void cord_message_activity_free(cord_message_activity_t *ma) {
@@ -744,31 +708,23 @@ void cord_message_activity_free(cord_message_activity_t *ma) {
     free(ma);
 }
 
-void cord_reaction_free(cord_reaction_t *react) {
-    cord_emoji_free(react->emoji);
-    free(react);
-}
-
-int cord_message_application_init(cord_message_application_t *app) {
-    app = malloc(sizeof(cord_message_application_t));
-    if (!app) {
-        return CORD_ERR_MALLOC;
-    }
-
+void cord_message_application_init(cord_message_application_t *app) {
     app->id = NULL;
     app->cover_image = NULL;
     app->description = NULL;
     app->icon = NULL;
     app->name = NULL;
-    return CORD_OK;
 }
 
-int cord_message_application_serialize(cord_message_application_t *app, json_t *data) {
-    int err = cord_message_application_init(app);
-    if (err != CORD_OK) {
-        return err;
+cord_message_application_t *cord_message_application_serialize(json_t *data, cord_err *err) {
+    cord_message_application_t *app = malloc(sizeof(cord_message_application_t));
+    if (!app) {
+        store_status(err, CORD_ERR_MALLOC);
+        return NULL;
     }
 
+    cord_message_application_init(app);
+    
     const char *key = NULL;
     json_t *value = NULL;
 
@@ -783,7 +739,7 @@ int cord_message_application_serialize(cord_message_application_t *app, json_t *
         }
     }
 
-    return CORD_OK;
+    return app;
 }
 
 void cord_message_application_free(cord_message_application_t *app) {
@@ -813,23 +769,20 @@ void cord_embed_free(cord_embed_t *emb) {
     (void)emb;
 }
 
-int cord_message_reference_init(cord_message_reference_t *mr) {
-    mr = malloc(sizeof(cord_message_reference_t));
-    if (!mr) {
-        return CORD_ERR_MALLOC;
-    }
-
+void cord_message_reference_init(cord_message_reference_t *mr) {
     mr->message_id = NULL;
     mr->channel_id = NULL;
     mr->guild_id = NULL;
-    return CORD_OK;
 }
 
-int cord_message_reference_serialize(cord_message_reference_t *mr, json_t *data) {
-    int err = cord_message_reference_init(mr);
-    if (err != CORD_OK) {
-        return err;
+cord_message_reference_t *cord_message_reference_serialize(json_t *data, cord_err *err) {
+    cord_message_reference_t *mr = malloc(sizeof(cord_message_reference_t));
+    if (!mr) {
+        store_status(err, CORD_ERR_MALLOC);
+        return NULL;
     }
+
+    cord_message_reference_init(mr);
 
     const char *key = NULL;
     json_t *value = NULL;
@@ -842,7 +795,7 @@ int cord_message_reference_serialize(cord_message_reference_t *mr, json_t *data)
             map_property(mr, guild_id, "guild_id", key, copy_val);
         }
     }
-    return CORD_OK;
+    return mr;
 }
 
 void cord_message_reference_free(cord_message_reference_t *mr) {
@@ -852,8 +805,7 @@ void cord_message_reference_free(cord_message_reference_t *mr) {
     free(mr);
 }
 
-int cord_message_sticker_init(cord_message_sticker_t *ms) {
-    ms = malloc(sizeof(cord_message_sticker_t));
+void cord_message_sticker_init(cord_message_sticker_t *ms) {
     ms->id = NULL;
     ms->pack_id = NULL;
     ms->name = NULL;
@@ -862,14 +814,16 @@ int cord_message_sticker_init(cord_message_sticker_t *ms) {
     ms->asset = NULL;
     ms->preview_asset = NULL;
     ms->format_type = 0; // https://discord.com/developers/docs/resources/channel#message-object-message-sticker-format-types
-    return CORD_OK;
 }
 
-int cord_message_sticker_serialize(cord_message_sticker_t *ms, json_t *data) {
-    int err = cord_message_sticker_init(ms);
-    if (err != CORD_OK) {
-        return err;
+cord_message_sticker_t *cord_message_sticker_serialize(json_t *data, cord_err *err) {
+    cord_message_sticker_t *ms = malloc(sizeof(cord_message_sticker_t));
+    if (!ms) {
+        store_status(err, CORD_ERR_MALLOC);
+        return NULL;
     }
+
+    cord_message_sticker_init(ms);
 
     const char *key = NULL;
     json_t *value = NULL;
@@ -888,7 +842,7 @@ int cord_message_sticker_serialize(cord_message_sticker_t *ms, json_t *data) {
             map_property(ms, format_type, "format_type", key, val);
         }
     }
-    return CORD_OK;
+    return ms;
 }
 
 void cord_message_sticker_free(cord_message_sticker_t *ms) {
@@ -939,13 +893,13 @@ void cord_message_init(cord_message_t *msg) {
 cord_message_t *cord_message_serialize(json_t *data, cord_err *err) {
 #if 1
     cord_message_t *msg = malloc(sizeof(cord_message_t));
-    cord_message_init(msg);
-
-	if (!msg) {
+    if (!msg) {
 		log_error("Failed to allocate discord message");
         store_status(err, CORD_ERR_MALLOC);
         return NULL;
 	}
+
+    cord_message_init(msg);
 
 	const char *key = NULL;
 	json_t *value = NULL;
