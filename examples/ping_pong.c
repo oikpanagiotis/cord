@@ -14,7 +14,7 @@ void on_message(discord_t *disc, cord_message_t *msg) {
 		discord_send_message(disc, response);
 
 		// Free the message's memory
-		cord_message_free(response);
+		// cord_message_free(response);
 	}
 }
 

@@ -14,10 +14,10 @@ The following example bot uses cord to create a simple echo bot
 #include <string.h>
 #include <cord.h>
 
-void on_message(discord_t *disc, discord_message_t *msg) {
+void on_message(discord_t *disc, cord_message_t *msg) {
 	if (strcmp(msg->content, "ping") == 0) {
 		// Allocate a response
-		discord_message_t *response = malloc(sizeof(discord_message_t));
+		cord_message_t *response = malloc(sizeof(cord_message_t));
 		response->channel_id = calloc(1, 256);
 		strcpy(response->channel_id, msg->channel_id);
 
@@ -26,7 +26,7 @@ void on_message(discord_t *disc, discord_message_t *msg) {
 		discord_send_message(disc, response);
 
 		// Free the message's memory
-		discord_message_destroy(response);
+		// cord_message_free(response);
 	}
 }
 
