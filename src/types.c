@@ -907,13 +907,28 @@ cord_message_t *cord_message_serialize(json_t *data, cord_err *err) {
 		if (json_is_string(value)) {
 			const char *str = json_string_value(value);
 			char *value_copy = strdup(str);
+            #if 0
 			map_property(msg, id, "id", key, value_copy);
 			map_property(msg, content, "content", key, value_copy);
 			map_property(msg, channel_id, "channel_id", key, value_copy);
 			map_property(msg, guild_id, "guild_id", key, value_copy);
 			map_property(msg, timestamp, "timestamp", key, value_copy);
 			map_property(msg, nonce, "nonce", key, value_copy);
-		}
+            #endif
+            map_property(msg, id, "id", key, value_copy);
+			map_property(msg, channel_id, "channel_id", key, value_copy);
+			map_property(msg, guild_id, "guild_id", key, value_copy);
+			map_property(msg, content, "content", key, value_copy);
+			map_property(msg, timestamp, "timestamp", key, value_copy);
+			map_property(msg, edited_timestamp, "edited_timestamp", key, value_copy);
+            map_property(msg, nonce, "nonce", key, value_copy);
+			map_property(msg, webhook_id, "webhook_id", key, value_copy);
+		} else if (json_is_boolean(value)) {
+			bool val = json_boolean_value(value);
+			map_property(msg, tts, "tts", key, val);
+            map_property(msg, mention_everyone, "mention_everyone", key, val);
+			map_property(msg, pinned, "pinned", key, val);
+        }
 	}
     store_status(err, CORD_OK);
 	return msg;
