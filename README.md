@@ -14,7 +14,7 @@ The following example bot uses cord to create a simple echo bot
 #include <string.h>
 #include <cord.h>
 
-void on_message(discord_t *disc, cord_message_t *msg) {
+void on_message(discord_t *client, cord_message_t *msg) {
 	if (strcmp(msg->content, "ping") == 0) {
 		// Allocate a response
 		cord_message_t *response = malloc(sizeof(cord_message_t));
@@ -23,10 +23,10 @@ void on_message(discord_t *disc, cord_message_t *msg) {
 
 		// Write & send the message
 		discord_message_set_content(response, "Pong!");
-		discord_send_message(disc, response);
+		discord_send_message(client, response);
 
 		// Free the message's memory
-		// cord_message_free(response);
+		cord_message_free(response);
 	}
 }
 
@@ -34,6 +34,7 @@ int main(void) {
 	const char *url = "wss://gateway.discord.gg/?v=6&encoding=json";
 	cord_t *context = cord_create();
 
+	// Provide callback
 	cord_on_message(context, on_message);
 
 	cord_connect(context, url);
@@ -42,9 +43,6 @@ int main(void) {
 }
 
 ```
-## Documentation
-To be written
-
 ## Building
 Build and install [libuwsc](https://github.com/zhaojh329/libuwsc)
 
@@ -64,6 +62,9 @@ Before using the library in your program make sure to set the following envirome
 ```
 CORD_APPLICATION_TOKEN
 ```
+
+## Documentation
+To be written
 
 ## Roadmap
 To be written  
