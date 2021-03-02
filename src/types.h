@@ -5,6 +5,7 @@
 #include <jansson.h>
 
 #include "error.h"
+#include "array.h"
 #include "sds.h"
 
 // https://discord.com/developers/docs/resources/user#user-object
@@ -280,18 +281,12 @@ typedef struct cord_message_t {
 	bool tts;
 	bool mention_everyone;
 
-	cord_user_t *mentions[MAX_ARRAY];
-	int _mentions_count;
-	cord_role_t *mention_roles[MAX_ARRAY];
-	int _mention_roles_count;
-	cord_channel_mention_t *mention_channels[MAX_ARRAY];
-	int _mention_channels_count;
-	cord_attachment_t *attachments[MAX_ARRAY];
-	int _attachments_count;
-	cord_embed_t *embeds[MAX_ARRAY];
-	int _embeds_count;
-	cord_reaction_t *reactions[MAX_ARRAY];
-	int _reactions_count;
+	cord_array_t *mentions;
+	cord_array_t *mention_roles;
+	cord_array_t *mention_channels;
+	cord_array_t *attachments;
+	cord_array_t *embeds;
+	cord_array_t *reactions;	
 
 	sds nonce;
     bool pinned;

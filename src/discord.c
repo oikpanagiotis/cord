@@ -21,7 +21,7 @@ static void load_identification_info(identification *id) {
 		exit(1);
 	}
 
-	// TODO: Implement os detection
+	// TODO: OS detection
 	id->os = os_name;
 	id->device = LIB_NAME;
 	id->library = LIB_NAME;
@@ -30,11 +30,6 @@ static void load_identification_info(identification *id) {
 // Assumes that sequence is initialized to -1
 static bool is_valid_sequence(int s) {
 	return (s >= 0) ? true : false;
-}
-
-static void free_buf_and_json(char *buf, json_t *json) {
-	free(buf);
-	json_decref(json);
 }
 
 static double heartbeat_to_double(int interval) {
@@ -46,25 +41,34 @@ static double heartbeat_to_double(int interval) {
 	return decimal_d + floating_d;
 }
 
+static int send_heartbeat(discord_t *client) {
+	json_t *heartbeat = json_object();
+	json_object_set_new(heartbeat, PAYLOAD_KEY_OPCODE, json_integer(1));
+
+	// Send sequence number unless we havent received one
+	if (is_valid_sequence(client->sequence)) {
+		json_object_set_new(heartbeat, PAYLOAD_KEY_DATA, json_integer(client->sequence));
+	} else {
+		json_object_set_new(heartbeat, PAYLOAD_KEY_DATA, json_null());
+	}	
+
+	char *buf = json_dumps(heartbeat, 0);
+	int len = strlen(buf);
+
+	int rc = client->ws_client->send(client->ws_client, buf, len, UWSC_OP_TEXT);
+	free(buf);
+	json_decref(heartbeat);
+	return rc;
+}
+
 static void heartbeat_cb(struct ev_loop *loop, ev_timer *w, int revents) {
 	(void)revents;
 	
 	struct uwsc_client *ws_client = w->data;
-	discord_t *disc = ws_client->ext;
+	discord_t *client = ws_client->ext;
 
-	json_t *hb_json = json_object();
-	json_object_set_new(hb_json, PAYLOAD_KEY_OPCODE, json_integer(1));
-	if (is_valid_sequence(disc->sequence)) {
-		json_object_set_new(hb_json, PAYLOAD_KEY_DATA, json_integer(disc->sequence));
-	} else {
-		json_object_set_new(hb_json, PAYLOAD_KEY_DATA, json_null());
-	}	
-	char *buf = json_dumps(hb_json, 0);
-	int buflen = strlen(buf);
-	ws_client->send(ws_client, buf, buflen, UWSC_OP_TEXT);
+	send_heartbeat(client);
 	ev_timer_again(loop, w);
-	
-	free_buf_and_json(buf, hb_json);
 }
 
 static void sigint_cb(struct ev_loop *loop, ev_signal *w, int revents) {
@@ -83,68 +87,62 @@ static void on_open(struct uwsc_client *ws_client) {
 }
 
 // TODO: Should we pass the buffer directly instead of the payload?
-static void on_heartbeat(struct uwsc_client *ws_client, json_t *d_json) {
-	discord_t *disc = ws_client->ext;
+static void on_heartbeat(struct uwsc_client *ws_client, json_t *data) {
+	discord_t *client = ws_client->ext;
 
-	json_t *hb_interval_json = json_object_get(d_json, "heartbeat_interval");
+	json_t *hb_interval_json = json_object_get(data, "heartbeat_interval");
 	if (!hb_interval_json) {
 		log_error("Failed to get heartbeat object");
 		return;
 	}
-	disc->hb_interval = (int)json_integer_value(hb_interval_json);
+	client->hb_interval = (int)json_integer_value(hb_interval_json);
 
-	json_t *hb_json = json_object();
-	json_object_set_new(hb_json, PAYLOAD_KEY_OPCODE, json_integer(1));
-	// Send sequence number unless we havent received one
-	if (is_valid_sequence(disc->sequence)) {
-		json_object_set_new(hb_json, PAYLOAD_KEY_DATA, json_integer(disc->sequence));
-	} else {
-		json_object_set_new(hb_json, PAYLOAD_KEY_DATA, json_null());
-	}	
-
-	char *buf = json_dumps(hb_json, 0);
-	int buflen = strlen(buf);
 	// Send heartbeat
-	ws_client->send(ws_client, buf, buflen, UWSC_OP_TEXT);
-	free_buf_and_json(buf, hb_json);
+	send_heartbeat(client);
 
-	if (!disc->sent_initial_heartbeat) {
+	if (!client->sent_initial_heartbeat) {
 		log_info("Sending initial heartbeat");
-		disc->sent_initial_heartbeat = true;
+		client->sent_initial_heartbeat = true;
 		
 		struct ev_timer *timer_watcher = malloc(sizeof(struct ev_timer));
 		// Keep a reference to the watcher so we can free it later
-		disc->hb_watcher = timer_watcher;
+		client->hb_watcher = timer_watcher;
 		
 		ev_init(timer_watcher, heartbeat_cb);
 		timer_watcher->data = ws_client;
-		timer_watcher->repeat = heartbeat_to_double(disc->hb_interval);
+		timer_watcher->repeat = heartbeat_to_double(client->hb_interval);
 		ev_timer_again(ws_client->loop, timer_watcher);
 	}
 }
 
+static int send_to_gateway(discord_t *client, json_t *payload) {
+	char *buf = json_dumps(payload, 0);
+	int len = strlen(buf);
+	int rc = client->ws_client->send(client->ws_client, buf, len, UWSC_OP_TEXT);
+	free(buf);
+	json_decref(payload);
+	return rc;
+}
+
 static void send_identify(struct uwsc_client *ws_client) {
-	discord_t *disc = ws_client->ext;
+	discord_t *client = ws_client->ext;
 
 	log_info("Identifying");
 	json_t *payload = json_object();
 	json_object_set_new(payload, PAYLOAD_KEY_OPCODE, json_integer(2));
 	
 	json_t *d = json_object();
-	json_object_set_new(d, "token", json_string(disc->id.token));
+	json_object_set_new(d, "token", json_string(client->id.token));
 	json_t *properties = json_object();
 	json_object_set_new(d, "properties", properties);
 
-	json_object_set_new(properties, "$os", json_string(disc->id.os));
-	json_object_set_new(properties, "$browser", json_string(disc->id.library));
-	json_object_set_new(properties, "$device", json_string(disc->id.device));
+	json_object_set_new(properties, "$os", json_string(client->id.os));
+	json_object_set_new(properties, "$browser", json_string(client->id.library));
+	json_object_set_new(properties, "$device", json_string(client->id.device));
 
 	json_object_set_new(payload, PAYLOAD_KEY_DATA, d);
 
-	char *buf = json_dumps(payload, 0);
-	int len = strlen(buf);
-	ws_client->send(ws_client, buf, len, UWSC_OP_TEXT);
-	free_buf_and_json(buf, payload);
+	send_to_gateway(client, payload);
 	log_info("Sent identify payload");
 }
 
@@ -332,9 +330,12 @@ static void on_message(struct uwsc_client *ws_client, void *data, size_t len, bo
 			break;
 		case OP_HEARTBEAT:
 			log_info("Server is requesting Hearbeat");
+			on_heartbeat(ws_client, payload->d);
 			break;
 		case OP_RECONNECT:
 			log_info("Server is requesting Reconnect");
+			// this crashes if not handled
+			discord_connect(disc, "wss://gateway.discord.gg/?v=6&encoding=json");
 			break;
 		case OP_INVALID_SESSION:
 			log_warning("Invalid Session");

@@ -869,13 +869,13 @@ void cord_message_init(cord_message_t *msg) {
     msg->mention_everyone = false;
 
 
-    msg->_mentions_count = 0;
-    msg->_mention_roles_count = 0;
-    msg->_mention_channels_count = 0;
-    msg->_attachments_count = 0;
-    msg->_embeds_count = 0;
-    msg->_reactions_count = 0;
-    msg->_stickers_count = 0;
+    // msg->_mentions_count = 0;
+    // msg->_mention_roles_count = 0;
+    // msg->_mention_channels_count = 0;
+    // msg->_attachments_count = 0;
+    // msg->_embeds_count = 0;
+    // msg->_reactions_count = 0;
+    // msg->_stickers_count = 0;
 
     msg->nonce = NULL;
     msg->pinned = false;
@@ -984,29 +984,29 @@ void cord_message_free(cord_message_t *msg) {
     cord_message_reference_free(msg->message_reference);
     cord_message_free(msg->referenced_message);
     
-    for (int i = 0; i < msg->_mentions_count; i++) {
-        cord_user_free(msg->mentions[i]);
-    }
-
-    for (int i = 0; i < msg->_mention_roles_count; i++) {
-        cord_role_free(msg->mention_roles[i]);
-    }
-
-    for (int i = 0; i < msg->_mention_channels_count; i++) {
-        cord_channel_mention_free(msg->mention_channels[i]);
-    }
-
-    for (int i = 0; i < msg->_attachments_count; i++) {
-        cord_attachment_free(msg->attachments[i]);
-    }
-
-    for (int i = 0; i < msg->_embeds_count; i++) {
-        cord_embed_free(msg->embeds[i]);
-    }
-
-    for (int i = 0; i < msg->_reactions_count; i++) {
-        cord_reaction_free(msg->reactions[i]);
-    }
+    // for (int i = 0; i < msg->_mentions_count; i++) {
+        // cord_user_free(msg->mentions[i]);
+    // }
+// 
+    // for (int i = 0; i < msg->_mention_roles_count; i++) {
+        // cord_role_free(msg->mention_roles[i]);
+    // }
+// 
+    // for (int i = 0; i < msg->_mention_channels_count; i++) {
+        // cord_channel_mention_free(msg->mention_channels[i]);
+    // }
+// 
+    // for (int i = 0; i < msg->_attachments_count; i++) {
+        // cord_attachment_free(msg->attachments[i]);
+    // }
+// 
+    // for (int i = 0; i < msg->_embeds_count; i++) {
+        // cord_embed_free(msg->embeds[i]);
+    // }
+// 
+    // for (int i = 0; i < msg->_reactions_count; i++) {
+        // cord_reaction_free(msg->reactions[i]);
+    // }
 
     for (int i = 0; i < msg->_stickers_count; i++) {
         cord_message_sticker_free(msg->stickers[i]);
