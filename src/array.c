@@ -26,7 +26,7 @@ void cord_array_push(cord_array_t *arr, void *item) {
     arr->items[arr->size++] = item;
 }
 
-void *array_get(cord_array_t *arr, int index) {
+void *cord_array_get(cord_array_t *arr, int index) {
     if (index > arr->capacity - 1) {
         return NULL;
     }

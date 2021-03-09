@@ -78,6 +78,6 @@ void on_message_create(discord_t *ctx, json_t *data, char *event) {
 	// Make sure we didn't corrupt the heap
 	assert(msg);
 	ctx->on_message_callback(ctx, msg);
-	// BUG: Fix initialization function so cord_message_free doesn crash on NULL
+	// BUG: Fix initialization function so cord_message_free doesnt crash on NULL
 	// cord_message_free(msg);
 }

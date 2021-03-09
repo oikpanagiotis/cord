@@ -136,6 +136,7 @@ cord_guild_member_t *cord_guild_member_serialize(json_t *data, cord_err *err) {
 
         } else if (json_is_object(value)) {
             cord_user_t *user = NULL;
+            (void)user;
             if (string_is_equal(key, "user")) {
                 // cord_user_t *usr = cord_user_serialize(user, value);
                 // if (!usr) log_err; store_status; return NULL;
@@ -595,6 +596,7 @@ cord_emoji_t *cord_emoji_serialize(json_t *data, cord_err *err) {
             map_property(emj, available, "available", key, val);
         } else if (json_is_object(value)) {
             json_t *obj = value;
+            (void)obj;
             if (string_is_equal(key, "roles")) {
                 // TODO: roles array
             } else if (string_is_equal(key, "user")) {
@@ -925,7 +927,7 @@ cord_message_t *cord_message_serialize(json_t *data, cord_err *err) {
 			map_property(msg, type, "type", key, num);
 			map_property(msg, flags, "flags", key, num);
 		} else if (json_is_array(value)) {
-
+            // array
         } else if (json_is_object(value)) {
             json_t *object = value;
             cord_err error = 0;
@@ -1009,8 +1011,9 @@ void cord_message_free(cord_message_t *msg) {
     // }
 
     for (int i = 0; i < msg->_stickers_count; i++) {
-        cord_message_sticker_free(msg->stickers[i]);
+        cord_message_sticker_free(cord_array_get(msg->stickers, i));
     }
+    cord_array_free(msg->stickers);
     //free(msg);
     log_info("Message freed");
 }

@@ -297,7 +297,8 @@ typedef struct cord_message_t {
 	cord_message_reference_t *message_reference;
 	int flags; // combined as a bitfield(check bitwise operators on how to check the fieldset)
 
-	cord_message_sticker_t *stickers[MAX_ARRAY];
+	cord_array_t *stickers;
+	// cord_message_sticker_t *stickers[MAX_ARRAY];
 	int _stickers_count;
 
 	/*

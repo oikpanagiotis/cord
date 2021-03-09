@@ -24,9 +24,6 @@ void on_message(discord_t *client, cord_message_t *msg) {
 		// Write & send the message
 		discord_message_set_content(response, "Pong!");
 		discord_send_message(client, response);
-
-		// Free the message's memory
-		cord_message_free(response);
 	}
 }
 

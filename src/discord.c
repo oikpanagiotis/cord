@@ -56,6 +56,8 @@ static int send_heartbeat(discord_t *client) {
 	int len = strlen(buf);
 
 	int rc = client->ws_client->send(client->ws_client, buf, len, UWSC_OP_TEXT);
+	client->heartbeat_acknowledged = false;
+
 	free(buf);
 	json_decref(heartbeat);
 	return rc;
@@ -334,8 +336,7 @@ static void on_message(struct uwsc_client *ws_client, void *data, size_t len, bo
 			break;
 		case OP_RECONNECT:
 			log_info("Server is requesting Reconnect");
-			// this crashes if not handled
-			discord_connect(disc, "wss://gateway.discord.gg/?v=6&encoding=json");
+			disc->must_reconnect = true;
 			break;
 		case OP_INVALID_SESSION:
 			log_warning("Invalid Session");
@@ -349,10 +350,19 @@ static void on_message(struct uwsc_client *ws_client, void *data, size_t len, bo
 			}
 			break;
 		case OP_HEARTBEAT_ACK:
+			disc->heartbeat_acknowledged = true;
 			break;
 		default: // fallthrough
 			log_error("Default switch case sentinel");
 			break;
+	}
+	
+	if (disc->sent_initial_heartbeat) {
+		if (disc->heartbeat_acknowledged) {
+			log_info("heartbeat acknowledged");
+		} else {
+			log_info("Zombie");
+		}
 	}
 	
 	// json_decref(payload->d);
@@ -402,6 +412,7 @@ discord_t *discord_create(void) {
 	disc->sequence = -1;
 	disc->sent_initial_heartbeat = false;
 	disc->loop = NULL;
+	disc->must_reconnect = false;
 
 	// TODO: Move this somewhere else
 	// Assign callbacks
@@ -410,6 +421,34 @@ discord_t *discord_create(void) {
 	on_message_event->handler = on_message_create;
 
 	return disc;
+}
+
+static void check_reconnect_cb(struct ev_loop *loop, ev_check *w, int revents) {
+	(void)revents;
+	discord_t *client = (discord_t *)w->data;
+	assert(client);
+
+	if (client) {
+		if (client->must_reconnect) {
+			client->must_reconnect = false;
+	
+			// Turn off timers
+			ev_timer_stop(client->loop, client->hb_watcher);
+			free(client->hb_watcher);
+			free(client->ws_client);
+	
+			client->ws_client = uwsc_new(client->loop, "wss://gateway.discord.gg/?v=6&encoding=json", 5, NULL);
+			client->ws_client->onopen = on_open;
+			client->ws_client->onmessage = on_message;
+			client->ws_client->onerror = on_error;
+			client->ws_client->onclose = on_close;
+			client->ws_client->ext = client;
+			client->sent_initial_heartbeat = false;
+	
+			log_info("Reconnecting");
+			ev_run(client->loop, 0);
+		}
+	}
 }
 
 int discord_connect(discord_t *disc, const char *url) {
@@ -422,8 +461,15 @@ int discord_connect(discord_t *disc, const char *url) {
 	disc->ws_client->onerror = on_error;
 	disc->ws_client->onclose = on_close;
 	disc->ws_client->ext = disc;
+	disc->must_reconnect = false;
 
 	log_info("Connecting");
+	struct ev_check *reconnect_watcher = malloc(sizeof(struct ev_check));
+	reconnect_watcher->data = disc;
+	ev_check_init(reconnect_watcher, check_reconnect_cb);
+	ev_check_start(disc->loop, reconnect_watcher);
+	disc->reconnect_watcher = reconnect_watcher;
+
 	struct ev_signal *sigint_watcher = malloc(sizeof(struct ev_signal));
 	ev_signal_init(sigint_watcher, sigint_cb, SIGINT);
 	ev_signal_start(disc->loop, sigint_watcher);

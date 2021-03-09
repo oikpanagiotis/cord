@@ -54,11 +54,14 @@ typedef struct discord_event_t {
 } discord_event_t;
 
 typedef struct discord_t {
-	// should be the first field in the struct	
 	struct uwsc_client *ws_client;
 	struct ev_loop *loop;
 	struct ev_timer *hb_watcher;
 	struct ev_signal *sigint_watcher;
+	struct ev_check *reconnect_watcher;
+
+	bool heartbeat_acknowledged;
+	bool must_reconnect;
 
 	int hb_interval;
 	int sequence;

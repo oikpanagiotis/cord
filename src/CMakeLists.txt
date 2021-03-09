@@ -9,6 +9,7 @@ set(Sources
     types.c
     util.c
     sds.c
+    array.c
 )
 
 set(Libraries
