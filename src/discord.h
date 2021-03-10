@@ -50,8 +50,11 @@ typedef struct discord_event_t {
 	int type;
 	sds token;
 	int token_length;
-
 } discord_event_t;
+
+typedef struct cord_gateway_event_callbacks_t {
+	on_msg on_message;
+} cord_gateway_event_callbacks_t;
 
 typedef struct discord_t {
 	struct uwsc_client *ws_client;
@@ -70,7 +73,7 @@ typedef struct discord_t {
 	identification id;
 	http_client_t *http;
 
-	on_msg on_message_callback;
+	cord_gateway_event_callbacks_t event_callbacks;
 } discord_t;
 
 discord_t *discord_create(void);

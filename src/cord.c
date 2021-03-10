@@ -24,5 +24,5 @@ void cord_destroy(cord_t *c) {
 
 
 void cord_on_message(cord_t *c, on_msg_cb func) {
-	c->client->on_message_callback = func;
+	c->client->event_callbacks.on_message = func;
 }

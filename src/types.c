@@ -1015,7 +1015,7 @@ void cord_message_free(cord_message_t *msg) {
     }
     cord_array_free(msg->stickers);
     //free(msg);
-    log_info("Message freed");
+    debug("Message freed");
 }
 
 int cord_guild_init(cord_guild_t *g) {
