@@ -74,6 +74,8 @@ typedef struct discord_t {
 	http_client_t *http;
 
 	cord_gateway_event_callbacks_t event_callbacks;
+
+	void *user_data;
 } discord_t;
 
 discord_t *discord_create(void);

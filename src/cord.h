@@ -10,6 +10,7 @@ typedef struct cord_t {
 	discord_t *client;
 	
 	on_msg_cb msg_cb;
+	void *user_data;
 } cord_t;
 
 

@@ -200,9 +200,10 @@ int parse_gatway_payload(json_t *raw_payload, gateway_payload *payload) {
 
 void discord_message_set_content(cord_message_t *msg, char *content) {
 	char *json_content_template = "{\"content\": \"%s\"}";
+	int template_len = strlen(json_content_template);
 
 	int len = strlen(content);
-	msg->content = calloc(1, len + 1);
+	msg->content = calloc(1, len + template_len + 1);
 	sprintf(msg->content, json_content_template, content);
 }
 
@@ -210,12 +211,13 @@ void discord_message_set_content(cord_message_t *msg, char *content) {
 char *DISCORD_API_URL = "https://discordapp.com/api";
 int discord_send_message(discord_t *disc, cord_message_t *msg) {
 	// TODO: Prefix the channel and ids based on our cache
-	const int URL_LEN = 512;
-	char *final_url = calloc(1, URL_LEN);
+	const int URL_LEN = 1024;
+	char *final_url = calloc(1, sizeof(char) * URL_LEN);
 	if (!final_url) {
 		log_error("Failed to allocate final url");
 		return -1;
 	}
+
 	snprintf(final_url, URL_LEN, "%s/channels/%s/messages", DISCORD_API_URL, msg->channel_id);
 	http_request_t *req = http_request_create(HTTP_POST, final_url, discord_api_header(disc->http), msg->content);
 	http_client_perform_request(disc->http, req);

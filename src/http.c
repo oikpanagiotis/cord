@@ -87,6 +87,7 @@ int http_client_perform_request(http_client_t *client, http_request_t *req) {
 	if (req->type == HTTP_POST) {
 		curl_easy_setopt(client->curl, CURLOPT_POSTFIELDS, req->body);
 	}
+
 	CURLcode rc = curl_easy_perform(client->curl);
 	if (rc != CURLE_OK) {
 		log_error("HTTP Request failed: %s", curl_easy_strerror(rc));
