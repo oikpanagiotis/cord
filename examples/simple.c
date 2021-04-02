@@ -112,6 +112,7 @@ static void show_results(simple_bot *bot, char *channel) {
 
 	discord_message_set_content(results, buf);
 	discord_send_message(bot->cord_context->client, results);
+    discord_message_destroy(results);
 }
 
 static void update_vote(simple_bot *bot, char *vote) {

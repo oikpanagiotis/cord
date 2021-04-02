@@ -12,6 +12,7 @@ void on_message(discord_t *disc, cord_message_t *msg) {
 		// Write & send the message
 		discord_message_set_content(response, "Pong!");
 		discord_send_message(disc, response);
+		discord_message_destroy(response);
 	}
 }
 

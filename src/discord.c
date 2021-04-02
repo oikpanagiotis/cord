@@ -210,6 +210,7 @@ void discord_message_set_content(cord_message_t *msg, char *content) {
 
 char *DISCORD_API_URL = "https://discordapp.com/api";
 int discord_send_message(discord_t *disc, cord_message_t *msg) {
+	assert(msg);
 	// TODO: Prefix the channel and ids based on our cache
 	const int URL_LEN = 1024;
 	char *final_url = calloc(1, sizeof(char) * URL_LEN);
@@ -285,7 +286,6 @@ cord_message_t *message_from_json(json_t *data) {
 
 void discord_message_destroy(cord_message_t *msg) {
 	if (msg) {
-		if (msg->id) free(msg->id);
 		if (msg->content) free(msg->content);
 
 		free(msg);
