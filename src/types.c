@@ -3,6 +3,7 @@
 #include "error.h"
 #include "sds.h"
 #include "util.h"
+#include "array.h"
 
 #include <jansson.h>
 #include <assert.h>
@@ -1011,9 +1012,9 @@ void cord_message_free(cord_message_t *msg) {
     // }
 
     for (int i = 0; i < msg->_stickers_count; i++) {
-        cord_message_sticker_free(cord_array_get(msg->stickers, i));
+        // cord_message_sticker_free(cord_array_get(msg->stickers, i));
     }
-    cord_array_free(msg->stickers);
+    // cord_array_destroy(msg->stickers);
     //free(msg);
     debug("Message freed");
 }

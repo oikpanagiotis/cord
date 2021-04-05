@@ -65,6 +65,8 @@ static bool is_command(char *str, int *type) {
 }
 
 static void parse_poll(char *str, poll *out) {
+    (void)out;
+    
     poll *new_poll = malloc(sizeof(poll));
 
     char *a = NULL;

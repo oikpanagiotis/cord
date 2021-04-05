@@ -10,6 +10,7 @@ set(Sources
     util.c
     sds.c
     array.c
+    memory.c
 )
 
 set(Libraries
