@@ -871,15 +871,6 @@ void cord_message_init(cord_message_t *msg) {
     msg->tts = false;
     msg->mention_everyone = false;
 
-
-    // msg->_mentions_count = 0;
-    // msg->_mention_roles_count = 0;
-    // msg->_mention_channels_count = 0;
-    // msg->_attachments_count = 0;
-    // msg->_embeds_count = 0;
-    // msg->_reactions_count = 0;
-    // msg->_stickers_count = 0;
-
     msg->nonce = NULL;
     msg->pinned = false;
     msg->webhook_id = NULL;
@@ -891,8 +882,6 @@ void cord_message_init(cord_message_t *msg) {
     msg->referenced_message = NULL;
 }
 
-// TODO: Transition the API to the following style
-// obj *obj_serialize(json_data, err_out)
 cord_message_t *cord_message_serialize(json_t *data, cord_err *err) {
     cord_message_t *msg = malloc(sizeof(cord_message_t));
     if (!msg) {
@@ -928,7 +917,18 @@ cord_message_t *cord_message_serialize(json_t *data, cord_err *err) {
 			map_property(msg, type, "type", key, num);
 			map_property(msg, flags, "flags", key, num);
 		} else if (json_is_array(value)) {
-            // array
+            if (string_is_equal("mentions", key)) {
+                /*
+                msg->mentions = cord_array_create(cord_pool_create(), sizeof(cord_channel_mention_t));
+
+                int i = 0;
+                json_t *item = NULL;
+                json_array_foreach(value, i, item) {
+                    cord_channel_mention_t *mention = cord_array_push(msg->mentions);
+                    cord_channel_mention_serialize(item, NULL);
+                }
+                */
+            }
         } else if (json_is_object(value)) {
             json_t *object = value;
             cord_err error = 0;
@@ -1011,9 +1011,9 @@ void cord_message_free(cord_message_t *msg) {
         // cord_reaction_free(msg->reactions[i]);
     // }
 
-    for (int i = 0; i < msg->_stickers_count; i++) {
+    // for (int i = 0; i < msg->_stickers_count; i++) {
         // cord_message_sticker_free(cord_array_get(msg->stickers, i));
-    }
+    // }
     // cord_array_destroy(msg->stickers);
     //free(msg);
     debug("Message freed");

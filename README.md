@@ -60,9 +60,3 @@ Before using the library in your program make sure to set the following envirome
 CORD_APPLICATION_TOKEN
 ```
 
-## Documentation
-To be written
-
-## Roadmap
-To be written  
-

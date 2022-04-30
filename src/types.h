@@ -184,7 +184,7 @@ typedef struct cord_embed_t {
 	cord_embed_provider_t *provider;
 	cord_embed_author_t *author;
 
-	cord_embed_field_t *fields; // TODO: array
+	cord_array_t *fields; // cord_embed_fields[]
 } cord_embed_t;
 
 int cord_embed_init(cord_embed_t *emb);
@@ -195,7 +195,7 @@ void cord_embed_free(cord_embed_t *emb);
 typedef struct cord_emoji_t {
 	sds id;
 	sds name;
-	cord_role_t *roles; // array
+	cord_array_t *roles; // cord_role_t[]
 	cord_user_t *user;
 	bool require_colons;
 	bool managed;
@@ -267,7 +267,6 @@ void cord_message_sticker_init(cord_message_sticker_t *ms);
 cord_message_sticker_t *cord_message_sticker_serialize(json_t *data, cord_err *err);
 void cord_message_sticker_free(cord_message_sticker_t *ms);
 
-#define MAX_ARRAY 4
 // (Message) - https://discord.com/developers/docs/resources/channel#message-object
 typedef struct cord_message_t {
 	sds id;
@@ -297,9 +296,7 @@ typedef struct cord_message_t {
 	cord_message_reference_t *message_reference;
 	int flags; // combined as a bitfield(check bitwise operators on how to check the fieldset)
 
-	cord_array_t *stickers;
-	// cord_message_sticker_t *stickers[MAX_ARRAY];
-	int _stickers_count;
+	cord_array_t *stickers; // cord_message_sticker_t[]
 
 	/*
 	This field is only returned for messages with a type of 19 (REPLY).
