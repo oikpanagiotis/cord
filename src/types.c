@@ -10,12 +10,6 @@
 #include <assert.h>
 #include <string.h>
 
-#define map_property(obj, prop, prop_str, key, val) \
-	do { \
-		if (string_is_equal(key, prop_str)) { \
-			obj->prop = val; \
-		} \
-} while (0)
 
 static void *store_error(cord_error_t *error, cord_error_t code) {
     if (error) {

@@ -222,14 +222,7 @@ int discord_send_message(discord_t *disc, cord_message_t *msg) {
 	http_request_t *req = http_request_create(HTTP_POST, final_url, discord_api_header(disc->http), msg->content);
 	http_client_perform_request(disc->http, req);
 	return 0;
-}
-
-#define M_msg_prop(msg, prop, prop_str, key, val) \
-	do { \
-		if (string_is_equal(key, prop_str)) { \
-			msg->prop = val; \
-		} \
-} while (0)								
+}						
 
 // Used from events module
 cord_message_t *message_from_json(json_t *data) {
@@ -247,12 +240,12 @@ cord_message_t *message_from_json(json_t *data) {
 			const char *str = json_string_value(value);
 			
 			char *value_copy = strdup(str);
-			M_msg_prop(msg, id, "id", key, value_copy);
-			M_msg_prop(msg, content, "content", key, value_copy);
-			M_msg_prop(msg, channel_id, "channel_id", key, value_copy);
-			M_msg_prop(msg, guild_id, "guild_id", key, value_copy);
-			M_msg_prop(msg, timestamp, "timestamp", key, value_copy);
-			M_msg_prop(msg, nonce, "nonce", key, value_copy);
+			map_property(msg, id, "id", key, value_copy);
+			map_property(msg, content, "content", key, value_copy);
+			map_property(msg, channel_id, "channel_id", key, value_copy);
+			map_property(msg, guild_id, "guild_id", key, value_copy);
+			map_property(msg, timestamp, "timestamp", key, value_copy);
+			map_property(msg, nonce, "nonce", key, value_copy);
 
 			// Serialize author object
 			if (string_is_equal(key, "author")) {
@@ -262,9 +255,9 @@ cord_message_t *message_from_json(json_t *data) {
 
 		} else if (json_is_boolean(value)) {
 			bool val = json_boolean_value(value);
-			M_msg_prop(msg, tts, "tts", key, val);
-			M_msg_prop(msg, pinned, "pinned", key, val);
-			M_msg_prop(msg, mention_everyone, "mention_everyone", key, val);
+			map_property(msg, tts, "tts", key, val);
+			map_property(msg, pinned, "pinned", key, val);
+			map_property(msg, mention_everyone, "mention_everyone", key, val);
 
 		} else if (json_is_array(value)) {
 			// todo
@@ -274,7 +267,7 @@ cord_message_t *message_from_json(json_t *data) {
 		} else if (json_is_integer(value)) {
 			json_int_t val = json_integer_value(value);
 			int num = (int)val; // long long -> int
-			M_msg_prop(msg, type, "type", key, num);
+			map_property(msg, type, "type", key, num);
 		} else if (json_is_null(value)) {
 
 		}
