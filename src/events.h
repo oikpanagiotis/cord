@@ -7,16 +7,16 @@
 typedef void (*event_handler)(discord_t *ctx, json_t *obj, char *event);
 
 #define MAX_EVENT_NAME_LEN 32
-typedef struct receiving_event {
+typedef struct cord_gateway_event_t {
 	char name[MAX_EVENT_NAME_LEN];
 	event_handler handler;
-} receiving_event;
+} cord_gateway_event_t;
 
-receiving_event *get_all_receicing_events(void);
+cord_gateway_event_t *get_all_gateway_events(void);
 
-bool event_has_handler(receiving_event *event);
+bool event_has_handler(cord_gateway_event_t *event);
 void on_message_create(discord_t *ctx, json_t *data, char *event);
-receiving_event *get_receiving_event(receiving_event *events, char *key);
+cord_gateway_event_t *get_gateway_event(cord_gateway_event_t *events, char *key);
 
 void on_message_create(discord_t *ctx, json_t *data, char *event);
 

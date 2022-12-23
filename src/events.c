@@ -1,14 +1,16 @@
 #include "events.h"
 #include "discord.h"
-#include "util.h"
 #include "types.h"
-#include "log.h"
-#include "error.h"
+#include "core/util.h"
+#include "core/log.h"
+#include "core/error.h"
 
 #include <assert.h>
 
-// (string, event_handler) dictionary to dispatch receiving events
-static receiving_event receiving_events[] = {
+/*
+*  Dictionary of all the possible events as documented in Discord Gateway API
+*/
+static cord_gateway_event_t receiving_events[] = {
 	{ "CHANNEL_CREATE", NULL },
 	{ "CHANNEL_UPDATE", NULL },
 	{ "CHANNEL_DELETE", NULL },
@@ -39,11 +41,11 @@ static receiving_event receiving_events[] = {
 	{ "", NULL }
 };
 
-receiving_event *get_all_receicing_events(void) {
+cord_gateway_event_t *get_all_gateway_events(void) {
     return receiving_events;
 }
 
-bool event_has_handler(receiving_event *event) {
+bool event_has_handler(cord_gateway_event_t *event) {
 	if (event) {
 		if (event->handler) {
 			return true;
@@ -52,8 +54,8 @@ bool event_has_handler(receiving_event *event) {
 	return false;
 }
 
-receiving_event *get_receiving_event(receiving_event *events, char *key) {
-	receiving_event *iter = events;
+cord_gateway_event_t *get_gateway_event(cord_gateway_event_t *events, char *key) {
+	cord_gateway_event_t *iter = events;
 	while (!string_is_empty(iter->name)) {
 		if (string_is_equal(iter->name, key)) {
 			return iter;
@@ -68,7 +70,7 @@ void on_message_create(discord_t *ctx, json_t *data, char *event) {
 	(void)ctx;
 	(void)event;
 
-	cord_err err;
+	cord_error_t err;
 	cord_message_t *msg = cord_message_serialize(data, &err);
 	if (!msg) {
 		log_error("Failed to serialize message: %s", cord_error(err));

@@ -1,12 +1,13 @@
 #ifndef TYPES_H
 #define TYPES_H
 
+#include "sds.h"
+#include "core/error.h"
+#include "core/array.h"
+
 #include <stdbool.h>
 #include <jansson.h>
 
-#include "error.h"
-#include "array.h"
-#include "sds.h"
 
 // https://discord.com/developers/docs/resources/user#user-object
 typedef struct cord_user_t {
@@ -26,7 +27,7 @@ typedef struct cord_user_t {
 } cord_user_t;
 
 void cord_user_init(cord_user_t *user);
-cord_user_t *cord_user_serialize(json_t *data, cord_err *err);
+cord_user_t *cord_user_serialize(json_t *data, cord_error_t *err);
 void cord_user_free(cord_user_t *user);
 
 // https://discord.com/developers/docs/topics/permissions#role-object
@@ -43,7 +44,7 @@ typedef struct cord_role_t {
 } cord_role_t;
 
 void cord_role_init(cord_role_t *role);
-cord_role_t *cord_role_serialize(json_t *data, cord_err *err);
+cord_role_t *cord_role_serialize(json_t *data, cord_error_t *err);
 void cord_role_free(cord_role_t *role);
 
 // https://discord.com/developers/docs/resources/guild#guild-member-object
@@ -60,7 +61,7 @@ typedef struct cord_guild_member_t {
 } cord_guild_member_t;
 
 void cord_guild_member_init(cord_guild_member_t *member);
-cord_guild_member_t *cord_guild_member_serialize(json_t *data, cord_err *err);
+cord_guild_member_t *cord_guild_member_serialize(json_t *data, cord_error_t *err);
 void cord_guild_member_free(cord_guild_member_t *member);
 
 // https://discord.com/developers/docs/resources/channel#channel-mention-object
@@ -72,7 +73,7 @@ typedef struct cord_channel_mention_t {
 } cord_channel_mention_t;
 
 void cord_channel_mention_init(cord_channel_mention_t *mention);
-cord_channel_mention_t *cord_channel_mention_serialize(json_t *data, cord_err *err);
+cord_channel_mention_t *cord_channel_mention_serialize(json_t *data, cord_error_t *err);
 void cord_channel_mention_free(cord_channel_mention_t *mention);
 
 // https://discord.com/developers/docs/resources/channel#attachment-object
@@ -87,7 +88,7 @@ typedef struct cord_attachment_t {
 } cord_attachment_t;
 
 void cord_attachment_init(cord_attachment_t *at);
-cord_attachment_t *cord_attachment_serialize(json_t *data, cord_err *err);
+cord_attachment_t *cord_attachment_serialize(json_t *data, cord_error_t *err);
 void cord_attachment_free(cord_attachment_t *at);
 
 // https://discord.com/developers/docs/resources/channel#embed-object-embed-footer-structure
@@ -98,7 +99,7 @@ typedef struct cord_embed_footer_t {
 } cord_embed_footer_t;
 
 void cord_embed_footer_init(cord_embed_footer_t *ft);
-cord_embed_footer_t *cord_embed_footer_serialize(json_t *data, cord_err *err);
+cord_embed_footer_t *cord_embed_footer_serialize(json_t *data, cord_error_t *err);
 void cord_embed_footer_free(cord_embed_footer_t *ft);
 
 // https://discord.com/developers/docs/resources/channel#embed-object-embed-image-structure
@@ -110,7 +111,7 @@ typedef struct cord_embed_image_t {
 } cord_embed_image_t;
 
 void cord_embed_image_init(cord_embed_image_t *img);
-cord_embed_image_t *cord_embed_image_serialize(json_t *data, cord_err *err);
+cord_embed_image_t *cord_embed_image_serialize(json_t *data, cord_error_t *err);
 void cord_embed_image_free(cord_embed_image_t *img);
 
 // https://discord.com/developers/docs/resources/channel#embed-object-embed-thumbnail-structure
@@ -122,7 +123,7 @@ typedef struct cord_embed_thumbnail_t {
 } cord_embed_thumbnail_t;
 
 void cord_embed_thumbnail_init(cord_embed_thumbnail_t *tn);
-cord_embed_thumbnail_t *cord_embed_thumbnail_serialize(json_t *data, cord_err *err);
+cord_embed_thumbnail_t *cord_embed_thumbnail_serialize(json_t *data, cord_error_t *err);
 void cord_embed_thumbnail_free(cord_embed_thumbnail_t *tn);
 
 // https://discord.com/developers/docs/resources/channel#embed-object-embed-video-structure
@@ -133,7 +134,7 @@ typedef struct cord_embed_video_t {
 } cord_embed_video_t;
 
 void cord_embed_video_init(cord_embed_video_t *evid);
-cord_embed_video_t *cord_embed_video_serialize(json_t *data, cord_err *err);
+cord_embed_video_t *cord_embed_video_serialize(json_t *data, cord_error_t *err);
 void cord_embed_video_free(cord_embed_video_t *evid);
 
 // https://discord.com/developers/docs/resources/channel#embed-object-embed-provider-structure
@@ -143,7 +144,7 @@ typedef struct cord_embed_provider_t {
 } cord_embed_provider_t;
 
 void cord_embed_provider_init(cord_embed_provider_t *epr);
-cord_embed_provider_t *cord_embed_provider_serialize(json_t *data, cord_err *err);
+cord_embed_provider_t *cord_embed_provider_serialize(json_t *data, cord_error_t *err);
 void cord_embed_provider_free(cord_embed_provider_t *epr);
 
 // https://discord.com/developers/docs/resources/channel#embed-object-embed-author-structure
@@ -155,7 +156,7 @@ typedef struct cord_embed_author_t {
 } cord_embed_author_t;
 
 void cord_embed_author_init(cord_embed_author_t *eauth);
-cord_embed_author_t *cord_embed_author_serialize(json_t *data, cord_err *err);
+cord_embed_author_t *cord_embed_author_serialize(json_t *data, cord_error_t *err);
 void cord_embed_author_free(cord_embed_author_t *eauth);
 
 // https://discord.com/developers/docs/resources/channel#embed-object-embed-field-structure
@@ -166,7 +167,7 @@ typedef struct cord_embed_field_t {
 } cord_embed_field_t;
 
 void cord_embed_field_init(cord_embed_field_t *efield);
-cord_embed_field_t *cord_embed_field_serialize(json_t *data, cord_err *err);
+cord_embed_field_t *cord_embed_field_serialize(json_t *data, cord_error_t *err);
 void cord_embed_field_free(cord_embed_field_t *efield);
 
 // https://discord.com/developers/docs/resources/channel#embed-object
@@ -204,7 +205,7 @@ typedef struct cord_emoji_t {
 } cord_emoji_t;
 
 void cord_emoji_init(cord_emoji_t *emj);
-cord_emoji_t *cord_emoji_serialize(json_t *data, cord_err *err);
+cord_emoji_t *cord_emoji_serialize(json_t *data, cord_error_t *err);
 void cord_emoji_free(cord_emoji_t *emj);
 
 typedef struct cord_reaction_t {
@@ -214,7 +215,7 @@ typedef struct cord_reaction_t {
 } cord_reaction_t;
 
 void cord_reaction_init(cord_reaction_t *react);
-cord_reaction_t *cord_reaction_serialize(json_t *data, cord_err *err);
+cord_reaction_t *cord_reaction_serialize(json_t *data, cord_error_t *err);
 void cord_reaction_free(cord_reaction_t *react);
 
 // (Message Activity) - https://discord.com/developers/docs/resources/channel#message-object-message-activity-structure
@@ -224,7 +225,7 @@ typedef struct cord_message_activity_t {
 } cord_message_activity_t;
 
 void cord_message_activity_init(cord_message_activity_t *ma);
-cord_message_activity_t *cord_message_activity_serialize(json_t *data, cord_err *err);
+cord_message_activity_t *cord_message_activity_serialize(json_t *data, cord_error_t *err);
 void cord_message_activity_free(cord_message_activity_t *ma);
 
 // (Message Application) - https://discord.com/developers/docs/resources/channel#message-object-message-application-structure
@@ -237,7 +238,7 @@ typedef struct cord_message_application_t {
 } cord_message_application_t;
 
 void cord_message_application_init(cord_message_application_t *app);
-cord_message_application_t *cord_message_application_serialize(json_t *data, cord_err *err);
+cord_message_application_t *cord_message_application_serialize(json_t *data, cord_error_t *err);
 void cord_message_application_free(cord_message_application_t *app);
 
 // (Message Reference) - https://discord.com/developers/docs/resources/channel#message-object-message-reference-structure
@@ -248,7 +249,7 @@ typedef struct cord_message_reference_t {
 } cord_message_reference_t;
 
 void cord_message_reference_init(cord_message_reference_t *mr);
-cord_message_reference_t *cord_message_reference_serialize(json_t *data, cord_err *err);
+cord_message_reference_t *cord_message_reference_serialize(json_t *data, cord_error_t *err);
 void cord_message_reference_free(cord_message_reference_t *mr);
 
 // (Message Sticker) - https://discord.com/developers/docs/resources/channel#message-object-message-sticker-structure
@@ -264,7 +265,7 @@ typedef struct cord_message_sticker_t {
 } cord_message_sticker_t;
 
 void cord_message_sticker_init(cord_message_sticker_t *ms);
-cord_message_sticker_t *cord_message_sticker_serialize(json_t *data, cord_err *err);
+cord_message_sticker_t *cord_message_sticker_serialize(json_t *data, cord_error_t *err);
 void cord_message_sticker_free(cord_message_sticker_t *ms);
 
 // (Message) - https://discord.com/developers/docs/resources/channel#message-object
@@ -308,7 +309,7 @@ typedef struct cord_message_t {
 } cord_message_t;
 
 void cord_message_init(cord_message_t *msg);
-cord_message_t *cord_message_serialize(json_t *data, cord_err *err);
+cord_message_t *cord_message_serialize(json_t *data, cord_error_t *err);
 void cord_message_free(cord_message_t *msg);
 
 typedef struct cord_guild_t {

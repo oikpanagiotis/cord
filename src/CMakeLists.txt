@@ -3,14 +3,10 @@ set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra -ggdb -fsanitize=undefined")
 set(Sources
     cord.c
     discord.c
-    error.c
     events.c
     http.c
     types.c
-    util.c
     sds.c
-    array.c
-    memory.c
 )
 
 set(Libraries
@@ -19,13 +15,21 @@ set(Libraries
     uwsc
     jansson
     curl
+
+    core
 )
 
+add_subdirectory(core)
+# add_subdirectory(discord)
+# add_subdirectory(http)
 
 add_library(cord SHARED ${Sources})
 
 target_link_libraries(cord PUBLIC ${Libraries})
-target_include_directories(cord PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+target_include_directories(cord PUBLIC
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/core
+)
 
 install(TARGETS cord DESTINATION)
 install(FILES cord.h discord.h http.h DESTINATION /usr/local/include)

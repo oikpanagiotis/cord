@@ -10,7 +10,7 @@
 #define __FILENAME__ (__builtin_strrchr(__FILE__, '/') ? __builtin_strrchr(__FILE__, '/') + 1 : __FILE__)
 #endif
 
-#define debug(M, ...) fprintf(stderr, "[DEBUG](%s:%d): " M "\n", __FILENAME__, __LINE__, ##__VA_ARGS__)
+#define log_debug(M, ...) fprintf(stderr, "[DEBUG](%s:%d): " M "\n", __FILENAME__, __LINE__, ##__VA_ARGS__)
 #define log_info(M, ...) fprintf(stderr, "[INFO]: " M "\n", ##__VA_ARGS__)
 #define log_warning(M, ...) fprintf(stderr, "[WARNING](%s:%d): " M "\n", __FILENAME__, __LINE__, ##__VA_ARGS__)
 #define log_error(M, ...) fprintf(stderr, "[ERROR](%s:%d): " M "\n", __FILENAME__, __LINE__, ##__VA_ARGS__)

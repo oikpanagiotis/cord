@@ -38,7 +38,7 @@ void *cord_array_push(cord_array_t *arr) {
         arr->data = new_array;
     }
 
-    void *new_element = (void *)(arr->data + (arr->element_size * arr->num_elements));
+    void *new_element = arr->data + (arr->element_size * arr->num_elements);
     arr->num_elements++;
     return new_element;
 }

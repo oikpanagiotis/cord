@@ -1,9 +1,9 @@
 #include "discord.h"
 #include "events.h"
 #include "types.h"
-#include "log.h"
-#include "util.h"
-#include "constants.h"
+#include "core/log.h"
+#include "core/util.h"
+#include "core/typedefs.h"
 #include "sds.h"
 
 #include <stdio.h>
@@ -12,7 +12,7 @@
 #include <ev.h>
 #include <assert.h>
 
-static char *os_name = "Linux";
+static string_ptr os_name = "Linux";
 
 static void load_identification_info(identification *id) {
 	id->token = getenv("CORD_APPLICATION_TOKEN");
@@ -22,10 +22,9 @@ static void load_identification_info(identification *id) {
 		exit(1);
 	}
 
-	// TODO: OS detection
-	id->os = os_name;
-	id->device = LIB_NAME;
-	id->library = LIB_NAME;
+	id->os = (char *)os_name;
+	id->device = LIBRARY_NAME;
+	id->library = LIBRARY_NAME;
 }
 
 // Assumes that sequence is initialized to -1
@@ -33,16 +32,16 @@ static bool is_valid_sequence(int s) {
 	return (s >= 0) ? true : false;
 }
 
-static double heartbeat_to_double(int interval) {
-	int decimal = interval / 1000;
-	int floating_ms = interval % 1000;
+static f64 heartbeat_to_double(i32 interval) {
+	i32 decimal = interval / 1000;
+	i32 floating_ms = interval % 1000;
 
-	double decimal_d = (double)decimal;
-	double floating_d = (double)floating_ms * 0.001;
+	f64 decimal_d = (f64)decimal;
+	f64 floating_d = (f64)floating_ms * 0.001;
 	return decimal_d + floating_d;
 }
 
-static int send_heartbeat(discord_t *client) {
+static i32 send_heartbeat(discord_t *client) {
 	json_t *heartbeat = json_object();
 	json_object_set_new(heartbeat, PAYLOAD_KEY_OPCODE, json_integer(1));
 
@@ -54,9 +53,9 @@ static int send_heartbeat(discord_t *client) {
 	}	
 
 	char *buf = json_dumps(heartbeat, 0);
-	int len = strlen(buf);
+	size_t len = strlen(buf);
 
-	int rc = client->ws_client->send(client->ws_client, buf, len, UWSC_OP_TEXT);
+	i32 rc = client->ws_client->send(client->ws_client, buf, len, UWSC_OP_TEXT);
 	client->heartbeat_acknowledged = false;
 
 	free(buf);
@@ -80,13 +79,13 @@ static void sigint_cb(struct ev_loop *loop, ev_signal *w, int revents) {
 	if (w->signum == SIGINT) {
 		ev_break(loop, EVBREAK_ALL);
 		// Should we clean up here or call another func after we exit	
-		debug("Exiting");	
+		log_debug("Exiting");	
 	}
 }
 
 static void on_open(struct uwsc_client *ws_client) {
 	(void)ws_client;	
-	debug("Connected");
+	log_debug("Connected");
 }
 
 static void on_heartbeat(struct uwsc_client *ws_client, json_t *data) {
@@ -103,7 +102,7 @@ static void on_heartbeat(struct uwsc_client *ws_client, json_t *data) {
 	send_heartbeat(client);
 
 	if (!client->sent_initial_heartbeat) {
-		debug("Sending initial heartbeat");
+		log_debug("Sending initial heartbeat");
 		client->sent_initial_heartbeat = true;
 		
 		struct ev_timer *timer_watcher = malloc(sizeof(struct ev_timer));
@@ -129,7 +128,7 @@ static int send_to_gateway(discord_t *client, json_t *payload) {
 static void send_identify(struct uwsc_client *ws_client) {
 	discord_t *client = ws_client->ext;
 
-	debug("Identifying");
+	log_debug("Identifying");
 	json_t *payload = json_object();
 	json_object_set_new(payload, PAYLOAD_KEY_OPCODE, json_integer(2));
 	
@@ -145,7 +144,7 @@ static void send_identify(struct uwsc_client *ws_client) {
 	json_object_set_new(payload, PAYLOAD_KEY_DATA, d);
 
 	send_to_gateway(client, payload);
-	debug("Sent identify payload");
+	log_debug("Sent identify payload");
 }
 
 typedef struct gateway_payload {
@@ -321,23 +320,23 @@ static void on_message(struct uwsc_client *ws_client, void *data, size_t len, bo
 		// Dispatch is returned if we've received an event from the gateway	
 		case OP_DISPATCH:
 			if (!string_is_empty(event)) {
-				debug("Received Event: %s", event);
+				log_debug("Received Event: %s", event);
 				
-				receiving_event *all_events = get_all_receicing_events();
-				receiving_event *ev = get_receiving_event(all_events, event);
+				cord_gateway_event_t *all_events = get_all_gateway_events();
+				cord_gateway_event_t *ev = get_gateway_event(all_events, event);
 				if (event_has_handler(ev)) {
 					ev->handler(disc, payload->d, event);
 				} else {
-					log_warning("Invalid handler for event(%s)", event);
+					log_warning("No handler for event(%s)", event);
 				}
 			}	
 			break;
 		case OP_HEARTBEAT:
-			debug("Server is requesting Hearbeat");
+			log_debug("Server is requesting Hearbeat");
 			on_heartbeat(ws_client, payload->d);
 			break;
 		case OP_RECONNECT:
-			debug("Server is requesting Reconnect");
+			log_debug("Server is requesting Reconnect");
 			disc->must_reconnect = true;
 			break;
 		case OP_INVALID_SESSION:
@@ -361,9 +360,9 @@ static void on_message(struct uwsc_client *ws_client, void *data, size_t len, bo
 	
 	if (disc->sent_initial_heartbeat) {
 		if (disc->heartbeat_acknowledged) {
-			debug("heartbeat acknowledged");
+			log_debug("heartbeat acknowledged");
 		} else {
-			debug("Zombie");
+			log_debug("Zombie");
 		}
 	}
 	
@@ -382,7 +381,7 @@ static void on_close(struct uwsc_client *ws_client, int code, const char *reason
 	(void)code;
 	(void)reason;
 
-	debug("Closing connection");
+	log_debug("Closing connection");
 }
 
 discord_t *discord_create(void) {
@@ -414,10 +413,10 @@ discord_t *discord_create(void) {
 	disc->loop = NULL;
 	disc->must_reconnect = false;
 
-	// Refactor: Move this somewhere else
+	// TODO: Refactor. Move this somewhere else
 	// Assign callbacks
-	receiving_event *all_events = get_all_receicing_events();
-	receiving_event *on_message_event = get_receiving_event(all_events, "MESSAGE_CREATE");
+	cord_gateway_event_t *all_events = get_all_gateway_events();
+	cord_gateway_event_t *on_message_event = get_gateway_event(all_events, "MESSAGE_CREATE");
 	on_message_event->handler = on_message_create;
 
 	return disc;
@@ -450,7 +449,7 @@ static void client_reconnect_to(discord_t *client, const char *url) {
 	client->sent_initial_heartbeat = false;
 	client->must_reconnect = false;
 
-	debug("Reconnecting");
+	log_debug("Reconnecting");
 	ev_run(client->loop, 0);
 }
 
@@ -472,7 +471,7 @@ int discord_connect(discord_t *client, const char *url) {
 	client_init(client, url);
 	client->must_reconnect = false;
 
-	debug("Connecting");
+	log_debug("Connecting");
 	struct ev_check *reconnect_watcher = malloc(sizeof(struct ev_check));
 	reconnect_watcher->data = client;
 	ev_check_init(reconnect_watcher, check_reconnect_cb);

@@ -1,5 +1,6 @@
 #include "memory.h"
 
+#include <assert.h>
 #include <stdlib.h>
 
 cord_pool_t *cord_pool_create_with_size(size_t size) {
@@ -35,6 +36,7 @@ void cord_pool_destroy(cord_pool_t *pool) {
 
 void *alloc(cord_pool_t *pool, size_t size) {
     if (pool->size < pool->offset + size) {
+        assert(1 == 0 && "Implement resize");
         // TODO: Allocate new block
         return NULL;
     }

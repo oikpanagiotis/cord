@@ -1,9 +1,10 @@
 #include "types.h"
-#include "log.h"
-#include "error.h"
 #include "sds.h"
-#include "util.h"
-#include "array.h"
+#include "core/log.h"
+#include "core/error.h"
+#include "core/util.h"
+#include "core/array.h"
+#include "core/typedefs.h"
 
 #include <jansson.h>
 #include <assert.h>
@@ -16,10 +17,11 @@
 		} \
 } while (0)
 
-static void store_status(cord_err *err, cord_err code) {
-    if (err) {
-        *err = code;
+static void *store_error(cord_error_t *error, cord_error_t code) {
+    if (error) {
+        *error = code;
     }
+    return NULL;
 }
 
 void cord_user_init(cord_user_t *user) {
@@ -38,40 +40,55 @@ void cord_user_init(cord_user_t *user) {
     user->public_flags = 0;
 }
 
-cord_user_t * cord_user_serialize(json_t *data, cord_err *err) {
+static void user_json_boolean_mappings(cord_user_t *author, string_ptr key, bool value) {
+    map_property(author, bot, "bot", key, value);
+    map_property(author, system_, "system", key, value);
+    map_property(author, mfa_enabled, "mfa_enabled", key, value);
+    map_property(author, verified, "varified", key, value);
+}
+
+static void user_json_string_mappings(cord_user_t *author, string_ptr key, sds value) {
+    // map_property(author, id, "id", key, value);
+    // map_property(author, username, "username", key, value);
+    map_property(author, discriminator, "discriminator", key, value);
+    map_property(author, avatar, "avatar", key, value);
+    map_property(author, locale, "locale", key, value);
+    map_property(author, email, "email", key, value);
+}
+
+static void user_json_integer_mappings(cord_user_t *author, string_ptr key, i64 value) {
+    map_property(author, flags, "flags", key, value);
+    map_property(author, premium_type, "premium_type", key, value);
+    // map_property(author, public_flags, "public_flags", key, val);
+}
+
+static void cord_user_read_from_json(cord_user_t *author, json_t *json_user) {
+
+}
+
+cord_user_t *cord_user_serialize(json_t *json_user, cord_error_t *error) {
     cord_user_t *author = malloc(sizeof(cord_user_t));
-     if (!author) {
-        store_status(err, CORD_ERR_MALLOC);
-        return NULL;
-	}
+    if (!author) {
+        return store_error(error, CORD_ERR_MALLOC);
+    }
 
     cord_user_init(author);
+    string_ptr key = NULL;
+    json_t *value = NULL;   
 
-    const char *key = NULL;
-    json_t *value = NULL;
-
-    json_object_foreach(data, key, value) {
+    json_object_foreach(json_user, key, value) {
         if (json_is_string(value)) {
             sds value_copy = sdsnew(json_string_value(value));
-            // map_property(author, id, "id", key, value_copy);
-            // map_property(author, username, "username", key, value_copy);
-            map_property(author, discriminator, "discriminator", key, value_copy);
-            map_property(author, avatar, "avatar", key, value_copy);
-            map_property(author, locale, "locale", key, value_copy);
-            map_property(author, email, "email", key, value_copy);
+            user_json_string_mappings(author, key, value_copy);
         } else if (json_is_boolean(value)) {
-            bool val = json_boolean_value(value);
-            map_property(author, bot, "bot", key, val);
-            map_property(author, system_, "system", key, val);
-            map_property(author, mfa_enabled, "mfa_enabled", key, val);
-            map_property(author, verified, "varified", key, val);
+            bool value_copy = json_boolean_value(value);
+            user_json_boolean_mappings(author, key, value_copy);
         } else if (json_is_integer(value)) {
-            int val = (int)json_integer_value(value);
-            map_property(author, flags, "flags", key, val);
-            map_property(author, premium_type, "premium_type", key, val);
-            // map_property(author, public_flags, "public_flags", key, val);
+            i64 value_copy = (i64)json_integer_value(value);
+            user_json_integer_mappings(author, key, value_copy);
         }
     }
+
     return author;
 }
 
@@ -85,7 +102,6 @@ void cord_user_free(cord_user_t *user) {
     free(user);
 }
 
-
 void cord_guild_member_init(cord_guild_member_t *member) {
     member->user = NULL;
     member->nick = NULL;
@@ -97,29 +113,39 @@ void cord_guild_member_init(cord_guild_member_t *member) {
     member->_roles_count = 0;
 }
 
-cord_guild_member_t *cord_guild_member_serialize(json_t *data, cord_err *err) {
+static void guild_member_json_boolean_mappings(cord_guild_member_t *member,
+                                               string_ptr key,
+                                               bool value) {
+    map_property(member, deaf, "deaf", key, value);
+    map_property(member, mute, "mute", key, value);
+    map_property(member, pending, "pending", key, value);
+}
+
+static void guild_member_string_mappings(cord_guild_member_t *member, string_ptr key, sds value) {
+    map_property(member, nick, "nick", key, value);
+    map_property(member, joined_at, "joined_at", key, value);
+    map_property(member, premium_since, "premium_since", key, value);
+}
+
+cord_guild_member_t *cord_guild_member_serialize(json_t *data, cord_error_t *err) {
     cord_guild_member_t *member = malloc(sizeof(cord_guild_member_t));
     if (!member) {
-        store_status(err, CORD_ERR_MALLOC);
+        store_error(err, CORD_ERR_MALLOC);
         return NULL;
     }
 
     cord_guild_member_init(member);
 
-    const char *key = NULL;
+    string_ptr key = NULL;
     json_t *value = NULL;
 
     json_object_foreach(data, key, value) {
         if (json_is_string(value)) {
-            sds copy_value = sdsnew(json_string_value(value));
-            map_property(member, nick, "nick", key, copy_value);
-            map_property(member, joined_at, "joined_at", key, copy_value);
-            map_property(member, premium_since, "premium_since", key, copy_value);
+            sds value_copy = sdsnew(json_string_value(value));
+            guild_member_string_mappings(member, key, value_copy);
         } else if (json_is_boolean(value)) {
-            bool val = json_boolean_value(value);
-            map_property(member, deaf, "deaf", key, val);
-            map_property(member, mute, "mute", key, val);
-            map_property(member, pending, "pending", key, val);
+            bool value_copy = json_boolean_value(value);
+            guild_member_json_boolean_mappings(member, key, value_copy);
         } else if (json_is_array(value)) {
             int i = 0;
             json_t *slot = NULL;
@@ -174,16 +200,15 @@ void cord_role_init(cord_role_t *role) {
     role->mentionable = false;
 }
 
-cord_role_t *cord_role_serialize(json_t *data, cord_err *err) {
+cord_role_t *cord_role_serialize(json_t *data, cord_error_t *err) {
     cord_role_t *role = malloc(sizeof(cord_role_t));
     if (!role) {
-        store_status(err, CORD_ERR_MALLOC);
-        return NULL;
+        return store_error(err, CORD_ERR_MALLOC);
     }
     
     cord_role_init(role);
 
-    const char *key = NULL;
+    string_ptr key = NULL;
     json_t *value = NULL;
 
     json_object_foreach(data, key, value) {
@@ -221,16 +246,15 @@ void cord_channel_mention_init(cord_channel_mention_t *mention) {
     mention->name = NULL;
 }
 
-cord_channel_mention_t *cord_channel_mention_serialize(json_t *data, cord_err *err) {
+cord_channel_mention_t *cord_channel_mention_serialize(json_t *data, cord_error_t *err) {
     cord_channel_mention_t *mention = malloc(sizeof(cord_channel_mention_t));
     if (!mention) {
-        store_status(err, CORD_ERR_MALLOC);
-        return NULL;
+        return store_error(err, CORD_ERR_MALLOC);
     }
 
     cord_channel_mention_init(mention);
 
-    const char *key = NULL;
+    string_ptr key = NULL;
     json_t *value = NULL;
 
     json_object_foreach(data, key, value) {
@@ -265,16 +289,15 @@ void cord_attachment_init(cord_attachment_t *at) {
     at->width = 0;
 }
 
-cord_attachment_t *cord_attachment_serialize(json_t *data, cord_err *err) {
+cord_attachment_t *cord_attachment_serialize(json_t *data, cord_error_t *err) {
     cord_attachment_t *at = malloc(sizeof(cord_attachment_t));
     if (!at) {
-        store_status(err, CORD_ERR_MALLOC);
-        return NULL;
+        return store_error(err, CORD_ERR_MALLOC);
     }
 
     cord_attachment_init(at);
 
-    const char *key = NULL;
+    string_ptr key = NULL;
     json_t *value = NULL;
 
     json_object_foreach(data, key, value) {
@@ -308,16 +331,15 @@ void cord_embed_footer_init(cord_embed_footer_t *ft) {
     ft->proxy_icon_url = NULL;
 }
 
-cord_embed_footer_t *cord_embed_footer_serialize(json_t *data, cord_err *err) {
+cord_embed_footer_t *cord_embed_footer_serialize(json_t *data, cord_error_t *err) {
     cord_embed_footer_t *ft = malloc(sizeof(cord_embed_footer_t));
     if (!ft) {
-        store_status(err, CORD_ERR_MALLOC);
-        return NULL;
+        return store_error(err, CORD_ERR_MALLOC);
     }
 
     cord_embed_footer_init(ft);
 
-    const char *key = NULL;
+    string_ptr key = NULL;
     json_t *value = NULL;
 
     json_object_foreach(data, key, value) {
@@ -345,16 +367,15 @@ void cord_embed_image_init(cord_embed_image_t *img) {
     img->width = 0;
 }
 
-cord_embed_image_t *cord_embed_image_serialize(json_t *data, cord_err *err) {
+cord_embed_image_t *cord_embed_image_serialize(json_t *data, cord_error_t *err) {
     cord_embed_image_t *img = malloc(sizeof(cord_embed_image_t));
     if (!img) {
-        store_status(err, CORD_ERR_MALLOC);
-        return NULL;
+        return store_error(err, CORD_ERR_MALLOC);
     }
 
     cord_embed_image_init(img);
 
-    const char *key = NULL;
+    string_ptr key = NULL;
     json_t *value = NULL;
 
     json_object_foreach(data, key, value) {
@@ -384,16 +405,15 @@ void cord_embed_thumbnail_init(cord_embed_thumbnail_t *tn) {
     tn->width = 0;
 }
 
-cord_embed_thumbnail_t *cord_embed_thumbnail_serialize(json_t *data, cord_err *err) {
+cord_embed_thumbnail_t *cord_embed_thumbnail_serialize(json_t *data, cord_error_t *err) {
     cord_embed_thumbnail_t *tn = malloc(sizeof(cord_embed_thumbnail_t));
     if (!tn) {
-        store_status(err, CORD_ERR_MALLOC);
-        return NULL;
+        return store_error(err, CORD_ERR_MALLOC);
     }
 
     cord_embed_thumbnail_init(tn);
 
-    const char *key = NULL;
+    string_ptr key = NULL;
     json_t *value = NULL;
 
     json_object_foreach(data, key, value) {
@@ -422,16 +442,15 @@ void cord_embed_video_init(cord_embed_video_t *evid) {
     evid->width = 0;
 }
 
-cord_embed_video_t *cord_embed_video_serialize(json_t *data, cord_err *err) {
+cord_embed_video_t *cord_embed_video_serialize(json_t *data, cord_error_t *err) {
     cord_embed_video_t *evid = malloc(sizeof(cord_embed_video_t));
     if (!evid) {
-        store_status(err, CORD_ERR_MALLOC);
-        return NULL;
+        return store_error(err, CORD_ERR_MALLOC);
     }
 
     cord_embed_video_init(evid);
 
-    const char *key = NULL;
+    string_ptr key = NULL;
     json_t *value = NULL;
 
     json_object_foreach(data, key, value) {
@@ -457,16 +476,15 @@ void cord_embed_provider_init(cord_embed_provider_t *epr) {
     epr->url = NULL;
 }
 
-cord_embed_provider_t *cord_embed_provider_serialize(json_t *data, cord_err *err) {
+cord_embed_provider_t *cord_embed_provider_serialize(json_t *data, cord_error_t *err) {
     cord_embed_provider_t *epr = malloc(sizeof(cord_embed_provider_t));
     if (!epr) {
-        store_status(err, CORD_ERR_MALLOC);
-        return NULL;
+        return store_error(err, CORD_ERR_MALLOC);
     }
 
     cord_embed_provider_init(epr);
 
-    const char *key = NULL;
+    string_ptr key = NULL;
     json_t *value = NULL;
 
     json_object_foreach(data, key, value) {
@@ -492,16 +510,15 @@ void cord_embed_author_init(cord_embed_author_t *eauth) {
     eauth->proxy_icon_url = NULL;
 }
 
-cord_embed_author_t *cord_embed_author_serialize(json_t *data, cord_err *err) {
+cord_embed_author_t *cord_embed_author_serialize(json_t *data, cord_error_t *err) {
     cord_embed_author_t *eauth = malloc(sizeof(cord_embed_author_t));
     if (!eauth) {
-        store_status(err, CORD_ERR_MALLOC);
-        return NULL;
+        return store_error(err, CORD_ERR_MALLOC);
     }
     
     cord_embed_author_init(eauth);
 
-    const char *key = NULL;
+    string_ptr key = NULL;
     json_t *value = NULL;
 
     json_object_foreach(data, key, value) {
@@ -530,16 +547,15 @@ void cord_embed_field_init(cord_embed_field_t *efield) {
     efield->inline_ = false;
 }
 
-cord_embed_field_t *cord_embed_field_serialize(json_t *data, cord_err *err) {
+cord_embed_field_t *cord_embed_field_serialize(json_t *data, cord_error_t *err) {
     cord_embed_field_t *efield = malloc(sizeof(cord_embed_field_t));
     if (!efield) {
-        store_status(err, CORD_ERR_MALLOC);
-        return NULL;
+        return store_error(err, CORD_ERR_MALLOC);
     }
 
     cord_embed_field_init(efield);
 
-    const char *key = NULL;
+    string_ptr key = NULL;
     json_t *value = NULL;
 
     json_object_foreach(data, key, value) {
@@ -572,16 +588,15 @@ void cord_emoji_init(cord_emoji_t *emj) {
     emj->available = false;
 }
 
-cord_emoji_t *cord_emoji_serialize(json_t *data, cord_err *err) {
+cord_emoji_t *cord_emoji_serialize(json_t *data, cord_error_t *err) {
     cord_emoji_t *emj = malloc(sizeof(cord_emoji_t));
     if (!emj) {
-        store_status(err, CORD_ERR_MALLOC);
-        return NULL;
+        return store_error(err, CORD_ERR_MALLOC);
     }
 
     cord_emoji_init(emj);
 
-    const char *key = NULL;
+    string_ptr key = NULL;
     json_t *value = NULL;
 
     json_object_foreach(data, key, value) {
@@ -636,16 +651,15 @@ void cord_reaction_init(cord_reaction_t *react) {
     react->emoji = NULL;
 }
 
-cord_reaction_t *cord_reaction_serialize(json_t *data, cord_err *err) {
+cord_reaction_t *cord_reaction_serialize(json_t *data, cord_error_t *err) {
     cord_reaction_t *react = malloc(sizeof(cord_reaction_t));
     if (!react) {
-        store_status(err, CORD_ERR_MALLOC);
-        return NULL;
+        return store_error(err, CORD_ERR_MALLOC);
     }
     
     cord_reaction_init(react);
 
-    const char *key = NULL;
+    string_ptr key = NULL;
     json_t *value = NULL;
 
     json_object_foreach(data, key, value) {
@@ -658,12 +672,11 @@ cord_reaction_t *cord_reaction_serialize(json_t *data, cord_err *err) {
         } else if (json_is_object(value)) {
             json_t *obj = value;
             if (string_is_equal(key, "emoji")) {
-                cord_err error = 0;
+                cord_error_t error = 0;
                 cord_emoji_t *emoji_obj = cord_emoji_serialize(obj, &error);
                 if (!emoji_obj) {
                     log_error("%s", cord_error(error));
-                    store_status(err, error);
-                    return NULL;
+                    return store_error(err, error);
                 }
                 map_property(react, emoji, "emoji", key, emoji_obj);
             }
@@ -682,16 +695,15 @@ void cord_message_activity_init(cord_message_activity_t *ma) {
     ma->party_id = NULL;
 }
 
-cord_message_activity_t *cord_message_activity_serialize(json_t *data, cord_err *err) {
+cord_message_activity_t *cord_message_activity_serialize(json_t *data, cord_error_t *err) {
     cord_message_activity_t *ma = malloc(sizeof(cord_message_activity_t));
     if (!ma) {
-        store_status(err, CORD_ERR_MALLOC);
-        return NULL;
+        return store_error(err, CORD_ERR_MALLOC);
     }
 
     cord_message_activity_init(ma);
 
-    const char *key = NULL;
+    string_ptr key = NULL;
     json_t *value = NULL;
 
     json_object_foreach(data, key, value) {
@@ -719,16 +731,15 @@ void cord_message_application_init(cord_message_application_t *app) {
     app->name = NULL;
 }
 
-cord_message_application_t *cord_message_application_serialize(json_t *data, cord_err *err) {
+cord_message_application_t *cord_message_application_serialize(json_t *data, cord_error_t *err) {
     cord_message_application_t *app = malloc(sizeof(cord_message_application_t));
     if (!app) {
-        store_status(err, CORD_ERR_MALLOC);
-        return NULL;
+        return store_error(err, CORD_ERR_MALLOC);
     }
 
     cord_message_application_init(app);
     
-    const char *key = NULL;
+    string_ptr key = NULL;
     json_t *value = NULL;
 
     json_object_foreach(data, key, value) {
@@ -778,16 +789,15 @@ void cord_message_reference_init(cord_message_reference_t *mr) {
     mr->guild_id = NULL;
 }
 
-cord_message_reference_t *cord_message_reference_serialize(json_t *data, cord_err *err) {
+cord_message_reference_t *cord_message_reference_serialize(json_t *data, cord_error_t *err) {
     cord_message_reference_t *mr = malloc(sizeof(cord_message_reference_t));
     if (!mr) {
-        store_status(err, CORD_ERR_MALLOC);
-        return NULL;
+        return store_error(err, CORD_ERR_MALLOC);
     }
 
     cord_message_reference_init(mr);
 
-    const char *key = NULL;
+    string_ptr key = NULL;
     json_t *value = NULL;
 
     json_object_foreach(data, key, value) {
@@ -819,16 +829,15 @@ void cord_message_sticker_init(cord_message_sticker_t *ms) {
     ms->format_type = 0; // https://discord.com/developers/docs/resources/channel#message-object-message-sticker-format-types
 }
 
-cord_message_sticker_t *cord_message_sticker_serialize(json_t *data, cord_err *err) {
+cord_message_sticker_t *cord_message_sticker_serialize(json_t *data, cord_error_t *err) {
     cord_message_sticker_t *ms = malloc(sizeof(cord_message_sticker_t));
     if (!ms) {
-        store_status(err, CORD_ERR_MALLOC);
-        return NULL;
+        return store_error(err, CORD_ERR_MALLOC);
     }
 
     cord_message_sticker_init(ms);
 
-    const char *key = NULL;
+    string_ptr key = NULL;
     json_t *value = NULL;
 
     json_object_foreach(data, key, value) {
@@ -882,40 +891,49 @@ void cord_message_init(cord_message_t *msg) {
     msg->referenced_message = NULL;
 }
 
-cord_message_t *cord_message_serialize(json_t *data, cord_err *err) {
-    cord_message_t *msg = malloc(sizeof(cord_message_t));
-    if (!msg) {
+static void message_json_string_mappings(cord_message_t *message, string_ptr key, sds value) {
+    map_property(message, id, "id", key, value);
+    map_property(message, channel_id, "channel_id", key, value);
+    map_property(message, guild_id, "guild_id", key, value);
+    map_property(message, content, "content", key, value);
+    map_property(message, timestamp, "timestamp", key, value);
+    map_property(message, edited_timestamp, "edited_timestamp", key, value);
+    map_property(message, nonce, "nonce", key, value);
+    map_property(message, webhook_id, "webhook_id", key, value);
+}
+
+static void message_json_bool_mappings(cord_message_t *message, string_ptr key, bool value) {
+    map_property(message, tts, "tts", key, value);
+    map_property(message, mention_everyone, "mention_everyone", key, value);
+    map_property(message, pinned, "pinned", key, value);
+}
+
+static void message_json_integer_mappings(cord_message_t *message, string_ptr key, i64 value) {
+    map_property(message, type, "type", key, value);
+	map_property(message, flags, "flags", key, value);
+}
+
+cord_message_t *cord_message_serialize(json_t *data, cord_error_t *err) {
+    cord_message_t *message = malloc(sizeof(cord_message_t));
+    if (!message) {
 		log_error("Failed to allocate discord message");
-        store_status(err, CORD_ERR_MALLOC);
-        return NULL;
+        return store_error(err, CORD_ERR_MALLOC);
 	}
 
-    cord_message_init(msg);
+    cord_message_init(message);
 
-	const char *key = NULL;
+	string_ptr key = NULL;
 	json_t *value = NULL;
 	json_object_foreach(data, key, value) {
 		if (json_is_string(value)) {
-			const char *str = json_string_value(value);
-			char *value_copy = strdup(str);
-            map_property(msg, id, "id", key, value_copy);
-			map_property(msg, channel_id, "channel_id", key, value_copy);
-			map_property(msg, guild_id, "guild_id", key, value_copy);
-			map_property(msg, content, "content", key, value_copy);
-			map_property(msg, timestamp, "timestamp", key, value_copy);
-			map_property(msg, edited_timestamp, "edited_timestamp", key, value_copy);
-            map_property(msg, nonce, "nonce", key, value_copy);
-			map_property(msg, webhook_id, "webhook_id", key, value_copy);
+			char *value_copy = strdup((char *)json_string_value(value));
+            message_json_string_mappings(message, key, value_copy);
 		} else if (json_is_boolean(value)) {
-			bool val = json_boolean_value(value);
-			map_property(msg, tts, "tts", key, val);
-            map_property(msg, mention_everyone, "mention_everyone", key, val);
-			map_property(msg, pinned, "pinned", key, val);
+			bool value_copy = json_boolean_value(value);
+            message_json_bool_mappings(message, key, value_copy);
         } else if (json_is_integer(value)) {
-			json_int_t val = json_integer_value(value);
-			int num = (int)val;
-			map_property(msg, type, "type", key, num);
-			map_property(msg, flags, "flags", key, num);
+			i64 value_copy = (i64)json_integer_value(value);
+            message_json_integer_mappings(message, key, value_copy);
 		} else if (json_is_array(value)) {
             if (string_is_equal("mentions", key)) {
                 /*
@@ -931,7 +949,7 @@ cord_message_t *cord_message_serialize(json_t *data, cord_err *err) {
             }
         } else if (json_is_object(value)) {
             json_t *object = value;
-            cord_err error = 0;
+            cord_error_t error = 0;
 
             if (string_is_equal(key, "author")) {
                 cord_user_t *author = cord_user_serialize(object, &error);
@@ -966,8 +984,8 @@ cord_message_t *cord_message_serialize(json_t *data, cord_err *err) {
             }
         }
 	}
-    store_status(err, CORD_OK);
-	return msg;
+    store_error(err, CORD_OK);
+	return message;
 }
 
 void cord_message_free(cord_message_t *msg) {
@@ -1016,7 +1034,7 @@ void cord_message_free(cord_message_t *msg) {
     // }
     // cord_array_destroy(msg->stickers);
     //free(msg);
-    debug("Message freed");
+    log_debug("Message freed");
 }
 
 int cord_guild_init(cord_guild_t *g) {

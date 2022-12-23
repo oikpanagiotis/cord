@@ -1,9 +1,11 @@
 #include "http.h"
+#include "core/log.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <curl/curl.h>
-#include "log.h"
+
 
 http_client_t *http_client_create(const char *bot_token) {
 	http_client_t *client = malloc(sizeof(http_client_t));
