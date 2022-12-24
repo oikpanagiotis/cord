@@ -1,12 +1,16 @@
 #include "cord.h"
+#include "core/log.h"
 #include "discord.h"
 #include "error.h"
 #include <jansson.h>
 #include <uwsc/uwsc.h>
 
 cord_t *cord_create(void) {
+	// TODO: Move this to a global context initialization routine
+	global_logger_init();
+
 	cord_t *c = malloc(sizeof(cord_t));
-	c->client = discord_create();	
+	c->client = discord_create();
 	return c;
 }
 

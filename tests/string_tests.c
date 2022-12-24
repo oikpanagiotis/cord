@@ -1,6 +1,6 @@
 #include "minunit.h"
 
-#include "../src/core/string.h"
+#include "../src/core/strings.h"
 #include "../src/core/typedefs.h"
 
 #include <string.h>

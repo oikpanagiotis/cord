@@ -9,7 +9,8 @@ set(Sources
     error.c
     memory.c
     util.c
-    string.c
+    strings.c
+    log.c
 )
 
 add_library(core SHARED ${Sources})

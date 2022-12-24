@@ -20,7 +20,7 @@ static void load_identification_info(identification *id) {
 	id->token = getenv("CORD_APPLICATION_TOKEN");
 	assert(id->token);
 	if (!id->token) {
-		log_error("Bot token not found. Please set CORD_APPLICATION_TOKEN enviroment variable.");
+		logger_error("Bot token not found. Please set CORD_APPLICATION_TOKEN enviroment variable.");
 		exit(1);
 	}
 
@@ -89,13 +89,13 @@ static json_t *heartbeat_json_object_create(i32 sequence) {
 static void send_heartbeat(discord_t *client) {
 	json_t *heartbeat_object = heartbeat_json_object_create(client->sequence);
 	if (!heartbeat_object) {
-		log_error("Failed to create heartbeat json object");
+		logger_error("Failed to create heartbeat json object");
 		return;
 	}
 
 	json_payload_t heartbeat = json_payload_from_json(heartbeat_object);
 	if (!is_valid_json_payload(heartbeat)) {
-		log_error("Failed to create json payload for heartbeat");
+		logger_error("Failed to create json payload for heartbeat");
 		return;
 	}
 	send_json_payload(client, heartbeat);
@@ -121,13 +121,13 @@ static void sigint_cb(struct ev_loop *loop, ev_signal *w, int revents) {
 	if (w->signum == SIGINT) {
 		ev_break(loop, EVBREAK_ALL);
 		// Should we clean up here or call another func after we exit	
-		log_debug("Exiting");	
+		logger_debug("Exiting");
 	}
 }
 
 static void on_open(struct uwsc_client *ws_client) {
 	(void)ws_client;	
-	log_debug("Connected");
+	logger_debug("Connected");
 }
 
 static void on_heartbeat(struct uwsc_client *ws_client, json_t *data) {
@@ -135,7 +135,7 @@ static void on_heartbeat(struct uwsc_client *ws_client, json_t *data) {
 
 	json_t *hb_interval_json = json_object_get(data, "heartbeat_interval");
 	if (!hb_interval_json) {
-		log_error("Failed to get heartbeat object");
+		logger_error("Failed to get heartbeat object");
 		return;
 	}
 	client->hb_interval = (int)json_integer_value(hb_interval_json);
@@ -144,7 +144,7 @@ static void on_heartbeat(struct uwsc_client *ws_client, json_t *data) {
 	send_heartbeat(client);
 
 	if (!client->sent_initial_heartbeat) {
-		log_debug("Sending initial heartbeat");
+		logger_debug("Sending initial heartbeat");
 		client->sent_initial_heartbeat = true;
 		
 		struct ev_timer *timer_watcher = malloc(sizeof(struct ev_timer));
@@ -170,7 +170,7 @@ static int send_to_gateway(discord_t *client, json_t *payload) {
 static void send_identify(struct uwsc_client *ws_client) {
 	discord_t *client = ws_client->ext;
 
-	log_debug("Identifying");
+	logger_debug("Identifying");
 	json_t *payload = json_object();
 	json_object_set_new(payload, PAYLOAD_KEY_OPCODE, json_integer(2));
 	
@@ -186,7 +186,7 @@ static void send_identify(struct uwsc_client *ws_client) {
 	json_object_set_new(payload, PAYLOAD_KEY_DATA, d);
 
 	send_to_gateway(client, payload);
-	log_debug("Sent identify payload");
+	logger_debug("Sent identify payload");
 }
 
 typedef struct gateway_payload {
@@ -208,7 +208,7 @@ void gateway_payload_init(gateway_payload *payload) {
 int parse_gatway_payload(json_t *raw_payload, gateway_payload *payload) {
 	json_t *opcode = json_object_get(raw_payload, PAYLOAD_KEY_OPCODE);
 	if (!opcode) {
-		log_error("Failed to get \"op\"");
+		logger_error("Failed to get \"op\"");
 		return -1;
 	}
 
@@ -218,7 +218,7 @@ int parse_gatway_payload(json_t *raw_payload, gateway_payload *payload) {
 	} else {
 		json_t *t = json_object_get(raw_payload, PAYLOAD_KEY_EVENT);
 		if (!t) {
-			log_error("Failed to get \"t\"");
+			logger_error("Failed to get \"t\"");
 			return -1;
 		}
 		payload->t = json_string_value(t) ? sdsnew(json_string_value(t)) : sdsnew("");
@@ -232,7 +232,7 @@ int parse_gatway_payload(json_t *raw_payload, gateway_payload *payload) {
 	
 	json_t *d = json_object_get(raw_payload, PAYLOAD_KEY_DATA);
 	if (!d) {
-		log_error("Failed to get \"d\"");
+		logger_error("Failed to get \"d\"");
 		return -1;	
 	}
 	payload->d = json_deep_copy(d);
@@ -256,7 +256,7 @@ int discord_send_message(discord_t *disc, cord_message_t *msg) {
 	const int URL_LEN = 1024;
 	char *final_url = calloc(1, sizeof(char) * URL_LEN);
 	if (!final_url) {
-		log_error("Failed to allocate final url");
+		logger_error("Failed to allocate final url");
 		return -1;
 	}
 
@@ -270,7 +270,7 @@ int discord_send_message(discord_t *disc, cord_message_t *msg) {
 cord_message_t *message_from_json(json_t *data) {
 	cord_message_t *msg = malloc(sizeof(cord_message_t));
 	if (!msg) {
-		log_error("Failed to allocate discord message");
+		logger_error("Failed to allocate discord message");
 		return NULL;
 	}
 
@@ -335,7 +335,7 @@ static void on_message(struct uwsc_client *ws_client, void *data, size_t len, bo
 	// Serialize payload
 	json_t *raw_payload = json_loadb(data, len, 0, &err);
 	if (!raw_payload) {
-		log_error("Failed to serialize payload: %s", err.text);
+		logger_error("Failed to serialize payload: %s", err.text);
 		return;
 	}
 	gateway_payload *payload = malloc(sizeof(gateway_payload));
@@ -343,7 +343,7 @@ static void on_message(struct uwsc_client *ws_client, void *data, size_t len, bo
 
 	int rc = parse_gatway_payload(raw_payload, payload);
 	if (rc < 0) {
-		log_error("Failed to parse gateway payload");
+		logger_error("Failed to parse gateway payload");
 	}
 	// When the reference count of a json object reaches decreases
 	// by one, the reference count of all it's children is also
@@ -355,27 +355,27 @@ static void on_message(struct uwsc_client *ws_client, void *data, size_t len, bo
 		// Dispatch is returned if we've received an event from the gateway	
 		case OP_DISPATCH:
 			if (!string_is_empty(event)) {
-				log_debug("Received Event: %s", event);
+				logger_debug("Received Event: %s", event);
 				
 				cord_gateway_event_t *all_events = get_all_gateway_events();
 				cord_gateway_event_t *ev = get_gateway_event(all_events, event);
 				if (event_has_handler(ev)) {
 					ev->handler(disc, payload->d, event);
 				} else {
-					log_warning("No handler for event(%s)", event);
+					logger_warn("No handler for event(%s)", event);
 				}
 			}	
 			break;
 		case OP_HEARTBEAT:
-			log_debug("Server is requesting Hearbeat");
+			logger_debug("Server is requesting Hearbeat");
 			on_heartbeat(ws_client, payload->d);
 			break;
 		case OP_RECONNECT:
-			log_debug("Server is requesting Reconnect");
+			logger_debug("Server is requesting Reconnect");
 			disc->must_reconnect = true;
 			break;
 		case OP_INVALID_SESSION:
-			log_warning("Invalid Session");
+			logger_warn("Invalid Session");
 			break;
 		case OP_HELLO:
 			if (!disc->sent_initial_heartbeat) {
@@ -389,15 +389,15 @@ static void on_message(struct uwsc_client *ws_client, void *data, size_t len, bo
 			disc->heartbeat_acknowledged = true;
 			break;
 		default: // fallthrough
-			log_error("Default switch case sentinel");
+			logger_error("Default switch case sentinel");
 			break;
 	}
 	
 	if (disc->sent_initial_heartbeat) {
 		if (disc->heartbeat_acknowledged) {
-			log_debug("heartbeat acknowledged");
+			logger_debug("heartbeat acknowledged");
 		} else {
-			log_debug("Zombie");
+			logger_debug("Zombie");
 		}
 	}
 	
@@ -408,7 +408,7 @@ static void on_message(struct uwsc_client *ws_client, void *data, size_t len, bo
 static void on_error(struct uwsc_client *ws_client, int err, const char *msg) {
 	(void)ws_client;
 
-	log_error("Websocket error(%d): %s", err, msg);
+	logger_error("Websocket error(%d): %s", err, msg);
 }
 
 static void on_close(struct uwsc_client *ws_client, int code, const char *reason) {
@@ -416,7 +416,7 @@ static void on_close(struct uwsc_client *ws_client, int code, const char *reason
 	(void)code;
 	(void)reason;
 
-	log_debug("Closing connection");
+	logger_debug("Closing connection");
 }
 
 discord_t *discord_create(void) {
@@ -425,19 +425,19 @@ discord_t *discord_create(void) {
 
 	discord_t *disc = malloc(sizeof(discord_t));
 	if (!disc) {
-		log_error("Failed to allocate discord context");
+		logger_error("Failed to allocate discord context");
 		return NULL;
 	}
 
 	disc->http = http_client_create(id.token);
 	if (!disc->http->bot_token) {
-		log_error("Failed to create bot token");
+		logger_error("Failed to create bot token");
 		free(disc);
 		return NULL;
 	}
 
 	if (!disc->http) {
-		log_error("Failed to create http client");
+		logger_error("Failed to create http client");
 		free(disc);
 		return NULL;
 	}
@@ -462,7 +462,7 @@ static const int ping_interval = 5;
 static void client_init(discord_t *client, const char *url) {
 	client->ws_client = uwsc_new(client->loop, url, ping_interval, NULL);
 	if (!client->ws_client) {
-		log_error("Failed to initialize websocket client");
+		logger_error("Failed to initialize websocket client");
 		exit(1);
 	}
 
@@ -484,7 +484,7 @@ static void client_reconnect_to(discord_t *client, const char *url) {
 	client->sent_initial_heartbeat = false;
 	client->must_reconnect = false;
 
-	log_debug("Reconnecting");
+	logger_debug("Reconnecting");
 	ev_run(client->loop, 0);
 }
 
@@ -506,7 +506,7 @@ int discord_connect(discord_t *client, const char *url) {
 	client_init(client, url);
 	client->must_reconnect = false;
 
-	log_debug("Connecting");
+	logger_debug("Connecting");
 	struct ev_check *reconnect_watcher = malloc(sizeof(struct ev_check));
 	reconnect_watcher->data = client;
 	ev_check_init(reconnect_watcher, check_reconnect_cb);

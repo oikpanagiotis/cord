@@ -7,4 +7,4 @@ set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra -ggdb -fsanitize=undefined")
 
 add_subdirectory(src)
 add_subdirectory(tests)
-# add_subdirectory(examples)
+add_subdirectory(examples)

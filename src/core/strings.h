@@ -1,5 +1,5 @@
-#ifndef STRING_H
-#define STRING_H
+#ifndef STRINGS_H
+#define STRINGS_H
 
 #include "memory.h"
 #include "typedefs.h"

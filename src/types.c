@@ -142,7 +142,7 @@ cord_guild_member_t *cord_guild_member_serialize(json_t *data, cord_error_t *err
                     // TODO: FIX AFTER REFACTOR
                     // int err = cord_role_serialize(member->roles[i], slot);
                     // if (err != CORD_OK) {
-                        // log_error("Failed to serialize cord role");
+                        // logger_error("Failed to serialize cord role");
                         // return NULL;
                     // }
                     // member->_roles_count++;
@@ -663,7 +663,7 @@ cord_reaction_t *cord_reaction_serialize(json_t *data, cord_error_t *err) {
                 cord_error_t error = 0;
                 cord_emoji_t *emoji_obj = cord_emoji_serialize(obj, &error);
                 if (!emoji_obj) {
-                    log_error("%s", cord_error(error));
+                    logger_error("%s", cord_error(error));
                     return store_error(err, error);
                 }
                 map_property(react, emoji, "emoji", key, emoji_obj);
@@ -908,7 +908,7 @@ static void message_json_integer_mappings(cord_message_t *message, string_ref ke
 cord_message_t *cord_message_serialize(json_t *data, cord_error_t *err) {
     cord_message_t *message = malloc(sizeof(cord_message_t));
     if (!message) {
-		log_error("Failed to allocate discord message");
+		logger_error("Failed to allocate discord message");
         return store_error(err, CORD_ERR_MALLOC);
 	}
 
@@ -946,32 +946,32 @@ cord_message_t *cord_message_serialize(json_t *data, cord_error_t *err) {
             if (string_is_equal(key, "author")) {
                 cord_user_t *author = cord_user_serialize(object, &error);
                 if (!author) {
-                    log_error("%s", cord_error(error));
+                    logger_error("%s", cord_error(error));
                 }
             } else if (string_is_equal(key, "member")) {
                 cord_guild_member_t *member = cord_guild_member_serialize(object, &error);
                 if (!member) {
-                    log_error("%s", cord_error(error));
+                    logger_error("%s", cord_error(error));
                 }
             } else if (string_is_equal(key, "activity")) {
                 cord_message_activity_t *activity = cord_message_activity_serialize(object, &error);
                 if (!activity) {
-                    log_error("%s", cord_error(error));
+                    logger_error("%s", cord_error(error));
                 }
             } else if (string_is_equal(key, "application")) {
                 cord_message_application_t *application = cord_message_application_serialize(object, &error);
                 if (!application) {
-                    log_error("%s", cord_error(error));
+                    logger_error("%s", cord_error(error));
                 }
             } else if (string_is_equal(key, "message_reference")) {
                 cord_message_reference_t *message_reference = cord_message_reference_serialize(object, &error);
                 if (!message_reference) {
-                    log_error("%s", cord_error(error));
+                    logger_error("%s", cord_error(error));
                 }
             } else if (string_is_equal(key, "referenced_message")) {
                 cord_message_t *referenced_message = cord_message_serialize(object, &error);
                 if (!referenced_message) {
-                    log_error("%s", cord_error(error));
+                    logger_error("%s", cord_error(error));
                 }
             }
         }
@@ -998,7 +998,7 @@ void cord_message_free(cord_message_t *msg) {
         cord_message_reference_free(msg->message_reference);
         cord_message_free(msg->referenced_message);
     }
-    log_debug("Message freed");
+    logger_debug("Message freed");
 }
 
 int cord_guild_init(cord_guild_t *g) {

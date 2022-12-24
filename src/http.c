@@ -2,6 +2,7 @@
 #include "core/log.h"
 
 #include <stdio.h>
+#include <string.h>
 #include <stdlib.h>
 #include <curl/curl.h>
 
@@ -9,13 +10,13 @@
 http_client_t *http_client_create(const char *bot_token) {
 	http_client_t *client = malloc(sizeof(http_client_t));
 	if (!client) {
-		log_error("Failed to allocate http client");	
+		logger_error("Failed to allocate http client");	
 		return NULL;
 	}
 
 	client->bot_token = strdup(bot_token);
 	if (!client->bot_token) {
-		log_error("Failed to allocate bot_token");
+		logger_error("Failed to allocate bot_token");
 		free(client);
 		return NULL;
 	}
@@ -23,7 +24,7 @@ http_client_t *http_client_create(const char *bot_token) {
 	curl_global_init(CURL_GLOBAL_ALL);
 	client->curl = curl_easy_init();
 	if (!client->curl) {
-		log_error("Failed to init curl");
+		logger_error("Failed to init curl");
 		free(client);
 		curl_global_cleanup();
 		return NULL;
@@ -62,7 +63,7 @@ struct curl_slist *discord_api_header(http_client_t *client) {
 http_request_t *http_request_create(int type, char *url, struct curl_slist *header, char *content) {	
 	http_request_t *req = malloc(sizeof(http_request_t));
 	if (!req) {
-		log_error("Failed to allocate http request");
+		logger_error("Failed to allocate http request");
 		return NULL;
 	}
 
@@ -91,7 +92,7 @@ int http_client_perform_request(http_client_t *client, http_request_t *req) {
 
 	CURLcode rc = curl_easy_perform(client->curl);
 	if (rc != CURLE_OK) {
-		log_error("HTTP Request failed: %s", curl_easy_strerror(rc));
+		logger_error("HTTP Request failed: %s", curl_easy_strerror(rc));
 	}
 	return (int)rc;
 	

@@ -1,6 +1,7 @@
 #ifndef CORD_H
 #define CORD_H
 
+#include "core/log.h"
 #include "discord.h"
 #include "events.h"
 #include "types.h"
@@ -9,7 +10,7 @@ typedef struct cord_t cord_t;
 
 typedef struct cord_t {
 	discord_t *client;
-	
+	cord_logger_t *logger;
 	on_msg_cb msg_cb;
 	void *user_data;
 } cord_t;

@@ -1,8 +1,9 @@
-#include "string.h"
+#include "strings.h"
 #include "memory.h"
 #include "typedefs.h"
 #include "util.h"
 
+#include <assert.h>
 #include <ctype.h>
 #include <string.h>
 #include <sys/types.h>
@@ -203,9 +204,9 @@ bool cord_strbuf_valid(cord_strbuf_t *builder) {
 }
 
 void cord_strbuf_append(cord_strbuf_t *builder, cord_str_t string) {
-    if (string.length > strbuf_memory_left(builder)) {
+    if ((size_t)string.length > strbuf_memory_left(builder)) {
         builder->data = realloc(builder->data, builder->capacity * STRBUF_GROWTH_FACTOR);
-        assert_that(builder->data, "Failed to realloc string buffer");
+        assert(builder->data && "Failed to realloc string buffer");
         builder->capacity *= STRBUF_GROWTH_FACTOR;
     }
 

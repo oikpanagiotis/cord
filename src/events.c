@@ -73,7 +73,7 @@ void on_message_create(discord_t *ctx, json_t *data, char *event) {
 	cord_error_t err;
 	cord_message_t *msg = cord_message_serialize(data, &err);
 	if (!msg) {
-		log_error("Failed to serialize message: %s", cord_error(err));
+		logger_error("Failed to serialize message: %s", cord_error(err));
 		return;
 	}
 

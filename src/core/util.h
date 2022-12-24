@@ -1,11 +1,11 @@
 #ifndef UTIL_H
 #define UTIL_H
 
+#include <assert.h>
 #include <stdbool.h>
 #include <jansson.h>
 
 #define array_length(arr) (sizeof(arr) / sizeof(*arr))
-#define assert_that(expr, message) (expr && message)
 
 /*
 *	
