@@ -44,7 +44,7 @@ void test_teardown(void) {
     cord_array_destroy(users);
 }
 
-void init_four_users() {
+void init_four_users(void) {
     my_user1 = cord_array_push(users);
     my_user2 = cord_array_push(users);
     my_user3 = cord_array_push(users);

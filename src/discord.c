@@ -1,4 +1,5 @@
 #include "discord.h"
+#include "core/error.h"
 #include "events.h"
 #include "types.h"
 #include "core/log.h"
@@ -11,6 +12,7 @@
 #include <jansson.h>
 #include <ev.h>
 #include <assert.h>
+#include <uwsc/config.h>
 
 static string_ptr os_name = "Linux";
 
@@ -29,7 +31,7 @@ static void load_identification_info(identification *id) {
 
 // Assumes that sequence is initialized to -1
 static bool is_valid_sequence(int s) {
-	return (s >= 0) ? true : false;
+	return s >= 0;
 }
 
 static f64 heartbeat_to_double(i32 interval) {
@@ -41,36 +43,76 @@ static f64 heartbeat_to_double(i32 interval) {
 	return decimal_d + floating_d;
 }
 
-static i32 send_heartbeat(discord_t *client) {
-	json_t *heartbeat = json_object();
-	json_object_set_new(heartbeat, PAYLOAD_KEY_OPCODE, json_integer(1));
+typedef struct json_payload_t {
+	char *json_string;
+	size_t length;
+} json_payload_t;
 
-	// Send sequence number unless we havent received one
-	if (is_valid_sequence(client->sequence)) {
-		json_object_set_new(heartbeat, PAYLOAD_KEY_DATA, json_integer(client->sequence));
-	} else {
-		json_object_set_new(heartbeat, PAYLOAD_KEY_DATA, json_null());
-	}	
-
-	char *buf = json_dumps(heartbeat, 0);
-	size_t len = strlen(buf);
-
-	i32 rc = client->ws_client->send(client->ws_client, buf, len, UWSC_OP_TEXT);
-	client->heartbeat_acknowledged = false;
-
-	free(buf);
-	json_decref(heartbeat);
-	return rc;
+static bool is_valid_json_payload(json_payload_t payload) {
+	return payload.json_string && payload.length > 0;
 }
 
-static void heartbeat_cb(struct ev_loop *loop, ev_timer *w, int revents) {
+static json_payload_t json_payload_from_json(json_t *json) {
+	char *json_string = json_dumps(json, 0);
+	if (!json_string) {
+		return (json_payload_t){ "", 0 };
+	}
+
+	size_t length = strlen(json_string);
+	return (json_payload_t){ json_string, length };
+}
+
+static void json_payload_destroy(json_payload_t payload) {
+	if (payload.json_string) {
+		free(payload.json_string);
+		payload.json_string = NULL;
+	}
+}
+
+static void send_json_payload(discord_t *client, json_payload_t payload) {
+	client->ws_client->send(client->ws_client, payload.json_string, payload.length, UWSC_OP_TEXT);
+}
+
+static json_t *heartbeat_json_object_create(i32 sequence) {
+	json_t *heartbeat_object = json_object();
+	if (!heartbeat_object) {
+		return NULL;
+	}
+	json_object_set_new(heartbeat_object, PAYLOAD_KEY_OPCODE, json_integer(1));
+
+	// Send sequence number unless we havent received one
+	json_t *sequence_object = is_valid_sequence(sequence) ? json_integer(sequence) : json_null();
+	json_object_set_new(heartbeat_object, PAYLOAD_KEY_DATA, sequence_object);
+	return heartbeat_object;
+}
+
+static void send_heartbeat(discord_t *client) {
+	json_t *heartbeat_object = heartbeat_json_object_create(client->sequence);
+	if (!heartbeat_object) {
+		log_error("Failed to create heartbeat json object");
+		return;
+	}
+
+	json_payload_t heartbeat = json_payload_from_json(heartbeat_object);
+	if (!is_valid_json_payload(heartbeat)) {
+		log_error("Failed to create json payload for heartbeat");
+		return;
+	}
+	send_json_payload(client, heartbeat);
+	client->heartbeat_acknowledged = false;
+
+	json_payload_destroy(heartbeat);
+	json_decref(heartbeat_object);
+}
+
+static void heartbeat_cb(struct ev_loop *loop, ev_timer *timer, int revents) {
 	(void)revents;
 	
-	struct uwsc_client *ws_client = w->data;
+	struct uwsc_client *ws_client = timer->data;
 	discord_t *client = ws_client->ext;
 
 	send_heartbeat(client);
-	ev_timer_again(loop, w);
+	ev_timer_again(loop, timer);
 }
 
 static void sigint_cb(struct ev_loop *loop, ev_signal *w, int revents) {

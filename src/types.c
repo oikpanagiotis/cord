@@ -907,6 +907,10 @@ static void message_json_integer_mappings(cord_message_t *message, string_ptr ke
 	map_property(message, flags, "flags", key, value);
 }
 
+static void message_json_array_mappings(cord_message_t *message, string_ptr key, json_t *array) {
+    
+}
+
 cord_message_t *cord_message_serialize(json_t *data, cord_error_t *err) {
     cord_message_t *message = malloc(sizeof(cord_message_t));
     if (!message) {

@@ -34,7 +34,7 @@ void cord_pool_destroy(cord_pool_t *pool) {
     }
 }
 
-void *alloc(cord_pool_t *pool, size_t size) {
+void *palloc(cord_pool_t *pool, size_t size) {
     if (pool->size < pool->offset + size) {
         assert(1 == 0 && "Implement resize");
         // TODO: Allocate new block
@@ -44,4 +44,20 @@ void *alloc(cord_pool_t *pool, size_t size) {
     void *new_block = (void *)(pool->data + pool->offset);
     pool->offset += size;
     return new_block;
+}
+
+cord_bump_t *cord_bump_create(void) {
+
+}
+
+cord_bump_t *cord_bump_create_with_size(size_t size) {
+
+}
+
+void cord_bump_destroy(cord_bump_t *bump) {
+
+}
+
+void *balloc(cord_bump_t *bump, size_t size) {
+    return NULL;
 }

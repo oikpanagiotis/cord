@@ -1,15 +1,16 @@
 #ifndef DISCORD_H
 #define DISCORD_H
 
+#include "sds.h"
+#include "http.h"
+#include "types.h"
+#include "core/memory.h"
+
 #include <stdbool.h>
 #include <stdlib.h>
 #include <uwsc/uwsc.h>
 #include <ev.h>
 #include <jansson.h>
-
-#include "sds.h"
-#include "http.h"
-#include "types.h"
 
 #define PAYLOAD_KEY_OPCODE "op"
 #define PAYLOAD_KEY_DATA "d"
@@ -63,11 +64,16 @@ typedef struct discord_t {
 	struct ev_signal *sigint_watcher;
 	struct ev_check *reconnect_watcher;
 
+	// Architect so we can use memory pool
+	// Implement these as bump allocators
+	cord_bump_t *persistent_allocator;
+	cord_bump_t *temporary_strings_allocator;
+
 	bool heartbeat_acknowledged;
 	bool must_reconnect;
 
-	int hb_interval;
-	int sequence;
+	i32 hb_interval;
+	i32 sequence;
 	bool sent_initial_heartbeat;
 
 	identification id;

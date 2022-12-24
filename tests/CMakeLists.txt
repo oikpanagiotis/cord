@@ -22,10 +22,15 @@ add_executable(array_tests array_tests.c)
 target_link_libraries(array_tests PUBLIC ${Libraries})
 add_test(NAME test_array COMMAND array)
 
+add_executable(allocators_tests allocators_tests.c)
+target_link_libraries(allocators_tests PUBLIC ${Libraries})
+add_test(NAME test_allocators COMMAND allocators)
+
 add_custom_target(test_all
     COMMAND ./json_tests
     COMMAND ./container_tests
     COMMAND ./array_tests
+    COMMAND ./allocators_tests
 )
 
 add_custom_target(test_report
@@ -33,4 +38,5 @@ add_custom_target(test_report
     COMMAND ./json_tests >> test_report.txt
     COMMAND ./container_tests >> test_report.txt
     COMMAND ./array_tests >> test_report.txt
+    COMMAND ./allocators_tests >> test_report.txt
 )
