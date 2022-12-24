@@ -9,6 +9,7 @@ set(Sources
     error.c
     memory.c
     util.c
+    string.c
 )
 
 add_library(core SHARED ${Sources})

@@ -4,6 +4,12 @@
 #include <stdbool.h>
 #include <jansson.h>
 
+#define array_length(arr) (sizeof(arr) / sizeof(*arr))
+#define assert_that(expr, message) (expr && message)
+
+/*
+*	
+*/
 #define map_property(obj, prop, prop_str, key, val) \
 	do { \
 		if (string_is_equal(key, prop_str)) { \

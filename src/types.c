@@ -34,14 +34,14 @@ void cord_user_init(cord_user_t *user) {
     user->public_flags = 0;
 }
 
-static void user_json_boolean_mappings(cord_user_t *author, string_ptr key, bool value) {
+static void user_json_boolean_mappings(cord_user_t *author, string_ref key, bool value) {
     map_property(author, bot, "bot", key, value);
     map_property(author, system_, "system", key, value);
     map_property(author, mfa_enabled, "mfa_enabled", key, value);
     map_property(author, verified, "varified", key, value);
 }
 
-static void user_json_string_mappings(cord_user_t *author, string_ptr key, sds value) {
+static void user_json_string_mappings(cord_user_t *author, string_ref key, sds value) {
     // map_property(author, id, "id", key, value);
     // map_property(author, username, "username", key, value);
     map_property(author, discriminator, "discriminator", key, value);
@@ -50,7 +50,7 @@ static void user_json_string_mappings(cord_user_t *author, string_ptr key, sds v
     map_property(author, email, "email", key, value);
 }
 
-static void user_json_integer_mappings(cord_user_t *author, string_ptr key, i64 value) {
+static void user_json_integer_mappings(cord_user_t *author, string_ref key, i64 value) {
     map_property(author, flags, "flags", key, value);
     map_property(author, premium_type, "premium_type", key, value);
     // map_property(author, public_flags, "public_flags", key, val);
@@ -67,7 +67,7 @@ cord_user_t *cord_user_serialize(json_t *json_user, cord_error_t *error) {
     }
 
     cord_user_init(author);
-    string_ptr key = NULL;
+    string_ref key = NULL;
     json_t *value = NULL;   
 
     json_object_foreach(json_user, key, value) {
@@ -108,14 +108,14 @@ void cord_guild_member_init(cord_guild_member_t *member) {
 }
 
 static void guild_member_json_boolean_mappings(cord_guild_member_t *member,
-                                               string_ptr key,
+                                               string_ref key,
                                                bool value) {
     map_property(member, deaf, "deaf", key, value);
     map_property(member, mute, "mute", key, value);
     map_property(member, pending, "pending", key, value);
 }
 
-static void guild_member_string_mappings(cord_guild_member_t *member, string_ptr key, sds value) {
+static void guild_member_string_mappings(cord_guild_member_t *member, string_ref key, sds value) {
     map_property(member, nick, "nick", key, value);
     map_property(member, joined_at, "joined_at", key, value);
     map_property(member, premium_since, "premium_since", key, value);
@@ -130,7 +130,7 @@ cord_guild_member_t *cord_guild_member_serialize(json_t *data, cord_error_t *err
 
     cord_guild_member_init(member);
 
-    string_ptr key = NULL;
+    string_ref key = NULL;
     json_t *value = NULL;
 
     json_object_foreach(data, key, value) {
@@ -202,7 +202,7 @@ cord_role_t *cord_role_serialize(json_t *data, cord_error_t *err) {
     
     cord_role_init(role);
 
-    string_ptr key = NULL;
+    string_ref key = NULL;
     json_t *value = NULL;
 
     json_object_foreach(data, key, value) {
@@ -248,7 +248,7 @@ cord_channel_mention_t *cord_channel_mention_serialize(json_t *data, cord_error_
 
     cord_channel_mention_init(mention);
 
-    string_ptr key = NULL;
+    string_ref key = NULL;
     json_t *value = NULL;
 
     json_object_foreach(data, key, value) {
@@ -291,7 +291,7 @@ cord_attachment_t *cord_attachment_serialize(json_t *data, cord_error_t *err) {
 
     cord_attachment_init(at);
 
-    string_ptr key = NULL;
+    string_ref key = NULL;
     json_t *value = NULL;
 
     json_object_foreach(data, key, value) {
@@ -333,7 +333,7 @@ cord_embed_footer_t *cord_embed_footer_serialize(json_t *data, cord_error_t *err
 
     cord_embed_footer_init(ft);
 
-    string_ptr key = NULL;
+    string_ref key = NULL;
     json_t *value = NULL;
 
     json_object_foreach(data, key, value) {
@@ -369,7 +369,7 @@ cord_embed_image_t *cord_embed_image_serialize(json_t *data, cord_error_t *err) 
 
     cord_embed_image_init(img);
 
-    string_ptr key = NULL;
+    string_ref key = NULL;
     json_t *value = NULL;
 
     json_object_foreach(data, key, value) {
@@ -407,7 +407,7 @@ cord_embed_thumbnail_t *cord_embed_thumbnail_serialize(json_t *data, cord_error_
 
     cord_embed_thumbnail_init(tn);
 
-    string_ptr key = NULL;
+    string_ref key = NULL;
     json_t *value = NULL;
 
     json_object_foreach(data, key, value) {
@@ -444,7 +444,7 @@ cord_embed_video_t *cord_embed_video_serialize(json_t *data, cord_error_t *err) 
 
     cord_embed_video_init(evid);
 
-    string_ptr key = NULL;
+    string_ref key = NULL;
     json_t *value = NULL;
 
     json_object_foreach(data, key, value) {
@@ -478,7 +478,7 @@ cord_embed_provider_t *cord_embed_provider_serialize(json_t *data, cord_error_t 
 
     cord_embed_provider_init(epr);
 
-    string_ptr key = NULL;
+    string_ref key = NULL;
     json_t *value = NULL;
 
     json_object_foreach(data, key, value) {
@@ -512,7 +512,7 @@ cord_embed_author_t *cord_embed_author_serialize(json_t *data, cord_error_t *err
     
     cord_embed_author_init(eauth);
 
-    string_ptr key = NULL;
+    string_ref key = NULL;
     json_t *value = NULL;
 
     json_object_foreach(data, key, value) {
@@ -549,7 +549,7 @@ cord_embed_field_t *cord_embed_field_serialize(json_t *data, cord_error_t *err) 
 
     cord_embed_field_init(efield);
 
-    string_ptr key = NULL;
+    string_ref key = NULL;
     json_t *value = NULL;
 
     json_object_foreach(data, key, value) {
@@ -590,7 +590,7 @@ cord_emoji_t *cord_emoji_serialize(json_t *data, cord_error_t *err) {
 
     cord_emoji_init(emj);
 
-    string_ptr key = NULL;
+    string_ref key = NULL;
     json_t *value = NULL;
 
     json_object_foreach(data, key, value) {
@@ -653,7 +653,7 @@ cord_reaction_t *cord_reaction_serialize(json_t *data, cord_error_t *err) {
     
     cord_reaction_init(react);
 
-    string_ptr key = NULL;
+    string_ref key = NULL;
     json_t *value = NULL;
 
     json_object_foreach(data, key, value) {
@@ -697,7 +697,7 @@ cord_message_activity_t *cord_message_activity_serialize(json_t *data, cord_erro
 
     cord_message_activity_init(ma);
 
-    string_ptr key = NULL;
+    string_ref key = NULL;
     json_t *value = NULL;
 
     json_object_foreach(data, key, value) {
@@ -733,7 +733,7 @@ cord_message_application_t *cord_message_application_serialize(json_t *data, cor
 
     cord_message_application_init(app);
     
-    string_ptr key = NULL;
+    string_ref key = NULL;
     json_t *value = NULL;
 
     json_object_foreach(data, key, value) {
@@ -791,7 +791,7 @@ cord_message_reference_t *cord_message_reference_serialize(json_t *data, cord_er
 
     cord_message_reference_init(mr);
 
-    string_ptr key = NULL;
+    string_ref key = NULL;
     json_t *value = NULL;
 
     json_object_foreach(data, key, value) {
@@ -831,7 +831,7 @@ cord_message_sticker_t *cord_message_sticker_serialize(json_t *data, cord_error_
 
     cord_message_sticker_init(ms);
 
-    string_ptr key = NULL;
+    string_ref key = NULL;
     json_t *value = NULL;
 
     json_object_foreach(data, key, value) {
@@ -885,7 +885,7 @@ void cord_message_init(cord_message_t *msg) {
     msg->referenced_message = NULL;
 }
 
-static void message_json_string_mappings(cord_message_t *message, string_ptr key, sds value) {
+static void message_json_string_mappings(cord_message_t *message, string_ref key, sds value) {
     map_property(message, id, "id", key, value);
     map_property(message, channel_id, "channel_id", key, value);
     map_property(message, guild_id, "guild_id", key, value);
@@ -896,18 +896,18 @@ static void message_json_string_mappings(cord_message_t *message, string_ptr key
     map_property(message, webhook_id, "webhook_id", key, value);
 }
 
-static void message_json_bool_mappings(cord_message_t *message, string_ptr key, bool value) {
+static void message_json_bool_mappings(cord_message_t *message, string_ref key, bool value) {
     map_property(message, tts, "tts", key, value);
     map_property(message, mention_everyone, "mention_everyone", key, value);
     map_property(message, pinned, "pinned", key, value);
 }
 
-static void message_json_integer_mappings(cord_message_t *message, string_ptr key, i64 value) {
+static void message_json_integer_mappings(cord_message_t *message, string_ref key, i64 value) {
     map_property(message, type, "type", key, value);
 	map_property(message, flags, "flags", key, value);
 }
 
-static void message_json_array_mappings(cord_message_t *message, string_ptr key, json_t *array) {
+static void message_json_array_mappings(cord_message_t *message, string_ref key, json_t *array) {
     
 }
 
@@ -920,7 +920,7 @@ cord_message_t *cord_message_serialize(json_t *data, cord_error_t *err) {
 
     cord_message_init(message);
 
-	string_ptr key = NULL;
+	string_ref key = NULL;
 	json_t *value = NULL;
 	json_object_foreach(data, key, value) {
 		if (json_is_string(value)) {

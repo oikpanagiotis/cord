@@ -2,13 +2,14 @@
 #define TYPEDEFS_H
 
 #include <stdint.h>
+#include <sys/types.h>
 
 #define LIBRARY_NAME "cord"
 #define LIBRARY_VERSION "0.1.0dev"
 #define LIBRARY_REPOSITORY "github.com/oikpanagiotis/cord"
 
 // Used as a read-only reference to a C string
-typedef const char * string_ptr;
+typedef const char * string_ref;
 typedef unsigned char byte;
 
 typedef float f32;

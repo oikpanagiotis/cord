@@ -14,7 +14,7 @@
 #include <assert.h>
 #include <uwsc/config.h>
 
-static string_ptr os_name = "Linux";
+static string_ref OS_NAME = "Linux";
 
 static void load_identification_info(identification *id) {
 	id->token = getenv("CORD_APPLICATION_TOKEN");
@@ -24,7 +24,7 @@ static void load_identification_info(identification *id) {
 		exit(1);
 	}
 
-	id->os = (char *)os_name;
+	id->os = (char *)OS_NAME;
 	id->device = LIBRARY_NAME;
 	id->library = LIBRARY_NAME;
 }
