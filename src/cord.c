@@ -1,6 +1,7 @@
 #include "cord.h"
 #include "discord.h"
 #include "error.h"
+#include <jansson.h>
 #include <uwsc/uwsc.h>
 
 cord_t *cord_create(void) {

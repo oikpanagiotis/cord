@@ -179,7 +179,7 @@ cord_strbuf_t cord_strbuf_create_with_allocator(cord_bump_t *allocator) {
 
     return (cord_strbuf_t){ 
         .data = balloc(allocator, 64),
-        .length = 64,
+        .length = 0,
         .capacity = 64,
         .allocator = allocator
     };
@@ -196,6 +196,10 @@ void cord_strbuf_destroy(cord_strbuf_t *builder) {
             cord_bump_destroy(builder->allocator);
         }
     }
+}
+
+bool cord_strbuf_valid(cord_strbuf_t *builder) {
+    return builder && builder->capacity > 0;
 }
 
 void cord_strbuf_append(cord_strbuf_t *builder, cord_str_t string) {

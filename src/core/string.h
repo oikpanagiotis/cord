@@ -32,7 +32,7 @@ bool cord_str_equals_ignore_case(cord_str_t first, cord_str_t second);
 bool cord_str_contains(cord_str_t haystack, cord_str_t needle);
 
 /*
-*   Returns the substring of <string> as defined by the indices <begin>, <end> inclusive
+*   Returns substring of <string> as defined by the indices <begin> inclusive, <end> non-inclusive
 */
 cord_str_t cord_str_substring(cord_str_t string, size_t begin, size_t end);
 
@@ -69,6 +69,7 @@ typedef struct cord_strbuf_t {
 
 cord_strbuf_t cord_strbuf_create(void);
 void cord_strbuf_destroy(cord_strbuf_t *builder);
+bool cord_strbuf_valid(cord_strbuf_t *builder);
 
 /*
 *   Used to append strings to string builder. C style strings can be converted

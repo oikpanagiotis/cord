@@ -14,6 +14,3 @@ set(Sources
 add_library(http SHARED ${Sources})
 
 target_include_directories(http PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
-
-# install(TARGETS cord DESTINATION)
-# install(FILES cord.h discord.h http.h DESTINATION /usr/local/include)
