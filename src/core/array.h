@@ -1,9 +1,11 @@
 #ifndef ARRAY_H
 #define ARRAY_H
 
-#include <stdlib.h>
-
 #include "memory.h"
+
+#include <stdlib.h>
+#include <string.h>
+
 
 
 typedef struct cord_array_t {

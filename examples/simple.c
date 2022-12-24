@@ -1,9 +1,11 @@
 #include <string.h>
+#include <stdlib.h>
 #include <stdbool.h>
 #include <cord.h>
 
 // Example code for a bot application that supports polls and votes
 // The error handling code has been removed for simplicity purposes
+
 
 #define URL "wss://gateway.discord.gg/?v=6&encoding=json"
 enum {
@@ -155,7 +157,7 @@ void on_message(discord_t *client, cord_message_t *msg) {
 void simple_bot_configure(simple_bot *bot) {
     bot->on_message = simple_bot_on_message;
     bot->cord_context->client->user_data = bot;
-    cord_on_message(bot->cord_context, on_message);
+    cord_on_message(bot->cord_context, (on_msg_cb)on_message);
 }
 
 void simple_bot_start(simple_bot *bot) {

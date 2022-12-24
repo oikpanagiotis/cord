@@ -56,10 +56,6 @@ static void user_json_integer_mappings(cord_user_t *author, string_ref key, i64 
     // map_property(author, public_flags, "public_flags", key, val);
 }
 
-static void cord_user_read_from_json(cord_user_t *author, json_t *json_user) {
-
-}
-
 cord_user_t *cord_user_serialize(json_t *json_user, cord_error_t *error) {
     cord_user_t *author = malloc(sizeof(cord_user_t));
     if (!author) {
@@ -907,9 +903,9 @@ static void message_json_integer_mappings(cord_message_t *message, string_ref ke
 	map_property(message, flags, "flags", key, value);
 }
 
-static void message_json_array_mappings(cord_message_t *message, string_ref key, json_t *array) {
-    
-}
+// static void message_json_array_mappings(cord_message_t *message, string_ref key, json_t *array) {
+    // 
+// }
 
 cord_message_t *cord_message_serialize(json_t *data, cord_error_t *err) {
     cord_message_t *message = malloc(sizeof(cord_message_t));
@@ -987,51 +983,23 @@ cord_message_t *cord_message_serialize(json_t *data, cord_error_t *err) {
 }
 
 void cord_message_free(cord_message_t *msg) {
-    sdsfree(msg->id);
-    sdsfree(msg->channel_id);
-    sdsfree(msg->guild_id);
-    sdsfree(msg->nonce);
-    sdsfree(msg->content);
-    sdsfree(msg->timestamp);
-    sdsfree(msg->edited_timestamp);
-    sdsfree(msg->webhook_id);
+    if (msg) {
+        sdsfree(msg->id);
+        sdsfree(msg->channel_id);
+        sdsfree(msg->guild_id);
+        sdsfree(msg->nonce);
+        sdsfree(msg->content);
+        sdsfree(msg->timestamp);
+        sdsfree(msg->edited_timestamp);
+        sdsfree(msg->webhook_id);
     
-    cord_user_free(msg->author);
-    cord_guild_member_free(msg->member);
-    cord_message_activity_free(msg->activity);
-    cord_message_application_free(msg->application);
-    cord_message_reference_free(msg->message_reference);
-    cord_message_free(msg->referenced_message);
-    
-    // for (int i = 0; i < msg->_mentions_count; i++) {
-        // cord_user_free(msg->mentions[i]);
-    // }
-// 
-    // for (int i = 0; i < msg->_mention_roles_count; i++) {
-        // cord_role_free(msg->mention_roles[i]);
-    // }
-// 
-    // for (int i = 0; i < msg->_mention_channels_count; i++) {
-        // cord_channel_mention_free(msg->mention_channels[i]);
-    // }
-// 
-    // for (int i = 0; i < msg->_attachments_count; i++) {
-        // cord_attachment_free(msg->attachments[i]);
-    // }
-// 
-    // for (int i = 0; i < msg->_embeds_count; i++) {
-        // cord_embed_free(msg->embeds[i]);
-    // }
-// 
-    // for (int i = 0; i < msg->_reactions_count; i++) {
-        // cord_reaction_free(msg->reactions[i]);
-    // }
-
-    // for (int i = 0; i < msg->_stickers_count; i++) {
-        // cord_message_sticker_free(cord_array_get(msg->stickers, i));
-    // }
-    // cord_array_destroy(msg->stickers);
-    //free(msg);
+        cord_user_free(msg->author);
+        cord_guild_member_free(msg->member);
+        cord_message_activity_free(msg->activity);
+        cord_message_application_free(msg->application);
+        cord_message_reference_free(msg->message_reference);
+        cord_message_free(msg->referenced_message);
+    }
     log_debug("Message freed");
 }
 
