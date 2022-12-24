@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+
 cord_array_t *cord_array_create(cord_bump_t *allocator, size_t element_size) {
     cord_array_t *arr = balloc(allocator, sizeof(cord_array_t));
     if (!arr) {

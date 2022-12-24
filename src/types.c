@@ -8,8 +8,6 @@
 
 #include <jansson.h>
 #include <assert.h>
-#include <string.h>
-
 
 static void *store_error(cord_error_t *error, cord_error_t code) {
     if (error) {

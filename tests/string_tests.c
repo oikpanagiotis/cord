@@ -1,7 +1,7 @@
 #include "minunit.h"
 
-#include "../core/string.h"
-#include "typedefs.h"
+#include "../src/core/string.h"
+#include "../src/core/typedefs.h"
 
 #include <string.h>
 #include <stdbool.h>

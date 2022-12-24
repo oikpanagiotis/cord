@@ -1,11 +1,10 @@
 cmake_minimum_required(VERSION 3.10)
 
-project(cord C)
+project(cord)
 
 # Transition to C11
-
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra -ggdb -fsanitize=undefined")
 
 add_subdirectory(src)
 add_subdirectory(tests)
-add_subdirectory(examples)
+# add_subdirectory(examples)

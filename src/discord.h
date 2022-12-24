@@ -45,7 +45,7 @@ enum {
 };
 
 typedef struct discord_t discord_t;
-typedef void (*on_msg)(discord_t *disc, cord_message_t *msg);
+typedef void (*on_msg_cb)(discord_t *disc, cord_message_t *msg);
 
 typedef struct discord_event_t {
 	int type;
@@ -54,7 +54,7 @@ typedef struct discord_event_t {
 } discord_event_t;
 
 typedef struct cord_gateway_event_callbacks_t {
-	on_msg on_message;
+	on_msg_cb on_message;
 } cord_gateway_event_callbacks_t;
 
 typedef struct discord_t {

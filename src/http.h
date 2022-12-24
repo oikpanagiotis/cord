@@ -23,7 +23,6 @@ typedef struct http_request_t {
 } http_request_t;
 
 http_request_t *http_request_create(int type, char *url, struct curl_slist *header, char *content);
-
 http_client_t *http_client_create(const char *bot_token);
 void http_client_destroy(http_client_t *client);
 struct curl_slist *discord_api_header(http_client_t *client);

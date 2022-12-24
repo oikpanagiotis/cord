@@ -65,7 +65,28 @@ typedef struct cord_strbuf_t {
     size_t length;
     size_t capacity;
     cord_bump_t *allocator;
-} cord_strbuf_t;
+} cord_strbuf_t; // TODO!!! Use this to build a json payload builder with an api that is imperative
+// example
+/*
+    json_payload_t payload = NULL;
+    json_payload_write_string(json_payload_t *payload, cord_str_t key, cord_str_t value);
+    json_payload_write_number(json_payload_t *payload, cord_str_t key, i64 value);
+    json_payload_write_boolean(json_payload_t *payload, cord_str_t key, bool value);
+    json_payload_write_array(json_payload_t *payload, cord_str_t key, T type, cord_array_t *array);
+    json_payload_write_object(json_payload_t *payload, cord_str_t key, json_t *object);
+    json_payload_write_null(json_payload_t *payload);
+
+
+    Domain specific functions use the json_payload_writer_t struct and form their own high level
+    
+    struct json_payload_writer_t {
+        json_payload_t *payload;
+        cord_bump_t *allocator;
+    }
+
+    json_payload_t *payload_from_cord_message(json_payload_writer_t *writer, cord_message_t *message);
+    json_payload_t *payload_from_cord_user(cord_message_t *message);
+*/
 
 cord_strbuf_t cord_strbuf_create(void);
 void cord_strbuf_destroy(cord_strbuf_t *builder);

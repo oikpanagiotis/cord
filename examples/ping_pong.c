@@ -7,7 +7,7 @@ void on_message(discord_t *disc, cord_message_t *msg) {
 		// Allocate a response
 		cord_message_t *response = malloc(sizeof(cord_message_t));
 		response->channel_id = calloc(1, 256);
-		strcpy(response->channel_id, msg->channel_id);
+		strcpy((char*)response->channel_id, (char*)msg->channel_id);
 
 		// Write & send the message
 		discord_message_set_content(response, "Pong!");

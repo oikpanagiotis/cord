@@ -7,8 +7,6 @@
 
 typedef struct cord_t cord_t;
 
-typedef void (*on_msg_cb)(cord_t *client, cord_message_t *message);
-
 typedef struct cord_t {
 	discord_t *client;
 	
