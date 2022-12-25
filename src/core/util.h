@@ -7,9 +7,9 @@
 
 #define array_length(arr) (sizeof(arr) / sizeof(*arr))
 
-/*
-*	
-*/
+/**
+ *	Utility macro to set a struct field value using the field name as key
+ */
 #define map_property(obj, prop, prop_str, key, val) \
 	do { \
 		if (string_is_equal(key, prop_str)) { \

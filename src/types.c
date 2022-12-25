@@ -32,14 +32,14 @@ void cord_user_init(cord_user_t *user) {
     user->public_flags = 0;
 }
 
-static void user_json_boolean_mappings(cord_user_t *author, string_ref key, bool value) {
+static void user_read_boolean_json_field(cord_user_t *author, string_ref key, bool value) {
     map_property(author, bot, "bot", key, value);
     map_property(author, system_, "system", key, value);
     map_property(author, mfa_enabled, "mfa_enabled", key, value);
     map_property(author, verified, "varified", key, value);
 }
 
-static void user_json_string_mappings(cord_user_t *author, string_ref key, sds value) {
+static void user_read_string_json_field(cord_user_t *author, string_ref key, sds value) {
     // map_property(author, id, "id", key, value);
     // map_property(author, username, "username", key, value);
     map_property(author, discriminator, "discriminator", key, value);
@@ -48,7 +48,7 @@ static void user_json_string_mappings(cord_user_t *author, string_ref key, sds v
     map_property(author, email, "email", key, value);
 }
 
-static void user_json_integer_mappings(cord_user_t *author, string_ref key, i64 value) {
+static void user_read_integer_json_field(cord_user_t *author, string_ref key, i64 value) {
     map_property(author, flags, "flags", key, value);
     map_property(author, premium_type, "premium_type", key, value);
     // map_property(author, public_flags, "public_flags", key, val);
@@ -67,13 +67,13 @@ cord_user_t *cord_user_serialize(json_t *json_user, cord_error_t *error) {
     json_object_foreach(json_user, key, value) {
         if (json_is_string(value)) {
             sds value_copy = sdsnew(json_string_value(value));
-            user_json_string_mappings(author, key, value_copy);
+            user_read_string_json_field(author, key, value_copy);
         } else if (json_is_boolean(value)) {
             bool value_copy = json_boolean_value(value);
-            user_json_boolean_mappings(author, key, value_copy);
+            user_read_boolean_json_field(author, key, value_copy);
         } else if (json_is_integer(value)) {
             i64 value_copy = (i64)json_integer_value(value);
-            user_json_integer_mappings(author, key, value_copy);
+            user_read_integer_json_field(author, key, value_copy);
         }
     }
 
