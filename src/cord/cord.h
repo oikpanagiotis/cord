@@ -1,15 +1,19 @@
 #ifndef CORD_H
 #define CORD_H
 
-#include "core/log.h"
-#include "discord.h"
-#include "events.h"
-#include "types.h"
+#include "../core/log.h"
+#include "../core/memory.h"
+#include "../discord/client.h"
+#include "../discord/events.h"
+#include "../discord/types.h"
+#include "../http/http.h"
+
 
 typedef struct cord_t cord_t;
 
 typedef struct cord_t {
-	discord_t *client;
+	cord_client_t *gateway_client;
+	cord_http_client_t *http_client;
 	cord_logger_t *logger;
 	on_msg_cb msg_cb;
 	void *user_data;

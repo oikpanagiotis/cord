@@ -31,6 +31,10 @@ bool cord_str_equals(cord_str_t first, cord_str_t second) {
     return true;
 }
 
+bool cord_str_equals_cstring(cord_str_t first, const char *second) {
+    return (second) ? cord_str_equals(first, cstr(second)) : false;
+}
+
 bool cord_str_equals_ignore_case(cord_str_t first, cord_str_t second) {
     if (first.length != second.length) {
         return false;
@@ -166,27 +170,31 @@ static void copy_str_to_buffer(void *buffer, cord_str_t string) {
 }
 
 
-#define INVALID_STRBUF (cord_strbuf_t){NULL, 0, 0, NULL}
 #define STRBUF_GROWTH_FACTOR 2
 
 static size_t strbuf_memory_left(cord_strbuf_t *builder) {
     return builder->capacity - builder->length;
 }
 
-cord_strbuf_t cord_strbuf_create_with_allocator(cord_bump_t *allocator) {
+cord_strbuf_t *cord_strbuf_create_with_allocator(cord_bump_t *allocator) {
     if (!allocator) {
-        return INVALID_STRBUF;
+        return NULL;
     }
 
-    return (cord_strbuf_t){ 
-        .data = balloc(allocator, 64),
-        .length = 0,
-        .capacity = 64,
-        .allocator = allocator
-    };
+    cord_strbuf_t *builder = balloc(allocator, sizeof(cord_strbuf_t));
+    if (!builder) {
+        return NULL;
+    }
+
+    builder->data = balloc(allocator, 64);
+    builder->length = 0;
+    builder->capacity = 64;
+    builder->allocator = allocator;
+    
+    return builder;
 }
 
-cord_strbuf_t cord_strbuf_create(void) {
+cord_strbuf_t *cord_strbuf_create(void) {
     cord_bump_t *allocator = cord_bump_create_with_size(64);
     return cord_strbuf_create_with_allocator(allocator);
 }
@@ -201,6 +209,16 @@ void cord_strbuf_destroy(cord_strbuf_t *builder) {
 
 bool cord_strbuf_valid(cord_strbuf_t *builder) {
     return builder && builder->capacity > 0;
+}
+
+bool cord_strbuf_empty(cord_strbuf_t *builder) {
+    return cord_strbuf_valid(builder) && builder->length == 0;
+}
+
+cord_strbuf_t *cord_strbuf_from_cstring(const char *cstring) {
+    cord_strbuf_t *builder = cord_strbuf_create();
+    cord_strbuf_append(builder, cstr(cstring));
+    return builder;
 }
 
 void cord_strbuf_append(cord_strbuf_t *builder, cord_str_t string) {

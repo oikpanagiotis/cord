@@ -1,10 +1,9 @@
-#ifndef DISCORD_H
-#define DISCORD_H
+#ifndef CLIENT_H
+#define CLIENT_H
 
-#include "sds.h"
-#include "http.h"
 #include "types.h"
-#include "core/memory.h"
+#include "../http/http.h"
+#include "../core/memory.h"
 
 #include <stdbool.h>
 #include <stdlib.h>
@@ -44,12 +43,12 @@ enum {
 	ACTION_COUNT
 };
 
-typedef struct discord_t discord_t;
-typedef void (*on_msg_cb)(discord_t *disc, cord_message_t *msg);
+typedef struct cord_client_t cord_client_t;
+typedef void (*on_msg_cb)(cord_client_t *disc, cord_message_t *msg);
 
 typedef struct discord_event_t {
 	int type;
-	sds token;
+	char *token;
 	int token_length;
 } discord_event_t;
 
@@ -57,7 +56,7 @@ typedef struct cord_gateway_event_callbacks_t {
 	on_msg_cb on_message;
 } cord_gateway_event_callbacks_t;
 
-typedef struct discord_t {
+typedef struct cord_client_t {
 	struct uwsc_client *ws_client;
 	struct ev_loop *loop;
 	struct ev_timer *hb_watcher;
@@ -67,6 +66,7 @@ typedef struct discord_t {
 	// Architect so we can use memory pool
 	// Implement these as bump allocators
 	cord_bump_t *persistent_allocator;
+	cord_bump_t *message_allocator;
 	cord_bump_t *temporary_strings_allocator;
 
 	bool heartbeat_acknowledged;
@@ -77,22 +77,22 @@ typedef struct discord_t {
 	bool sent_initial_heartbeat;
 
 	identification id;
-	http_client_t *http;
+	cord_http_client_t *http;
 
 	cord_gateway_event_callbacks_t event_callbacks;
 
 	void *user_data;
-} discord_t;
+} cord_client_t;
 
-discord_t *discord_create(void);
+cord_client_t *discord_create(void);
 // do these need to be in a header file?
-int discord_connect(discord_t *disc, const char *url);
-void discord_destroy(discord_t *disc);
+int discord_connect(cord_client_t *disc, const char *url);
+void discord_destroy(cord_client_t *disc);
 
 cord_message_t *message_from_json(json_t *data);
 
-int discord_send_message(discord_t *disc, cord_message_t *msg);
-void discord_message_set_content(cord_message_t *msg, sds content);
+int discord_send_message(cord_client_t *disc, cord_message_t *msg);
+void discord_message_set_content(cord_message_t *msg, char *content);
 void discord_message_set_content_c(cord_message_t *msg, char *content);
 void discord_message_destroy(cord_message_t *msg);
 

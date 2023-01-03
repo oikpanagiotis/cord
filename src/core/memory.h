@@ -54,8 +54,25 @@ cord_bump_t *cord_bump_create(void);
 cord_bump_t *cord_bump_create_with_size(size_t size);
 void cord_bump_destroy(cord_bump_t *bump);
 void cord_bump_clear(cord_bump_t *bump);
+void cord_bump_pop(cord_bump_t *bump, size_t size);
 size_t cord_bump_remaining_memory(cord_bump_t *bump);
 void *balloc(cord_bump_t *bump, size_t size);
 
+/*
+*   Bump memory allocator wrapper for allocating/freeing short-lived objects
+*
+*   Used to mark the start and end memory index of an allocator so after the
+*   operations are performed the temp memory allocated can be poped like in
+*   a stack. It's backed by a bump allocator that provides and owns the actual
+*   memory.
+*
+*/
+typedef struct cord_temp_memory_t {
+    size_t allocated;
+    cord_bump_t *allocator;
+} cord_temp_memory_t;
+
+cord_temp_memory_t cord_temp_memory_start(cord_bump_t *bump);
+void cord_temp_memory_end(cord_temp_memory_t temp_memory);
 
 #endif

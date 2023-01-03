@@ -1,16 +1,16 @@
 #include "events.h"
-#include "discord.h"
+#include "client.h"
 #include "types.h"
-#include "core/util.h"
-#include "core/log.h"
-#include "core/error.h"
+#include "../core/util.h"
+#include "../core/log.h"
+#include "../core/errors.h"
 
 #include <assert.h>
 
 /*
 *  Dictionary of all the possible events as documented in Discord Gateway API
 */
-static cord_gateway_event_t receiving_events[] = {
+static cord_gateway_event_t gateway_events[] = {
 	{ "CHANNEL_CREATE", NULL },
 	{ "CHANNEL_UPDATE", NULL },
 	{ "CHANNEL_DELETE", NULL },
@@ -42,7 +42,7 @@ static cord_gateway_event_t receiving_events[] = {
 };
 
 cord_gateway_event_t *get_all_gateway_events(void) {
-    return receiving_events;
+    return gateway_events;
 }
 
 bool event_has_handler(cord_gateway_event_t *event) {
@@ -66,20 +66,29 @@ cord_gateway_event_t *get_gateway_event(cord_gateway_event_t *events, char *key)
 	return NULL;
 }
 
-void on_message_create(discord_t *ctx, json_t *data, char *event) {
-	(void)ctx;
+static void init_message_lifecycle_allocator(cord_client_t *client) {
+	cord_bump_t *allocator = cord_bump_create_with_size(KB(1));
+	client->message_allocator = allocator;
+}
+
+static void free_message_lifecycle_allocator(cord_client_t *client) {
+	cord_bump_destroy(client->message_allocator);
+	client->message_allocator = NULL;
+}
+
+void on_message_create(cord_client_t *client, json_t *data, char *event) {
+	(void)client;
 	(void)event;
 
-	cord_error_t err;
-	cord_message_t *msg = cord_message_serialize(data, &err);
-	if (!msg) {
-		logger_error("Failed to serialize message: %s", cord_error(err));
+	init_message_lifecycle_allocator(client);
+	cord_serialize_result_t message = cord_message_serialize(data, client->message_allocator);
+	if (message.error) {
+		logger_error("Failed to serialize message: %s", cord_error(message.error));
 		return;
 	}
 
 	// Make sure we didn't corrupt the heap
-	assert(msg);
-	ctx->event_callbacks.on_message(ctx, msg);
-	// BUG: Fix initialization function so cord_message_free doesnt crash on NULL
-	// cord_message_free(msg);
+	// assert(msg);
+	client->event_callbacks.on_message(client, message.obj);
+	free_message_lifecycle_allocator(client);
 }

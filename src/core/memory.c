@@ -65,7 +65,7 @@ cord_bump_t *cord_bump_create_with_size(size_t size) {
 }
 
 cord_bump_t *cord_bump_create(void) {
-    const size_t INITIAL_SIZE = 4096;
+    const size_t INITIAL_SIZE = 512;
     return cord_bump_create_with_size(INITIAL_SIZE);
 }
 
@@ -82,6 +82,11 @@ void cord_bump_clear(cord_bump_t *bump) {
     bump->used = 0;
 }
 
+void cord_bump_pop(cord_bump_t *bump, size_t size) {
+    size_t safe_size = (bump->used - size  >= 0) ? size : bump->used;
+    bump->used -= safe_size;
+}
+
 size_t cord_bump_remaining_memory(cord_bump_t *bump) {
     return bump->capacity - bump->used;
 }
@@ -96,4 +101,16 @@ void *balloc(cord_bump_t *bump, size_t size) {
     intptr_t *block = (intptr_t *)bump->data + (intptr_t)bump->used;
     bump->used += size;
     return (void *)block;
+}
+
+cord_temp_memory_t cord_temp_memory_start(cord_bump_t *bump) {
+    return (cord_temp_memory_t){
+        .allocator = bump,
+        .allocated = 0
+    };
+}
+
+void cord_temp_memory_end(cord_temp_memory_t temp_memory) {
+    cord_bump_t *bump = temp_memory.allocator;
+    cord_bump_pop(bump, temp_memory.allocated);
 }

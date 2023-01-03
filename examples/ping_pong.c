@@ -2,7 +2,7 @@
 #include <string.h>
 #include <cord.h>
 
-void on_message(discord_t *disc, cord_message_t *msg) {
+void on_message(cord_client_t *disc, cord_message_t *msg) {
 	if (strcmp(msg->content, "ping") == 0) {
 		// Allocate a response
 		cord_message_t *response = malloc(sizeof(cord_message_t));

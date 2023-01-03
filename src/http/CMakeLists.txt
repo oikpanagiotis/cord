@@ -5,12 +5,15 @@ cmake_minimum_required(VERSION 3.10)
 
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra -ggdb -fsanitize=undefined")
 set(Sources
-    error.c
-    util.c
-    array.c
-    memory.c
+    http.c
+)
+
+set(Libraries
+    curl
 )
 
 add_library(http SHARED ${Sources})
+
+target_link_libraries(http PUBLIC ${Libraries})
 
 target_include_directories(http PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})

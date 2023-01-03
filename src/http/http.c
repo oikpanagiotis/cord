@@ -1,5 +1,5 @@
 #include "http.h"
-#include "core/log.h"
+#include "../core/log.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -7,8 +7,8 @@
 #include <curl/curl.h>
 
 
-http_client_t *http_client_create(const char *bot_token) {
-	http_client_t *client = malloc(sizeof(http_client_t));
+cord_http_client_t *http_client_create(const char *bot_token) {
+	cord_http_client_t *client = malloc(sizeof(cord_http_client_t));
 	if (!client) {
 		logger_error("Failed to allocate http client");	
 		return NULL;
@@ -34,7 +34,7 @@ http_client_t *http_client_create(const char *bot_token) {
 	return client;
 }
 
-void http_client_destroy(http_client_t *client) {
+void http_client_destroy(cord_http_client_t *client) {
 	if (client) {
 		if (client->curl) {
 			curl_easy_cleanup(client->curl);
@@ -47,7 +47,7 @@ void http_client_destroy(http_client_t *client) {
 	curl_global_cleanup();
 }
 
-struct curl_slist *discord_api_header(http_client_t *client) {
+struct curl_slist *discord_api_header(cord_http_client_t *client) {
 	struct curl_slist *list = NULL;
 	char auth[256] = {0};
 	snprintf(auth, 256, "Authorization: Bot %s", client->bot_token); 
@@ -75,7 +75,7 @@ http_request_t *http_request_create(int type, char *url, struct curl_slist *head
 }
 
 
-int http_client_perform_request(http_client_t *client, http_request_t *req) {
+int http_client_perform_request(cord_http_client_t *client, http_request_t *req) {
 	char req_type[6] = {0};
 	if (req->type == HTTP_GET) {
 		strcpy(req_type, "GET");
