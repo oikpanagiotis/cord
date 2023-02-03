@@ -1,9 +1,5 @@
 cmake_minimum_required(VERSION 3.10)
 
-set(Sources
-    cord.c
-)
-
 set(Libraries
     crypto
     ev
@@ -20,10 +16,6 @@ add_subdirectory(cord)
 add_subdirectory(core)
 add_subdirectory(discord)
 add_subdirectory(http)
-
-add_library(cord SHARED ${Sources})
-
-target_link_libraries(cord PUBLIC ${Libraries})
 
 target_include_directories(cord PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}

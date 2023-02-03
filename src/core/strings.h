@@ -84,5 +84,9 @@ void cord_strbuf_append(cord_strbuf_t *builder, cord_str_t string);
 cord_strbuf_t *cord_strbuf_create_with_allocator(cord_bump_t *allocator);
 cord_str_t cord_strbuf_to_str(cord_strbuf_t builder);
 
+// TODO: Write test for these
+char *cord_strbuf_to_cstring(cord_strbuf_t *builder);
+
+
 
 #endif

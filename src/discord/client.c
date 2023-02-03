@@ -260,8 +260,8 @@ int discord_send_message(cord_client_t *disc, cord_message_t *msg) {
 		return -1;
 	}
 
-	snprintf(final_url, URL_LEN, "%s/channels/%s/messages", DISCORD_API_URL, msg->channel_id);
-	http_request_t *req = http_request_create(HTTP_POST, final_url, discord_api_header(disc->http), msg->content.data);
+	snprintf(final_url, URL_LEN, "%s/channels/%.*s/messages", DISCORD_API_URL, msg->channel_id->data, msg->channel_id->length);
+	http_request_t *req = http_request_create(HTTP_POST, final_url, discord_api_header(disc->http), cord_strbuf_to_cstring(msg->content));
 	http_client_perform_request(disc->http, req);
 	return 0;
 }						
@@ -281,7 +281,7 @@ cord_message_t *message_from_json(json_t *data) {
 		if (json_is_string(value)) {
 			const char *str = json_string_value(value);
 			
-			cord_strbuf_t value_copy = cord_strbuf_from_cstring(str);
+			cord_strbuf_t *value_copy = cord_strbuf_from_cstring(str);
 			map_property(msg, id, "id", key, value_copy);
 			map_property(msg, content, "content", key, value_copy);
 			map_property(msg, channel_id, "channel_id", key, value_copy);

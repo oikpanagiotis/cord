@@ -239,3 +239,8 @@ cord_str_t cord_strbuf_to_str(cord_strbuf_t builder) {
         .length = builder.length
     };
 }
+
+char *cord_strbuf_to_cstring(cord_strbuf_t *builder) {
+    char *cstring = calloc(sizeof(char), sizeof(builder->length + 1));
+    return memcpy(cstring, builder->data, builder->length);
+}
