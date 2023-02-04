@@ -25,7 +25,7 @@ void on_message(cord_message_t *message) {
 }
 
 int main(void) {
-	const char *url = "wss://gateway.discord.gg/?v=6&encoding=json";
+	const char *url = "wss://gateway.discord.gg";
 	cord_t *context = cord_create();
 
 	cord_on_message(context, on_message);

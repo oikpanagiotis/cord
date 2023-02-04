@@ -74,7 +74,6 @@ static void debug_sent_payload(json_payload_t payload) {
 
 static void send_json_payload(cord_client_t *client, json_payload_t payload) {
 	client->ws_client->send(client->ws_client, payload.json_string, payload.length, UWSC_OP_TEXT);
-	debug_sent_payload(payload);
 }
 
 static json_t *heartbeat_json_object_create(i32 sequence) {
@@ -190,7 +189,7 @@ static void send_identify(struct uwsc_client *ws_client) {
 	json_object_set_new(payload, PAYLOAD_KEY_DATA, d);
 
 	json_object_set_new(d, "token", json_string(client->id.token));
-	json_object_set_new(d, "intents", json_integer(7));
+	// json_object_set_new(d, "intents", json_integer(7));
 	json_object_set_new(d, "large_threshold", json_integer(50));
 	json_object_set_new(d, "compress", json_boolean(false));
 
@@ -200,8 +199,6 @@ static void send_identify(struct uwsc_client *ws_client) {
 	json_object_set_new(properties, "os", json_string(client->id.os));
 	json_object_set_new(properties, "browser", json_string(client->id.library));
 	json_object_set_new(properties, "device", json_string(client->id.device));
-
-	debug_identify(payload);
 
 	send_to_gateway(client, payload);
 	json_decref(payload);
@@ -361,8 +358,6 @@ static void on_message(struct uwsc_client *ws_client, void *data, size_t length,
 	cord_client_t *disc = ws_client->ext;
 	json_error_t err = {0};	
 
-	logger_debug("Received message from gateway(binary?:%s): %.*s", bool_to_string(binary), length, (char *)data);
-
 	// Serialize payload
 	json_t *raw_payload = json_loadb(data, length, 0, &err);
 	if (!raw_payload) {
@@ -376,8 +371,6 @@ static void on_message(struct uwsc_client *ws_client, void *data, size_t length,
 	if (rc < 0) {
 		logger_error("Failed to parse gateway payload");
 	}
-
-	debug_payload(payload);
 
 	// When the reference count of a json object reaches decreases
 	// by one, the reference count of all it's children is also
@@ -527,7 +520,7 @@ static void check_reconnect_cb(struct ev_loop *loop, ev_check *w, int revents) {
 
 	if (client) {
 		if (client->must_reconnect) {
-			client_reconnect_to(client, "wss://gateway.discord.gg/?v=6&encoding=json");
+			client_reconnect_to(client, "wss://gateway.discord.gg");
 		}
 	}
 }

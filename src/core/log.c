@@ -72,14 +72,24 @@ static void set_date_time(char *buffer) {
         tm.tm_mday, tm.tm_mon + 1, tm.tm_year + 1900, tm.tm_hour, tm.tm_min, tm.tm_sec);
 }
 
+static void log_date_time(FILE *stream) {
+    if (stream) {
+        char date_time[24] = {0};
+        set_date_time(date_time);
+        fprintf(stream, tyellow "[" tnormal "%s" tyellow "]" tnormal , date_time);
+    }
+}
+
 void logger_info(const char *fmt, ...) {
     check_global_logger();
 
     if (g_logger->log_level >= LOG_LEVEL_INFO) {
         for (int i = 0; i < g_logger->num_streams; i++) {
             if (g_logger->verbose) {
+                log_date_time(g_logger->stream[i]);
                 fprintf(g_logger->stream[i], tblue "[ " tgreen "INFO  " tblue "]" tnormal " %s:%d: ", __FILE__, __LINE__);
             } else {
+                log_date_time(g_logger->stream[i]);
                 fprintf(g_logger->stream[i], tblue "[ " tgreen "INFO  " tblue "]" tnormal " ");
             }
             va_list args;
@@ -88,14 +98,6 @@ void logger_info(const char *fmt, ...) {
             va_end(args);
             fprintf(g_logger->stream[i], "\n");
         }
-    }
-}
-
-static void log_date_time(FILE *stream) {
-    if (stream) {
-        char date_time[24] = {0};
-        set_date_time(date_time);
-        fprintf(stream, tyellow "[" tnormal "%s" tyellow "]" tnormal , date_time);
     }
 }
 
@@ -143,8 +145,10 @@ void logger_warn(const char *fmt, ...) {
     if (g_logger->log_level >= LOG_LEVEL_ERROR) {
         for (int i = 0; i < g_logger->num_streams; i++) {
             if (g_logger->verbose) {
+                log_date_time(g_logger->stream[i]);
                 fprintf(g_logger->stream[i], tblue "[ " tyellow "WARN  " tblue "]" tnormal " %s:%d: ", __FILE__, __LINE__);
             } else {
+                log_date_time(g_logger->stream[i]);
                 fprintf(g_logger->stream[i], tblue "[ " tyellow "WARN  " tblue "]" tnormal " ");
             }
             va_list args;
@@ -161,6 +165,7 @@ void logger_error(const char *fmt, ...) {
 
     if (g_logger->log_level >= LOG_LEVEL_ERROR) {
         for (int i = 0; i < g_logger->num_streams; i++) {
+            log_date_time(g_logger->stream[i]);
             fprintf(g_logger->stream[i], tblue "[ " tred "ERROR " tblue "]" tnormal " (%s:%d): ", __FILE__, __LINE__);
             va_list args;
             va_start(args, fmt);
