@@ -68,8 +68,13 @@ static void json_payload_destroy(json_payload_t payload) {
 	}
 }
 
+static void debug_sent_payload(json_payload_t payload) {
+	logger_debug("Sent JSON payload of size(%d): %s", payload.length, payload.json_string);
+}
+
 static void send_json_payload(cord_client_t *client, json_payload_t payload) {
 	client->ws_client->send(client->ws_client, payload.json_string, payload.length, UWSC_OP_TEXT);
+	debug_sent_payload(payload);
 }
 
 static json_t *heartbeat_json_object_create(i32 sequence) {
@@ -100,6 +105,8 @@ static void send_heartbeat(cord_client_t *client) {
 	send_json_payload(client, heartbeat);
 	client->heartbeat_acknowledged = false;
 
+	logger_debug("Heartbeat");
+
 	json_payload_destroy(heartbeat);
 	json_decref(heartbeat_object);
 }
@@ -128,7 +135,7 @@ static void sigint_cb(struct ev_loop *loop, ev_signal *w, int revents) {
 
 static void on_open(struct uwsc_client *ws_client) {
 	(void)ws_client;	
-	logger_debug("Connected");
+	logger_debug("Connection established");
 }
 
 static void on_heartbeat(struct uwsc_client *ws_client, json_t *data) {
@@ -145,7 +152,7 @@ static void on_heartbeat(struct uwsc_client *ws_client, json_t *data) {
 	send_heartbeat(client);
 
 	if (!client->sent_initial_heartbeat) {
-		logger_debug("Sending initial heartbeat");
+		logger_debug("Sent initial heartbeat");
 		client->sent_initial_heartbeat = true;
 		
 		struct ev_timer *timer_watcher = malloc(sizeof(struct ev_timer));
@@ -160,34 +167,44 @@ static void on_heartbeat(struct uwsc_client *ws_client, json_t *data) {
 }
 
 static int send_to_gateway(cord_client_t *client, json_t *payload) {
-	char *buf = json_dumps(payload, 0);
-	int len = strlen(buf);
-	int rc = client->ws_client->send(client->ws_client, buf, len, UWSC_OP_TEXT);
-	free(buf);
-	json_decref(payload);
+	char *buffer = json_dumps(payload, 0);
+	size_t length = strlen(buffer);
+	int rc = client->ws_client->send(client->ws_client, buffer, length, UWSC_OP_TEXT);
+	free(buffer);
 	return rc;
+}
+
+static void debug_identify(json_t *payload) {
+	char *debug_dump = json_dumps(payload, 0);
+	logger_debug("Sending identify payload: %s", debug_dump);
+	free(debug_dump);
 }
 
 static void send_identify(struct uwsc_client *ws_client) {
 	cord_client_t *client = ws_client->ext;
 
-	logger_debug("Identifying");
 	json_t *payload = json_object();
-	json_object_set_new(payload, PAYLOAD_KEY_OPCODE, json_integer(2));
+	json_object_set_new(payload, PAYLOAD_KEY_OPCODE, json_integer(OP_IDENTIFY));
 	
 	json_t *d = json_object();
+	json_object_set_new(payload, PAYLOAD_KEY_DATA, d);
+
 	json_object_set_new(d, "token", json_string(client->id.token));
+	json_object_set_new(d, "intents", json_integer(7));
+	json_object_set_new(d, "large_threshold", json_integer(50));
+	json_object_set_new(d, "compress", json_boolean(false));
+
 	json_t *properties = json_object();
 	json_object_set_new(d, "properties", properties);
 
-	json_object_set_new(properties, "$os", json_string(client->id.os));
-	json_object_set_new(properties, "$browser", json_string(client->id.library));
-	json_object_set_new(properties, "$device", json_string(client->id.device));
+	json_object_set_new(properties, "os", json_string(client->id.os));
+	json_object_set_new(properties, "browser", json_string(client->id.library));
+	json_object_set_new(properties, "device", json_string(client->id.device));
 
-	json_object_set_new(payload, PAYLOAD_KEY_DATA, d);
+	debug_identify(payload);
 
 	send_to_gateway(client, payload);
-	logger_debug("Sent identify payload");
+	json_decref(payload);
 }
 
 typedef struct gateway_payload {
@@ -243,7 +260,7 @@ int parse_gatway_payload(json_t *raw_payload, gateway_payload *payload) {
 void discord_message_set_content(cord_message_t *msg, char *content) {
 	// char *json_content_template = "{\"content\": \"%s\"}";
 	// int template_len = strlen(json_content_template);
-	// int len = strlen(content);
+	// int length = strlen(content);
 
 	// FIXME: This will not work. We are not encoding the content
 
@@ -328,14 +345,26 @@ void discord_message_destroy(cord_message_t *msg) {
 	}
 }
 
-static void on_message(struct uwsc_client *ws_client, void *data, size_t len, bool binary) {
-	(void)binary;
+static void debug_payload(gateway_payload *payload) {
+	logger_debug("------------------");
+	logger_debug("  Parser Payload");
+	char *dump = json_dumps(payload->d, 0);
+	logger_debug("  d %s", dump);
+	logger_debug("  s %d", payload->s);
+	logger_debug("  t %s", payload->t);
+	logger_debug("  op %d", payload->op);
+	logger_debug("------------------");
+	free(dump);
+}
 
+static void on_message(struct uwsc_client *ws_client, void *data, size_t length, bool binary) {
 	cord_client_t *disc = ws_client->ext;
-
 	json_error_t err = {0};	
+
+	logger_debug("Received message from gateway(binary?:%s): %.*s", bool_to_string(binary), length, (char *)data);
+
 	// Serialize payload
-	json_t *raw_payload = json_loadb(data, len, 0, &err);
+	json_t *raw_payload = json_loadb(data, length, 0, &err);
 	if (!raw_payload) {
 		logger_error("Failed to serialize payload: %s", err.text);
 		return;
@@ -347,6 +376,9 @@ static void on_message(struct uwsc_client *ws_client, void *data, size_t len, bo
 	if (rc < 0) {
 		logger_error("Failed to parse gateway payload");
 	}
+
+	debug_payload(payload);
+
 	// When the reference count of a json object reaches decreases
 	// by one, the reference count of all it's children is also
 	// decreased by 1, so the whole object tree can be cleaned up
@@ -397,7 +429,7 @@ static void on_message(struct uwsc_client *ws_client, void *data, size_t len, bo
 	
 	if (disc->sent_initial_heartbeat) {
 		if (disc->heartbeat_acknowledged) {
-			logger_debug("heartbeat acknowledged");
+			logger_debug("ACK");
 		} else {
 			logger_debug("Zombie");
 		}
@@ -410,15 +442,12 @@ static void on_message(struct uwsc_client *ws_client, void *data, size_t len, bo
 static void on_error(struct uwsc_client *ws_client, int err, const char *msg) {
 	(void)ws_client;
 
-	logger_error("Websocket error(%d): %s", err, msg);
+	logger_error("Connection error (%d): %s", err, msg);
 }
 
 static void on_close(struct uwsc_client *ws_client, int code, const char *reason) {
 	(void)ws_client;
-	(void)code;
-	(void)reason;
-
-	logger_debug("Closing connection");
+	logger_debug("Closing connection to gateway (%d): %s", code, reason);
 }
 
 cord_client_t *discord_create(void) {
@@ -472,21 +501,21 @@ static void client_init(cord_client_t *client, const char *url) {
 	client->ws_client->onmessage = on_message;
 	client->ws_client->onerror = on_error;
 	client->ws_client->onclose = on_close;
+	client->sent_initial_heartbeat = false;
+	client->must_reconnect = false;
 	// Store the wrapper client pointer to be accessed in the callbacks
 	client->ws_client->ext = client;
 }
 
 static void client_reconnect_to(cord_client_t *client, const char *url) {
+	logger_debug("Attempting to reconnect");
+
 	// Turn off timers
 	ev_timer_stop(client->loop, client->hb_watcher);
 	free(client->hb_watcher);
 	free(client->ws_client);
 	
 	client_init(client, url);
-	client->sent_initial_heartbeat = false;
-	client->must_reconnect = false;
-
-	logger_debug("Reconnecting");
 	ev_run(client->loop, 0);
 }
 
@@ -494,7 +523,7 @@ static void check_reconnect_cb(struct ev_loop *loop, ev_check *w, int revents) {
 	(void)loop;
 	(void)revents;
 	cord_client_t *client = (cord_client_t *)w->data;
-	assert(client);
+	assert(client && "Client must not be null");
 
 	if (client) {
 		if (client->must_reconnect) {
@@ -508,7 +537,7 @@ int discord_connect(cord_client_t *client, const char *url) {
 	client_init(client, url);
 	client->must_reconnect = false;
 
-	logger_debug("Connecting");
+	logger_debug("Attempting to connect to gateway");
 	struct ev_check *reconnect_watcher = malloc(sizeof(struct ev_check));
 	reconnect_watcher->data = client;
 	ev_check_init(reconnect_watcher, check_reconnect_cb);

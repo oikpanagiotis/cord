@@ -72,16 +72,6 @@ static void set_date_time(char *buffer) {
         tm.tm_mday, tm.tm_mon + 1, tm.tm_year + 1900, tm.tm_hour, tm.tm_min, tm.tm_sec);
 }
 
-static void log_message(FILE *stream, const char *fmt, ...) {
-    if (stream) {
-        va_list args;
-        va_start(args, fmt);
-        vfprintf(stream, fmt, args);
-        va_end(args);
-        fprintf(stream, "\n");
-    }
-}
-
 void logger_info(const char *fmt, ...) {
     check_global_logger();
 
@@ -92,7 +82,11 @@ void logger_info(const char *fmt, ...) {
             } else {
                 fprintf(g_logger->stream[i], tblue "[ " tgreen "INFO  " tblue "]" tnormal " ");
             }
-            log_message(g_logger->stream[i], fmt);
+            va_list args;
+            va_start(args, fmt);
+            vfprintf(g_logger->stream[i], fmt, args);
+            va_end(args);
+            fprintf(g_logger->stream[i], "\n");
         }
     }
 }
@@ -101,7 +95,7 @@ static void log_date_time(FILE *stream) {
     if (stream) {
         char date_time[24] = {0};
         set_date_time(date_time);
-        fprintf(stream, tyellow "[" tgreen "%s" tyellow "]" tnormal , date_time);
+        fprintf(stream, tyellow "[" tnormal "%s" tyellow "]" tnormal , date_time);
     }
 }
 
@@ -133,7 +127,11 @@ void logger_debug(const char *fmt, ...) {
                 log_date_time(g_logger->stream[i]);
                 log_debug_label(g_logger->stream[i]);
             }
-            log_message(g_logger->stream[i], fmt);
+            va_list args;
+            va_start(args, fmt);
+            vfprintf(g_logger->stream[i], fmt, args);
+            va_end(args);
+            fprintf(g_logger->stream[i], "\n");
         }
     }
 #endif
@@ -149,7 +147,11 @@ void logger_warn(const char *fmt, ...) {
             } else {
                 fprintf(g_logger->stream[i], tblue "[ " tyellow "WARN  " tblue "]" tnormal " ");
             }
-            log_message(g_logger->stream[i], fmt);
+            va_list args;
+            va_start(args, fmt);
+            vfprintf(g_logger->stream[i], fmt, args);
+            va_end(args);
+            fprintf(g_logger->stream[i], "\n");
         }
     }
 }
@@ -160,7 +162,11 @@ void logger_error(const char *fmt, ...) {
     if (g_logger->log_level >= LOG_LEVEL_ERROR) {
         for (int i = 0; i < g_logger->num_streams; i++) {
             fprintf(g_logger->stream[i], tblue "[ " tred "ERROR " tblue "]" tnormal " (%s:%d): ", __FILE__, __LINE__);
-            log_message(g_logger->stream[i], fmt);
+            va_list args;
+            va_start(args, fmt);
+            vfprintf(g_logger->stream[i], fmt, args);
+            va_end(args);
+            fprintf(g_logger->stream[i], "\n");
         }
     }
 }
