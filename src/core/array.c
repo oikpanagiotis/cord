@@ -2,9 +2,12 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <assert.h>
 
 
 cord_array_t *cord_array_create(cord_bump_t *allocator, size_t element_size) {
+    assert(allocator);
+    assert(element_size > 0);
     cord_array_t *arr = balloc(allocator, sizeof(cord_array_t));
     if (!arr) {
         return NULL;
@@ -17,7 +20,10 @@ cord_array_t *cord_array_create(cord_bump_t *allocator, size_t element_size) {
     const int default_capacity = 16;
     arr->capacity = default_capacity;
 
-    arr->data = balloc(allocator, element_size * arr->capacity);
+    const size_t initial_array_size = element_size * (size_t)arr->capacity;
+    arr->data = balloc(allocator, initial_array_size);
+    assert(arr->data);
+
     if (!arr->data) {
         cord_bump_destroy(allocator);
         return NULL;
@@ -53,5 +59,5 @@ void *cord_array_get(cord_array_t *arr, int index) {
 }
 
 void cord_array_destroy(cord_array_t *arr) {
-    cord_bump_destroy(arr->allocator);
+    // Free underlying arena to free the array
 }

@@ -11,22 +11,23 @@ cord_t *cord_create(void) {
 	// TODO: Move this to a global context initialization routine
 	global_logger_init();
 
-	cord_t *c = malloc(sizeof(cord_t));
-	c->gateway_client = discord_create();
-	return c;
+	cord_t *cord = malloc(sizeof(cord_t));
+	cord->gateway_client = discord_create();
+	return cord;
 }
 
-void cord_connect(cord_t *c, const char *url) {
-	discord_connect(c->gateway_client, url);
+void cord_connect(cord_t *cord, const char *url) {
+	discord_connect(cord->gateway_client, url);
 }
 
-void cord_destroy(cord_t *c) {
-	if (c) {
-		if (c->gateway_client) {
-			discord_destroy(c->gateway_client);
+void cord_destroy(cord_t *cord) {
+	if (cord) {
+		if (cord->gateway_client) {
+			discord_destroy(cord->gateway_client);
 		}
-		free(c);
+		free(cord);
 	}
+	global_logger_destroy();
 }
 
 

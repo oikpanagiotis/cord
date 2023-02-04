@@ -56,6 +56,9 @@ typedef struct discord_event_t {
 typedef struct cord_client_t {
 	struct uwsc_client *ws_client;
 	struct ev_loop *loop;
+
+	struct ev_timer *health_report_scheduler;
+
 	struct ev_timer *hb_watcher;
 	struct ev_signal *sigint_watcher;
 	struct ev_check *reconnect_watcher;
@@ -64,7 +67,7 @@ typedef struct cord_client_t {
 	// Implement these as bump allocators
 	cord_bump_t *persistent_allocator;
 	cord_bump_t *message_allocator;
-	cord_bump_t *temporary_strings_allocator;
+	cord_bump_t *temporary_allocator;
 
 	bool heartbeat_acknowledged;
 	bool must_reconnect;

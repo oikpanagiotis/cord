@@ -48,6 +48,8 @@ void *palloc(cord_pool_t *pool, size_t size) {
 }
 
 cord_bump_t *cord_bump_create_with_size(size_t size) {
+    assert(size > 0 && "size must be a positive integer");
+
     cord_bump_t *bump = malloc(sizeof(cord_bump_t));
     if (!bump) {
         return NULL;
@@ -93,14 +95,17 @@ size_t cord_bump_remaining_memory(cord_bump_t *bump) {
 
 void *balloc(cord_bump_t *bump, size_t size) {
     if (size > cord_bump_remaining_memory(bump)) {
-        bump->data = realloc(bump->data, bump->capacity * 2);
-        assert(bump->data && "Failed double bump allocator size");
+        void *reallocated = realloc(bump->data, bump->capacity * 2);
+        if (!reallocated) {
+            return NULL;
+        }
+        bump->data = reallocated;
         bump->capacity *= 2;
     }
 
-    intptr_t *block = (intptr_t *)bump->data + (intptr_t)bump->used;
+    void *block = bump->data + bump->used;
     bump->used += size;
-    return (void *)block;
+    return block;
 }
 
 cord_temp_memory_t cord_temp_memory_start(cord_bump_t *bump) {

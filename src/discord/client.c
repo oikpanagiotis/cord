@@ -120,16 +120,24 @@ static void heartbeat_cb(struct ev_loop *loop, ev_timer *timer, int revents) {
 	ev_timer_again(loop, timer);
 }
 
-static void sigint_cb(struct ev_loop *loop, ev_signal *w, int revents) {
+static void sigint_cb(struct ev_loop *loop, ev_signal *signal, int revents) {
 	(void)revents;
 
-	// 1. Close any open log files
-	// 2. Destroy arenas
-	// 3. Break out of the loop
+	cord_client_t *client = signal->data;
 
-	if (w->signum == SIGINT) {
+	// 1. Close any open log files
+	// ...
+
+	// 2. Destroy arenas
+	cord_bump_destroy(client->temporary_allocator);
+	cord_bump_destroy(client->message_allocator);
+	cord_bump_destroy(client->persistent_allocator);
+
+	// 3. Break out of the loop
+	if (signal->signum == SIGINT) {
 		ev_break(loop, EVBREAK_ALL);
 	}
+	ev_default_destroy();
 }
 
 static void on_open(struct uwsc_client *ws_client) {
@@ -266,7 +274,7 @@ void discord_message_set_content(cord_message_t *msg, char *content) {
 
 
 char *DISCORD_API_URL = "https://discordapp.com/api";
-int discord_send_message(cord_client_t *disc, cord_message_t *msg) {
+int discord_send_message(cord_client_t *client, cord_message_t *msg) {
 	assert(msg);
 	// TODO: Prefix the channel and ids based on our cache
 	const int URL_LEN = 1024;
@@ -277,8 +285,10 @@ int discord_send_message(cord_client_t *disc, cord_message_t *msg) {
 	}
 
 	snprintf(final_url, URL_LEN, "%s/channels/%.*s/messages", DISCORD_API_URL, (int)msg->channel_id->length, msg->channel_id->data);
-	http_request_t *req = http_request_create(HTTP_POST, final_url, discord_api_header(disc->http), cord_strbuf_to_cstring(msg->content));
-	http_client_perform_request(disc->http, req);
+	char *data = cord_strbuf_to_cstring(msg->content);
+	http_request_t *req = http_request_create(HTTP_POST, final_url, discord_api_header(client->http), data);
+	http_client_perform_request(client->http, req);
+	free(data);
 	return 0;
 }						
 
@@ -355,7 +365,7 @@ static void debug_payload(gateway_payload *payload) {
 }
 
 static void on_message(struct uwsc_client *ws_client, void *data, size_t length, bool binary) {
-	cord_client_t *disc = ws_client->ext;
+	cord_client_t *client = ws_client->ext;
 	json_error_t err = {0};	
 
 	// Serialize payload
@@ -364,7 +374,7 @@ static void on_message(struct uwsc_client *ws_client, void *data, size_t length,
 		logger_error("Failed to serialize payload: %s", err.text);
 		return;
 	}
-	gateway_payload *payload = malloc(sizeof(gateway_payload));
+	gateway_payload *payload = balloc(client->temporary_allocator, sizeof(gateway_payload));
 	gateway_payload_init(payload);	
 
 	int rc = parse_gatway_payload(raw_payload, payload);
@@ -387,7 +397,7 @@ static void on_message(struct uwsc_client *ws_client, void *data, size_t length,
 				cord_gateway_event_t *all_events = get_all_gateway_events();
 				cord_gateway_event_t *ev = get_gateway_event(all_events, event);
 				if (event_has_handler(ev)) {
-					ev->handler(disc, payload->d, event);
+					ev->handler(client, payload->d, event);
 				} else {
 					logger_warn("No handler for event(%s)", event);
 				}
@@ -399,13 +409,13 @@ static void on_message(struct uwsc_client *ws_client, void *data, size_t length,
 			break;
 		case OP_RECONNECT:
 			logger_debug("Server is requesting Reconnect");
-			disc->must_reconnect = true;
+			client->must_reconnect = true;
 			break;
 		case OP_INVALID_SESSION:
 			logger_warn("Invalid Session");
 			break;
 		case OP_HELLO:
-			if (!disc->sent_initial_heartbeat) {
+			if (!client->sent_initial_heartbeat) {
 				on_heartbeat(ws_client, payload->d);
 				send_identify(ws_client);
 			} else {
@@ -413,15 +423,15 @@ static void on_message(struct uwsc_client *ws_client, void *data, size_t length,
 			}
 			break;
 		case OP_HEARTBEAT_ACK:
-			disc->heartbeat_acknowledged = true;
+			client->heartbeat_acknowledged = true;
 			break;
 		default: // fallthrough
 			logger_error("Default switch case sentinel");
 			break;
 	}
 	
-	if (disc->sent_initial_heartbeat) {
-		if (disc->heartbeat_acknowledged) {
+	if (client->sent_initial_heartbeat) {
+		if (client->heartbeat_acknowledged) {
 			logger_debug("ACK");
 		} else {
 			logger_debug("Zombie");
@@ -429,7 +439,7 @@ static void on_message(struct uwsc_client *ws_client, void *data, size_t length,
 	}
 	
 	// json_decref(payload->d);
-	free(payload);
+	cord_bump_clear(client->temporary_allocator);
 }
 
 static void on_error(struct uwsc_client *ws_client, int err, const char *msg) {
@@ -447,30 +457,30 @@ cord_client_t *discord_create(void) {
 	identification id = {0};
 	load_identification_info(&id);
 
-	cord_client_t *disc = malloc(sizeof(cord_client_t));
-	if (!disc) {
+	cord_client_t *client = malloc(sizeof(cord_client_t));
+	if (!client) {
 		logger_error("Failed to allocate discord context");
 		return NULL;
 	}
 
-	disc->http = http_client_create(id.token);
-	if (!disc->http->bot_token) {
+	client->http = http_client_create(id.token);
+	if (!client->http->bot_token) {
 		logger_error("Failed to create bot token");
-		free(disc);
+		free(client);
 		return NULL;
 	}
 
-	if (!disc->http) {
+	if (!client->http) {
 		logger_error("Failed to create http client");
-		free(disc);
+		free(client);
 		return NULL;
 	}
-	disc->id = id;
-	disc->hb_interval = -1;
-	disc->sequence = -1;
-	disc->sent_initial_heartbeat = false;
-	disc->loop = NULL;
-	disc->must_reconnect = false;
+	client->id = id;
+	client->hb_interval = -1;
+	client->sequence = -1;
+	client->sent_initial_heartbeat = false;
+	client->loop = NULL;
+	client->must_reconnect = false;
 
 	// TODO: Refactor. Move this somewhere else
 	// Assign callbacks
@@ -478,7 +488,30 @@ cord_client_t *discord_create(void) {
 	cord_gateway_event_t *on_message_event = get_gateway_event(all_events, "MESSAGE_CREATE");
 	on_message_event->handler = on_message_create;
 
-	return disc;
+	return client;
+}
+static void report_memory(struct ev_loop *loop, ev_timer *timer, int revents) {
+	(void)loop;
+	(void)revents;
+
+	cord_client_t *client = timer->data;
+
+	logger_info("Memory Report");
+	logger_info("    Message Allocator (%ld / %ld)", client->message_allocator->used, client->message_allocator->capacity);
+	logger_info("    Temporary Allocator (%ld / %ld)", client->temporary_allocator->used, client->temporary_allocator->capacity);
+	logger_info("    Persistent Allocator (%ld / %ld)", client->persistent_allocator->used, client->persistent_allocator->capacity);
+
+	size_t total_used = client->message_allocator->used + 
+						client->temporary_allocator->used +
+						client->persistent_allocator->used;
+
+	size_t total_allocated = client->message_allocator->capacity +
+							 client->temporary_allocator->capacity +
+							 client->persistent_allocator->capacity;
+
+	logger_info("    Total Memory (%ld / %ld)", total_used, total_allocated);
+
+	ev_timer_again(loop, timer);
 }
 
 static const int ping_interval = 5;
@@ -489,6 +522,10 @@ static void client_init(cord_client_t *client, const char *url) {
 		logger_error("Failed to initialize websocket client");
 		exit(1);
 	}
+
+	client->message_allocator = cord_bump_create_with_size(KB(4));
+	client->persistent_allocator = cord_bump_create_with_size(MB(4));
+	client->temporary_allocator = cord_bump_create_with_size(MB(1));
 
 	client->ws_client->onopen = on_open;
 	client->ws_client->onmessage = on_message;
@@ -526,7 +563,7 @@ static void check_reconnect_cb(struct ev_loop *loop, ev_check *w, int revents) {
 }
 
 int discord_connect(cord_client_t *client, const char *url) {
-	client->loop = EV_DEFAULT;
+	client->loop = ev_default_loop(0);
 	client_init(client, url);
 	client->must_reconnect = false;
 
@@ -538,29 +575,37 @@ int discord_connect(cord_client_t *client, const char *url) {
 	client->reconnect_watcher = reconnect_watcher;
 
 	struct ev_signal *sigint_watcher = malloc(sizeof(struct ev_signal));
+	sigint_watcher->data = client;
 	ev_signal_init(sigint_watcher, sigint_cb, SIGINT);
 	ev_signal_start(client->loop, sigint_watcher);
 	client->sigint_watcher = sigint_watcher;
+
+
+	struct ev_timer *health_report_timer = malloc(sizeof(struct ev_timer));
+	ev_init(health_report_timer, report_memory);
+	health_report_timer->repeat = 120;
+	health_report_timer->data = client;
+	ev_timer_start(client->loop, health_report_timer);
 
 	ev_run(client->loop, 0);
 	return 0;
 }
 
-void discord_destroy(cord_client_t *disc) {
-	if (disc) {
-		if (disc->ws_client) {
-			free(disc->ws_client);
+void discord_destroy(cord_client_t *client) {
+	if (client) {
+		if (client->ws_client) {
+			free(client->ws_client);
 		}
-		if (disc->hb_watcher) {
-			free(disc->hb_watcher);
+		if (client->hb_watcher) {
+			free(client->hb_watcher);
 		}
-		if (disc->sigint_watcher) {
-			free(disc->sigint_watcher);
+		if (client->sigint_watcher) {
+			free(client->sigint_watcher);
 		}
-		if (disc->http) {
-			http_client_destroy(disc->http);
+		if (client->http) {
+			http_client_destroy(client->http);
 		}
-		free(disc);
+		free(client);
 	}
 }
 

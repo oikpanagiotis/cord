@@ -67,7 +67,7 @@ cord_gateway_event_t *get_gateway_event(cord_gateway_event_t *events, char *key)
 }
 
 static void init_message_lifecycle_allocator(cord_client_t *client) {
-	cord_bump_t *allocator = cord_bump_create_with_size(KB(1));
+	cord_bump_t *allocator = cord_bump_create_with_size(KB(2));
 	client->message_allocator = allocator;
 }
 
@@ -78,8 +78,9 @@ static void free_message_lifecycle_allocator(cord_client_t *client) {
 
 void on_message_create(cord_client_t *client, json_t *data, char *event) {
 	logger_debug("Got event: %s", event);
+	// init_message_lifecycle_allocator(client);
 
-	init_message_lifecycle_allocator(client);
+	
 
 	cord_serialize_result_t message = cord_message_serialize(data, client->message_allocator);
 	// Make sure we didn't corrupt the heap
@@ -91,5 +92,5 @@ void on_message_create(cord_client_t *client, json_t *data, char *event) {
 	}
 
 	client->event_callbacks.on_message_cb(message.obj);
-	free_message_lifecycle_allocator(client);
+	// free_message_lifecycle_allocator(client);
 }
