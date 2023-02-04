@@ -12,18 +12,21 @@ set(Libraries
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS}")
 
 add_executable(ping_pong ping_pong.c)
-add_executable(simple simple.c)
+# add_executable(simple simple.c)
 
 target_include_directories(ping_pong PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/../src/
     ${CMAKE_CURRENT_SOURCE_DIR}/../src/core
+    ${CMAKE_CURRENT_SOURCE_DIR}/../src/cord
+    ${CMAKE_CURRENT_SOURCE_DIR}/../src/discord
+    ${CMAKE_CURRENT_SOURCE_DIR}/../src/http
 )
-target_include_directories(simple PUBLIC
-    ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}/../src/
-    ${CMAKE_CURRENT_SOURCE_DIR}/../src/core
-)
+# target_include_directories(simple PUBLIC
+#     ${CMAKE_CURRENT_SOURCE_DIR}
+#     ${CMAKE_CURRENT_SOURCE_DIR}/../src/
+#     ${CMAKE_CURRENT_SOURCE_DIR}/../src/core
+# )
 
-target_link_libraries(simple PUBLIC ${Libraries})
+# target_link_libraries(simple PUBLIC ${Libraries})
 target_link_libraries(ping_pong PUBLIC ${Libraries})

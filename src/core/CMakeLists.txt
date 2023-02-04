@@ -6,7 +6,7 @@ cmake_minimum_required(VERSION 3.10)
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra -ggdb -fsanitize=undefined")
 set(Sources
     array.c
-    error.c
+    errors.c
     memory.c
     util.c
     strings.c

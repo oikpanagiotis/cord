@@ -1,4 +1,4 @@
-#include "error.h"
+#include "errors.h"
 
 typedef struct api_error {
     int type;
@@ -10,9 +10,9 @@ static api_error errors[] = {
 
     { CORD_ERR_MALLOC, "Memory allocation failed" },
     
-    { ERR_USER_SERIALIZATION, "Failed to serialize user object" },
-    { ERR_GUILD_MEMBER_SERIALIZATION, "Failed to serialize guild member object" },
-    { ERR_MSG_SERIALIZATION, "Failed to serialize message object" },
+    { CORD_ERR_USER_SERIALIZATION, "Failed to serialize user object" },
+    { CORD_ERR_GUILD_MEMBER_SERIALIZATION, "Failed to serialize guild member object" },
+    { CORD_ERR_MSG_SERIALIZATION, "Failed to serialize message object" },
 
     { CORD_ERR_EMOJI_SERIALIZATION, "Failed to serialize emoji object" },
 

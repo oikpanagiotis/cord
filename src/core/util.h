@@ -1,9 +1,12 @@
 #ifndef UTIL_H
 #define UTIL_H
 
+#include "typedefs.h"
+
 #include <assert.h>
 #include <stdbool.h>
 #include <jansson.h>
+
 
 #define array_length(arr) (sizeof(arr) / sizeof(*arr))
 
@@ -20,6 +23,9 @@
 
 bool string_is_empty(const char *s);
 bool string_is_equal(const char *s1, const char *s2);
+bool string_is_null_or_empty(const char *string);
+bool is_posix_error(i32 code);
+const char *bool_to_string(bool value);
 
 
 #endif

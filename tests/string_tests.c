@@ -102,8 +102,8 @@ MU_TEST(test_cord_str_pop_first_split) {
 
 MU_TEST(test_cord_strbuf_create) {
     cord_bump_t *allocator = cord_bump_create_with_size(16);
-    cord_strbuf_t builder = cord_strbuf_create_with_allocator(allocator);
-    bool result = cord_strbuf_valid(&builder);
+    cord_strbuf_t *builder = cord_strbuf_create_with_allocator(allocator);
+    bool result = cord_strbuf_valid(builder);
     bool expected = true;
     mu_assert(result == expected, "After creation string builder should not be null");
     
@@ -116,16 +116,16 @@ MU_TEST(test_cord_strbuf_append) {
     cord_str_t expected1 = cstr("Hello");
     cord_str_t expected2 = cstr("Hello world");
     cord_bump_t *allocator = cord_bump_create_with_size(16);
-    cord_strbuf_t builder = cord_strbuf_create_with_allocator(allocator);
+    cord_strbuf_t *builder = cord_strbuf_create_with_allocator(allocator);
     
-    cord_strbuf_append(&builder, cstr("Hello"));
-    cord_str_t result_string = cord_strbuf_to_str(builder);
+    cord_strbuf_append(builder, cstr("Hello"));
+    cord_str_t result_string = cord_strbuf_to_str(*builder);
     mu_assert(cord_str_equals(result_string, expected1),
             "Converting string builder to string view should result in \"Hello\"");
     
-    cord_strbuf_append(&builder, cstr(" "));
-    cord_strbuf_append(&builder, cstr("world"));
-    result_string = cord_strbuf_to_str(builder);
+    cord_strbuf_append(builder, cstr(" "));
+    cord_strbuf_append(builder, cstr("world"));
+    result_string = cord_strbuf_to_str(*builder);
     
     mu_assert_int_eq(expected2.length, result_string.length);
     mu_assert(cord_str_equals(result_string, expected2),
@@ -135,10 +135,10 @@ MU_TEST(test_cord_strbuf_append) {
 MU_TEST(test_cord_strbuf_to_str) {
     cord_str_t expected = cstr("Hello");
 
-    cord_strbuf_t builder = cord_strbuf_create();
-    cord_strbuf_append(&builder, cstr("Hello"));
+    cord_strbuf_t *builder = cord_strbuf_create();
+    cord_strbuf_append(builder, cstr("Hello"));
 
-    cord_str_t string = cord_strbuf_to_str(builder);
+    cord_str_t string = cord_strbuf_to_str(*builder);
     mu_assert_int_eq(expected.length, string.length);
     mu_assert(cord_str_equals(string, expected),
             "Converting string builder to string view should result in \"Hello\"");

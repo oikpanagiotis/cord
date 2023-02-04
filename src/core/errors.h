@@ -1,5 +1,5 @@
-#ifndef ERROR_H
-#define ERROR_H
+#ifndef ERRORS_H
+#define ERRORS_H
 
 // Library's API return values
 typedef enum cord_error_t {
@@ -10,9 +10,9 @@ typedef enum cord_error_t {
     CORD_ERR_MALLOC,
 
     // Object serialization errors
-    ERR_USER_SERIALIZATION,
-    ERR_GUILD_MEMBER_SERIALIZATION,
-    ERR_MSG_SERIALIZATION,
+    CORD_ERR_USER_SERIALIZATION,
+    CORD_ERR_GUILD_MEMBER_SERIALIZATION,
+    CORD_ERR_MSG_SERIALIZATION,
 
     CORD_ERR_EMOJI_SERIALIZATION,
 
