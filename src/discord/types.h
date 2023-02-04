@@ -20,6 +20,18 @@
 	} \
 
 
+#define map_property_object(object, property, property_str, key, value, allocator, type, serialize) \
+	if (string_is_equal(key, property_str)) { \
+		cord_serialize_result_t __result = serialize(value, allocator); \
+		if (has_serialization_error(__result)) { \
+			logger_error("Failed to serialize " #type ": %s", cord_error(__result.error)); \
+			continue; \
+		} \
+		object->property = __result.obj; \
+	} \
+
+
+
 typedef enum cord_discord_channel_type_t {
 	DISCORD_CHANNEL_GUILD_TEXT,
 	DISCORD_CHANNEL_DM,
@@ -62,12 +74,6 @@ typedef struct cord_serialize_result_t {
 } cord_serialize_result_t;
 
 bool cord_serialize_result_is_valid(cord_serialize_result_t result);
-
-typedef struct cord_gateway_entity_t {
-	void (*init)(void *entity, cord_bump_t *allocator);
-	void *(*serialize)(json_t *data, cord_error_t *err);
-} cord_gateway_entity_t;
-
 
 // https://discord.com/developers/docs/resources/user#user-object
 typedef struct cord_user_t {
@@ -290,28 +296,34 @@ typedef struct cord_emoji_t {
 	bool managed;
 	bool animated;
 	bool available;
+
+	cord_bump_t *allocator;
 } cord_emoji_t;
 
 void cord_emoji_init(cord_emoji_t *emoji, cord_bump_t *allocator);
-cord_emoji_t *cord_emoji_serialize(json_t *data, cord_error_t *err);
+cord_serialize_result_t cord_emoji_serialize(json_t *data, cord_bump_t *allocator);
 
 typedef struct cord_reaction_t {
 	i32 count;
 	bool me;
 	cord_emoji_t *emoji;
+
+	cord_bump_t *allocator;
 } cord_reaction_t;
 
 void cord_reaction_init(cord_reaction_t *reactio, cord_bump_t *allocator);
-cord_reaction_t *cord_reaction_serialize(json_t *data, cord_error_t *err);
+cord_serialize_result_t cord_reaction_serialize(json_t *data, cord_bump_t *allocator);
 
 // (Message Activity) - https://discord.com/developers/docs/resources/channel#message-object-message-activity-structure
 typedef struct cord_message_activity_t {
 	i32 type;
 	cord_strbuf_t *party_id;
+
+	cord_bump_t *allocator;
 } cord_message_activity_t;
 
 void cord_message_activity_init(cord_message_activity_t *mactivity, cord_bump_t *allocator);
-cord_message_activity_t *cord_message_activity_serialize(json_t *data, cord_error_t *err);
+cord_serialize_result_t cord_message_activity_serialize(json_t *data, cord_bump_t *allocator);
 
 // (Message Application) - https://discord.com/developers/docs/resources/channel#message-object-message-application-structure
 typedef struct cord_message_application_t {
@@ -347,16 +359,15 @@ typedef struct cord_message_sticker_t {
 	cord_strbuf_t *asset;
 	cord_strbuf_t *preview_asset;
 	i32 format_type;
+
+	cord_bump_t *allocator;
 } cord_message_sticker_t;
 
 void cord_message_sticker_init(cord_message_sticker_t *msticker, cord_bump_t *allocator);
-cord_message_sticker_t *cord_message_sticker_serialize(json_t *data, cord_error_t *err);
+cord_serialize_result_t cord_message_sticker_serialize(json_t *data, cord_bump_t *allocator);
 
 // (Message) - https://discord.com/developers/docs/resources/channel#message-object
 typedef struct cord_message_t {
-	// TODO: Consider this inheritance style approach
-	// cord_gateway_entity_t header;
-
 	cord_strbuf_t *id;
 	cord_strbuf_t *channel_id;
 	cord_strbuf_t *guild_id;
@@ -406,9 +417,11 @@ typedef struct cord_guild_t {
 	cord_strbuf_t *icon;
 	cord_strbuf_t *splash;
 	cord_strbuf_t *discovery_splash;
+
+	cord_bump_t *allocator;
 } cord_guild_t;
 
-int cord_guild_init(cord_guild_t *guild, cord_bump_t *allocator);
-int cord_guild_serialize(cord_guild_t *g, json_t *data);
+void cord_guild_init(cord_guild_t *guild, cord_bump_t *allocator);
+cord_serialize_result_t cord_guild_serialize(json_t *data, cord_bump_t *allocator);
 
 #endif
