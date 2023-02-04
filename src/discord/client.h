@@ -43,18 +43,15 @@ enum {
 	ACTION_COUNT
 };
 
-typedef struct cord_client_t cord_client_t;
-typedef void (*on_msg_cb)(cord_client_t *disc, cord_message_t *msg);
+typedef struct cord_gateway_event_callbacks_t {
+	void(*on_message_cb)(cord_message_t *message);
+} cord_gateway_event_callbacks_t;
 
 typedef struct discord_event_t {
 	int type;
 	char *token;
 	int token_length;
 } discord_event_t;
-
-typedef struct cord_gateway_event_callbacks_t {
-	on_msg_cb on_message;
-} cord_gateway_event_callbacks_t;
 
 typedef struct cord_client_t {
 	struct uwsc_client *ws_client;

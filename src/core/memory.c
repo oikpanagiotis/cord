@@ -83,7 +83,7 @@ void cord_bump_clear(cord_bump_t *bump) {
 }
 
 void cord_bump_pop(cord_bump_t *bump, size_t size) {
-    size_t safe_size = (bump->used - size  >= 0) ? size : bump->used;
+    size_t safe_size = (size > bump->used) ? bump->used : size;
     bump->used -= safe_size;
 }
 

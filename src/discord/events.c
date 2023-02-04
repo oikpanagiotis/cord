@@ -77,19 +77,19 @@ static void free_message_lifecycle_allocator(cord_client_t *client) {
 }
 
 void on_message_create(cord_client_t *client, json_t *data, char *event) {
-	(void)client;
-	(void)event;
+	logger_debug("Got event: %s", event);
 
 	init_message_lifecycle_allocator(client);
 
 	cord_serialize_result_t message = cord_message_serialize(data, client->message_allocator);
+	// Make sure we didn't corrupt the heap
+	assert(message.obj);
+
 	if (message.error) {
 		logger_error("Failed to serialize message: %s", cord_error(message.error));
 		return;
 	}
 
-	// Make sure we didn't corrupt the heap
-	// assert(msg);
-	client->event_callbacks.on_message(client, message.obj);
+	client->event_callbacks.on_message_cb(message.obj);
 	free_message_lifecycle_allocator(client);
 }

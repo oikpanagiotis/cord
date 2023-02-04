@@ -2,17 +2,25 @@
 #include <string.h>
 #include <cord.h>
 
-void on_message(cord_client_t *disc, cord_message_t *msg) {
-	if (strcmp(msg->content, "ping") == 0) {
+static char *get_message_content(cord_message_t *message) {
+	return cord_strbuf_to_cstring(message->content);
+}
+
+static bool string_equals(const char *s1, const char *s2) {
+	return strcmp(s1, s2) == 0;
+}
+
+void on_message(cord_message_t *message) {
+	if (string_equals(get_message_content(message), "ping")) {
 		// Allocate a response
-		cord_message_t *response = malloc(sizeof(cord_message_t));
-		response->channel_id = calloc(1, 256);
-		strcpy((char*)response->channel_id, (char*)msg->channel_id);
+		// cord_message_t *response = malloc(sizeof(cord_message_t));
+		// response->channel_id = calloc(1, 256);
+		// strcpy((char*)response->channel_id, (char*)msg->channel_id);
 
 		// Write & send the message
-		discord_message_set_content(response, "Pong!");
-		discord_send_message(disc, response);
-		discord_message_destroy(response);
+		// discord_message_set_content(response, "Pong!");
+		// discord_send_message(disc, response);
+		// discord_message_destroy(response);
 	}
 }
 

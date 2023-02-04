@@ -352,8 +352,8 @@ cord_serialize_result_t cord_channel_mention_serialize(json_t *json_mention, cor
         if (json_is_string(value)) {
             string_ref cstring = json_string_value(value);
             channel_mention_strings(mention, key, cstring);
-        } else if (json_is_number(value)) {
-            i64 number = json_number_value(json_mention);
+        } else if (json_is_integer(value)) {
+            i64 number = json_integer_value(json_mention);
             channel_mention_numbers(mention, key, number);
         }
     }

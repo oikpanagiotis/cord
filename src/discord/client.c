@@ -241,11 +241,13 @@ int parse_gatway_payload(json_t *raw_payload, gateway_payload *payload) {
 }
 
 void discord_message_set_content(cord_message_t *msg, char *content) {
-	char *json_content_template = "{\"content\": \"%s\"}";
-	int template_len = strlen(json_content_template);
+	// char *json_content_template = "{\"content\": \"%s\"}";
+	// int template_len = strlen(json_content_template);
+	// int len = strlen(content);
 
-	int len = strlen(content);
-	cord_strbuf_append(&msg->content, cstr(content));
+	// FIXME: This will not work. We are not encoding the content
+
+	cord_strbuf_append(msg->content, cstr(content));
 }
 
 
@@ -260,7 +262,7 @@ int discord_send_message(cord_client_t *disc, cord_message_t *msg) {
 		return -1;
 	}
 
-	snprintf(final_url, URL_LEN, "%s/channels/%.*s/messages", DISCORD_API_URL, msg->channel_id->data, msg->channel_id->length);
+	snprintf(final_url, URL_LEN, "%s/channels/%.*s/messages", DISCORD_API_URL, (int)msg->channel_id->length, msg->channel_id->data);
 	http_request_t *req = http_request_create(HTTP_POST, final_url, discord_api_header(disc->http), cord_strbuf_to_cstring(msg->content));
 	http_client_perform_request(disc->http, req);
 	return 0;

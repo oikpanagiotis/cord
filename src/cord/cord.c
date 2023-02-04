@@ -30,6 +30,6 @@ void cord_destroy(cord_t *c) {
 }
 
 
-void cord_on_message(cord_t *c, on_msg_cb func) {
-	c->gateway_client->event_callbacks.on_message = func;
+void cord_on_message(cord_t *cord, void(*on_message_cb)(cord_message_t *message)) {
+	cord->gateway_client->event_callbacks.on_message_cb = on_message_cb;
 }
