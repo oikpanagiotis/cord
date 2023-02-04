@@ -11,8 +11,8 @@
 /*
 *   String view structure
 *
-*   This is is an allocation-free string that performs every operation
-*   by changing the length field and where the data pointer points.
+*   This is is an allocation-free string view structure that performs
+*   every operation by changing the length field and where the data pointer points.
 *   It will never attempty to overwrite the underlying memory.
 *
 */

@@ -9,6 +9,17 @@
 #include <jansson.h>
 
 
+#define map_property_object_collectible(object, property, property_str, key, value, allocator, type, serialize) \
+	if (string_is_equal(key, property_str)) { \
+		cord_serialize_result_t __result = serialize(value, allocator, NULL); \
+		if (has_serialization_error(__result)) { \
+			logger_error("Failed to serialize " #type ": %s", cord_error(__result.error)); \
+			continue; \
+		} \
+		object->property = __result.obj; \
+	} \
+
+
 typedef enum cord_discord_channel_type_t {
 	DISCORD_CHANNEL_GUILD_TEXT,
 	DISCORD_CHANNEL_DM,
@@ -147,27 +158,31 @@ cord_serialize_result_t cord_channel_mention_serialize(json_t *data, cord_bump_t
 
 // https://discord.com/developers/docs/resources/channel#attachment-object
 typedef struct cord_attachment_t {
-	cord_strbuf_t id;
-	cord_strbuf_t filename;
-	int size;
-	cord_strbuf_t url;
-	cord_strbuf_t proxy_url;
-	int height;
-	int width;
+	cord_strbuf_t *id;
+	cord_strbuf_t *filename;
+	i32 size;
+	cord_strbuf_t *url;
+	cord_strbuf_t *proxy_url;
+	i32 height;
+	i32 width;
+
+	cord_bump_t *allocator;
 } cord_attachment_t;
 
 void cord_attachment_init(cord_attachment_t *attachment, cord_bump_t *allocator);
-cord_attachment_t *cord_attachment_serialize(json_t *data, cord_error_t *err);
+cord_serialize_result_t cord_attachment_serialize(json_t *data, cord_bump_t *allocator);
 
 // https://discord.com/developers/docs/resources/channel#embed-object-embed-footer-structure
 typedef struct cord_embed_footer_t {
 	cord_strbuf_t *text;
 	cord_strbuf_t *icon_url;
 	cord_strbuf_t *proxy_icon_url;
+
+	cord_bump_t *allocator;
 } cord_embed_footer_t;
 
 void cord_embed_footer_init(cord_embed_footer_t *efooter, cord_bump_t *allocator);
-cord_embed_footer_t *cord_embed_footer_serialize(json_t *data, cord_error_t *err);
+cord_serialize_result_t cord_embed_footer_serialize(json_t *data, cord_bump_t *allocator, cord_embed_footer_t *array_slot);
 
 // https://discord.com/developers/docs/resources/channel#embed-object-embed-image-structure
 typedef struct cord_embed_image_t {
@@ -175,10 +190,12 @@ typedef struct cord_embed_image_t {
 	cord_strbuf_t *proxy_url;
 	i32 height;
 	i32 width;
+
+	cord_bump_t *allocator;
 } cord_embed_image_t;
 
 void cord_embed_image_init(cord_embed_image_t *eimage, cord_bump_t *allocator);
-cord_embed_image_t *cord_embed_image_serialize(json_t *data, cord_error_t *err);
+cord_serialize_result_t cord_embed_image_serialize(json_t *data, cord_bump_t *allocator, cord_embed_image_t *array_slot);
 
 // https://discord.com/developers/docs/resources/channel#embed-object-embed-thumbnail-structure
 typedef struct cord_embed_thumbnail_t {
@@ -186,29 +203,35 @@ typedef struct cord_embed_thumbnail_t {
 	cord_strbuf_t *proxy_url;
 	i32 height;
 	i32 width;
+
+	cord_bump_t *allocator;
 } cord_embed_thumbnail_t;
 
 void cord_embed_thumbnail_init(cord_embed_thumbnail_t *ethumbnail, cord_bump_t *allocator);
-cord_embed_thumbnail_t *cord_embed_thumbnail_serialize(json_t *data, cord_error_t *err);
+cord_serialize_result_t cord_embed_thumbnail_serialize(json_t *data, cord_bump_t *allocator, cord_embed_thumbnail_t *array_slot);
 
 // https://discord.com/developers/docs/resources/channel#embed-object-embed-video-structure
 typedef struct cord_embed_video_t {
 	cord_strbuf_t *url;
 	i32 height;
 	i32 width;
+
+	cord_bump_t *allocator;
 } cord_embed_video_t;
 
 void cord_embed_video_init(cord_embed_video_t *evideo, cord_bump_t *allocator);
-cord_embed_video_t *cord_embed_video_serialize(json_t *data, cord_error_t *err);
+cord_serialize_result_t cord_embed_video_serialize(json_t *data, cord_bump_t *allocator, cord_embed_video_t *array_slot);
 
 // https://discord.com/developers/docs/resources/channel#embed-object-embed-provider-structure
 typedef struct cord_embed_provider_t {
 	cord_strbuf_t *name;
 	cord_strbuf_t *url;
+
+	cord_bump_t *allocator;
 } cord_embed_provider_t;
 
 void cord_embed_provider_init(cord_embed_provider_t *eprovider, cord_bump_t *allocator);
-cord_embed_provider_t *cord_embed_provider_serialize(json_t *data, cord_error_t *err);
+cord_serialize_result_t cord_embed_provider_serialize(json_t *data, cord_bump_t *allocator, cord_embed_provider_t *array_slot);
 
 // https://discord.com/developers/docs/resources/channel#embed-object-embed-author-structure
 typedef struct cord_embed_author_t {
@@ -216,28 +239,32 @@ typedef struct cord_embed_author_t {
 	cord_strbuf_t *url;
 	cord_strbuf_t *icon_url;
 	cord_strbuf_t *proxy_icon_url;
+
+	cord_bump_t *allocator;
 } cord_embed_author_t;
 
 void cord_embed_author_init(cord_embed_author_t *eauthor, cord_bump_t *allocator);
-cord_embed_author_t *cord_embed_author_serialize(json_t *data, cord_error_t *err);
+cord_serialize_result_t cord_embed_author_serialize(json_t *data, cord_bump_t *allocator, cord_embed_author_t *array_slot);
 
 // https://discord.com/developers/docs/resources/channel#embed-object-embed-field-structure
 typedef struct cord_embed_field_t {
 	cord_strbuf_t *name;
 	cord_strbuf_t *value;
 	bool inline_;
+
+	cord_bump_t *allocator;
 } cord_embed_field_t;
 
 void cord_embed_field_init(cord_embed_field_t *efield, cord_bump_t *allocator);
-cord_embed_field_t *cord_embed_field_serialize(json_t *data, cord_error_t *err);
+cord_serialize_result_t cord_embed_field_serialize(json_t *data, cord_bump_t *allocator, cord_embed_field_t *array_slot);
 
 // https://discord.com/developers/docs/resources/channel#embed-object
 typedef struct cord_embed_t {
-	cord_strbuf_t* title;
-	cord_strbuf_t* type;
-	cord_strbuf_t* description;
-	cord_strbuf_t* url;
-	cord_strbuf_t* timestamp;
+	cord_strbuf_t *title;
+	cord_strbuf_t *type;
+	cord_strbuf_t *description;
+	cord_strbuf_t *url;
+	cord_strbuf_t *timestamp;
 	i32 color;
 	cord_embed_footer_t *footer;
 	cord_embed_image_t *image;
@@ -245,12 +272,13 @@ typedef struct cord_embed_t {
 	cord_embed_video_t *video;
 	cord_embed_provider_t *provider;
 	cord_embed_author_t *author;
+	cord_array_t *fields; // cord_embed_field_t[]
 
-	cord_array_t *fields; // cord_embed_fields[]
+	cord_bump_t *allocator;
 } cord_embed_t;
 
-// int cord_embed_init(cord_embed_t *emb, cord_bump_t *allocator);
-// int cord_embed_serialize(json_t *emb, json_t *data);
+void cord_embed_init(cord_embed_t *emb, cord_bump_t *allocator);
+cord_serialize_result_t cord_embed_serialize(json_t *data, cord_bump_t *allocator);
 
 // (Emoji) - https://discord.com/developers/docs/resources/emoji#emoji-object
 typedef struct cord_emoji_t {
