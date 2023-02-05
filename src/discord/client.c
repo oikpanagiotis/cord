@@ -497,19 +497,17 @@ static void report_memory(struct ev_loop *loop, ev_timer *timer, int revents) {
 	cord_client_t *client = timer->data;
 
 	logger_info("Memory Report");
-	logger_info("    Message Allocator (%ld / %ld)", client->message_allocator->used, client->message_allocator->capacity);
-	logger_info("    Temporary Allocator (%ld / %ld)", client->temporary_allocator->used, client->temporary_allocator->capacity);
-	logger_info("    Persistent Allocator (%ld / %ld)", client->persistent_allocator->used, client->persistent_allocator->capacity);
+	f64 message_allocator_used = (f64)client->message_allocator->used / (1024 * 1024);
+	f64 temporary_allocator_used = (f64)client->temporary_allocator->used / (1024 * 1024);
+	f64 persistent_allocator_used = (f64)client->persistent_allocator->used / (1024 * 1024);
 
-	size_t total_used = client->message_allocator->used + 
-						client->temporary_allocator->used +
-						client->persistent_allocator->used;
+	f64 message_allocator_capacity = (f64)client->message_allocator->capacity / (1024 * 1024);
+	f64 temporary_allocator_capacity = (f64)client->temporary_allocator->capacity / (1024 * 1024);
+	f64 persistent_allocator_capacity = (f64)client->persistent_allocator->capacity / (1024 * 1024);
 
-	size_t total_allocated = client->message_allocator->capacity +
-							 client->temporary_allocator->capacity +
-							 client->persistent_allocator->capacity;
-
-	logger_info("    Total Memory (%ld / %ld)", total_used, total_allocated);
+	logger_info("    Message Allocator (%.2f / %.2f)MB", message_allocator_used, message_allocator_capacity);
+	logger_info("    Temporary Allocator (%.2f / %.2f)MB", temporary_allocator_used, temporary_allocator_capacity);
+	logger_info("    Persistent Allocator (%.2f / %.2f)MB", persistent_allocator_used, persistent_allocator_capacity);
 
 	ev_timer_again(loop, timer);
 }
