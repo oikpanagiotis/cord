@@ -9,7 +9,7 @@
 #define LIBRARY_REPOSITORY "github.com/oikpanagiotis/cord"
 
 // Used as a read-only reference to a C string
-typedef const char * string_ref;
+typedef const char *string_ref;
 typedef unsigned char byte;
 
 typedef float f32;

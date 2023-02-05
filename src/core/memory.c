@@ -80,9 +80,7 @@ void cord_bump_destroy(cord_bump_t *bump) {
     }
 }
 
-void cord_bump_clear(cord_bump_t *bump) {
-    bump->used = 0;
-}
+void cord_bump_clear(cord_bump_t *bump) { bump->used = 0; }
 
 void cord_bump_pop(cord_bump_t *bump, size_t size) {
     size_t safe_size = (size > bump->used) ? bump->used : size;
@@ -109,10 +107,7 @@ void *balloc(cord_bump_t *bump, size_t size) {
 }
 
 cord_temp_memory_t cord_temp_memory_start(cord_bump_t *bump) {
-    return (cord_temp_memory_t){
-        .allocator = bump,
-        .allocated = 0
-    };
+    return (cord_temp_memory_t){.allocator = bump, .allocated = 0};
 }
 
 void cord_temp_memory_end(cord_temp_memory_t temp_memory) {

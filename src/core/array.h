@@ -6,8 +6,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-
-
 typedef struct cord_array_t {
     u8 *data;
     u32 capacity;

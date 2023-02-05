@@ -1,9 +1,8 @@
 #include "array.h"
 
+#include <assert.h>
 #include <stdlib.h>
 #include <string.h>
-#include <assert.h>
-
 
 cord_array_t *cord_array_create(cord_bump_t *allocator, size_t element_size) {
     assert(allocator);
@@ -41,11 +40,13 @@ void *cord_array_push(cord_array_t *array) {
         }
 
         array->capacity *= 2;
-        memcpy(new_array, current_array, array->num_elements * array->element_size);
+        memcpy(new_array, current_array,
+               array->num_elements * array->element_size);
         array->data = new_array;
     }
 
-    void *new_element = array->data + (array->element_size * array->num_elements);
+    void *new_element =
+        array->data + (array->element_size * array->num_elements);
     array->num_elements++;
     return new_element;
 }

@@ -1,15 +1,15 @@
 #ifndef CLIENT_H
 #define CLIENT_H
 
-#include "types.h"
-#include "../http/http.h"
 #include "../core/memory.h"
+#include "../http/http.h"
+#include "types.h"
 
+#include <ev.h>
+#include <jansson.h>
 #include <stdbool.h>
 #include <stdlib.h>
 #include <uwsc/uwsc.h>
-#include <ev.h>
-#include <jansson.h>
 
 #define PAYLOAD_KEY_OPCODE "op"
 #define PAYLOAD_KEY_DATA "d"
@@ -30,58 +30,58 @@
 
 // Load these from enviroment variables
 typedef struct identification {
-	char *token;
-	char *os;
-	char *library;
-	char *device;
+    char *token;
+    char *os;
+    char *library;
+    char *device;
 } identification;
 
 enum {
-	ACTION_NONE,
-	ACTION_SEND_MESSAGE,
+    ACTION_NONE,
+    ACTION_SEND_MESSAGE,
 
-	ACTION_COUNT
+    ACTION_COUNT
 };
 
 typedef struct cord_gateway_event_callbacks_t {
-	void(*on_message_cb)(cord_message_t *message);
+    void (*on_message_cb)(cord_message_t *message);
 } cord_gateway_event_callbacks_t;
 
 typedef struct discord_event_t {
-	int type;
-	char *token;
-	int token_length;
+    int type;
+    char *token;
+    int token_length;
 } discord_event_t;
 
 typedef struct cord_client_t {
-	struct uwsc_client *ws_client;
-	struct ev_loop *loop;
+    struct uwsc_client *ws_client;
+    struct ev_loop *loop;
 
-	struct ev_timer *health_report_scheduler;
+    struct ev_timer *health_report_scheduler;
 
-	struct ev_timer *hb_watcher;
-	struct ev_signal *sigint_watcher;
-	struct ev_check *reconnect_watcher;
+    struct ev_timer *hb_watcher;
+    struct ev_signal *sigint_watcher;
+    struct ev_check *reconnect_watcher;
 
-	// Architect so we can use memory pool
-	// Implement these as bump allocators
-	cord_bump_t *persistent_allocator;
-	cord_bump_t *message_allocator;
-	cord_bump_t *temporary_allocator;
+    // Architect so we can use memory pool
+    // Implement these as bump allocators
+    cord_bump_t *persistent_allocator;
+    cord_bump_t *message_allocator;
+    cord_bump_t *temporary_allocator;
 
-	bool heartbeat_acknowledged;
-	bool must_reconnect;
+    bool heartbeat_acknowledged;
+    bool must_reconnect;
 
-	i32 hb_interval;
-	i32 sequence;
-	bool sent_initial_heartbeat;
+    i32 hb_interval;
+    i32 sequence;
+    bool sent_initial_heartbeat;
 
-	identification id;
-	cord_http_client_t *http;
+    identification id;
+    cord_http_client_t *http;
 
-	cord_gateway_event_callbacks_t event_callbacks;
+    cord_gateway_event_callbacks_t event_callbacks;
 
-	void *user_data;
+    void *user_data;
 } cord_client_t;
 
 cord_client_t *discord_create(void);
@@ -98,10 +98,10 @@ void discord_message_destroy(cord_message_t *msg);
 
 // Events
 enum {
-	CHANNEL_CREATE,
-	MESSAGE_CREATE,
+    CHANNEL_CREATE,
+    MESSAGE_CREATE,
 
-	EVENT_COUNT
+    EVENT_COUNT
 };
 
 #endif

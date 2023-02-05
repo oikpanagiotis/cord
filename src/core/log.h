@@ -4,16 +4,19 @@
 #include "typedefs.h"
 
 #include <stdarg.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <stdbool.h>
 
-// Warning: GCC only to retrieve the filename
+// GCC only to retrieve the filename
 #ifndef __FILENAME__
-#define __FILENAME__ (__builtin_strrchr(__FILE__, '/') ? __builtin_strrchr(__FILE__, '/') + 1 : __FILE__)
+#define __FILENAME__                                                           \
+    (__builtin_strrchr(__FILE__, '/') ? __builtin_strrchr(__FILE__, '/') + 1   \
+                                      : __FILE__)
 #endif
 
-// TODO: Add support for logger_get(name) so we can log the module that produces the log
+// TODO: Add support for logger_get(name) so we can log the module that produces
+// the log
 
 #define MAX_LOGGER_OUTPUT_STREAMS 8
 
@@ -43,6 +46,5 @@ void logger_info(const char *fmt, ...);
 void logger_debug(const char *fmt, ...);
 void logger_warn(const char *fmt, ...);
 void logger_error(const char *fmt, ...);
-
 
 #endif

@@ -8,7 +8,6 @@
 #include <string.h>
 #include <sys/types.h>
 
-
 cord_str_t cstr(string_ref string) {
     size_t length = strlen(string);
     return (cord_str_t){(char *)string, length};
@@ -59,7 +58,7 @@ bool cord_str_contains(cord_str_t haystack, cord_str_t needle) {
         if (matched_chars == needle.length) {
             return true;
         }
-        
+
         if ((haystack.data[i] == needle.data[0]) && needle_index == -1) {
             needle_index = 0;
             matched_chars++;
@@ -82,7 +81,7 @@ cord_str_t cord_str_substring(cord_str_t string, size_t start, size_t end) {
 }
 
 cord_str_t cord_str_trim(cord_str_t string) {
-    string_ref trimmable[] =  {"\n", "\t", "\r", " "};
+    string_ref trimmable[] = {"\n", "\t", "\r", " "};
     cord_str_t clean = string;
     for (u32 i = 0; i < 4; i++) {
         clean = cord_str_remove_prefix(clean, cstr(trimmable[i]));
@@ -92,7 +91,8 @@ cord_str_t cord_str_trim(cord_str_t string) {
 }
 
 cord_str_t cord_str_remove_prefix(cord_str_t string, cord_str_t prefix) {
-    if ((string.data[0] != prefix.data[0]) || (string.length <= prefix.length)) {
+    if ((string.data[0] != prefix.data[0]) ||
+        (string.length <= prefix.length)) {
         return string;
     }
     ssize_t index = 0;
@@ -101,18 +101,21 @@ cord_str_t cord_str_remove_prefix(cord_str_t string, cord_str_t prefix) {
     }
 
     ssize_t offset = (index == prefix.length) ? index : 0;
-    cord_str_t clean = (cord_str_t){string.data + offset, string.length - offset};
+    cord_str_t clean =
+        (cord_str_t){string.data + offset, string.length - offset};
     return cord_str_remove_prefix(clean, prefix);
 }
 
 cord_str_t cord_str_remove_suffix(cord_str_t string, cord_str_t suffix) {
-    if ((string.data[string.length - 1] != suffix.data[suffix.length - 1]) || (string.length <= suffix.length)) {
+    if ((string.data[string.length - 1] != suffix.data[suffix.length - 1]) ||
+        (string.length <= suffix.length)) {
         return string;
     }
 
     ssize_t matches = 0;
     for (ssize_t i = 0; i < suffix.length; i++) {
-        if (string.data[string.length - i - 1] == suffix.data[suffix.length - i - 1]) {
+        if (string.data[string.length - i - 1] ==
+            suffix.data[suffix.length - i - 1]) {
             matches++;
         }
     }
@@ -157,9 +160,7 @@ cord_str_t cord_str_pop_first_split(cord_str_t *string, cord_str_t split_by) {
     return first_split;
 }
 
-char cord_str_first_char(cord_str_t string) {
-    return string.data[0];
-}
+char cord_str_first_char(cord_str_t string) { return string.data[0]; }
 
 char cord_str_last_char(cord_str_t string) {
     return string.data[string.length - 1];
@@ -168,7 +169,6 @@ char cord_str_last_char(cord_str_t string) {
 static void copy_str_to_buffer(void *buffer, cord_str_t string) {
     memcpy(buffer, string.data, string.length);
 }
-
 
 #define STRBUF_GROWTH_FACTOR 2
 
@@ -190,7 +190,7 @@ cord_strbuf_t *cord_strbuf_create_with_allocator(cord_bump_t *allocator) {
     builder->length = 0;
     builder->capacity = 64;
     builder->allocator = allocator;
-    
+
     return builder;
 }
 
@@ -223,7 +223,9 @@ cord_strbuf_t *cord_strbuf_from_cstring(const char *cstring) {
 
 void cord_strbuf_append(cord_strbuf_t *builder, cord_str_t string) {
     if ((size_t)string.length > strbuf_memory_left(builder)) {
-        builder->data = realloc(builder->data, builder->capacity * STRBUF_GROWTH_FACTOR);
+        builder->data =
+            realloc(builder->data, builder->capacity * STRBUF_GROWTH_FACTOR);
+
         assert(builder->data && "Failed to realloc string buffer");
         builder->capacity *= STRBUF_GROWTH_FACTOR;
     }
@@ -234,10 +236,7 @@ void cord_strbuf_append(cord_strbuf_t *builder, cord_str_t string) {
 }
 
 cord_str_t cord_strbuf_to_str(cord_strbuf_t builder) {
-    return (cord_str_t){
-        .data = builder.data,
-        .length = builder.length
-    };
+    return (cord_str_t){.data = builder.data, .length = builder.length};
 }
 
 char *cord_strbuf_to_cstring(cord_strbuf_t *builder) {
