@@ -7,14 +7,19 @@
 #include <stdbool.h>
 
 
+static cord_bump_t *allocator = NULL;
+
 static inline bool streq(const char *s1, const char *s2) {
     return (strcmp(s1, s2) == 0);
 }
 
 void test_setup(void) {
+    allocator = cord_bump_create_with_size(KB(16));
 }
 
 void test_teardown(void) {
+    cord_bump_destroy(allocator);
+    allocator = NULL;
 }
 
 
@@ -101,7 +106,6 @@ MU_TEST(test_cord_str_pop_first_split) {
 */
 
 MU_TEST(test_cord_strbuf_create) {
-    cord_bump_t *allocator = cord_bump_create_with_size(16);
     cord_strbuf_t *builder = cord_strbuf_create_with_allocator(allocator);
     bool result = cord_strbuf_valid(builder);
     bool expected = true;
@@ -115,7 +119,6 @@ MU_TEST(test_cord_strbuf_create) {
 MU_TEST(test_cord_strbuf_append) {
     cord_str_t expected1 = cstr("Hello");
     cord_str_t expected2 = cstr("Hello world");
-    cord_bump_t *allocator = cord_bump_create_with_size(16);
     cord_strbuf_t *builder = cord_strbuf_create_with_allocator(allocator);
     
     cord_strbuf_append(builder, cstr("Hello"));

@@ -269,12 +269,6 @@ int parse_gatway_payload(json_t *raw_payload, gateway_payload *payload) {
 }
 
 void discord_message_set_content(cord_message_t *msg, char *content) {
-    // char *json_content_template = "{\"content\": \"%s\"}";
-    // int template_len = strlen(json_content_template);
-    // int length = strlen(content);
-
-    // FIXME: This will not work. We are not encoding the content
-
     cord_strbuf_append(msg->content, cstr(content));
 }
 
@@ -298,6 +292,7 @@ int discord_send_message(cord_client_t *client, cord_message_t *msg) {
 
     http_client_perform_request(client->http, req);
     free(data);
+    free(final_url);
     return 0;
 }
 
@@ -543,7 +538,7 @@ static void client_init(cord_client_t *client, const char *url) {
         exit(1);
     }
 
-    client->message_allocator = cord_bump_create_with_size(KB(4));
+    client->message_allocator = cord_bump_create_with_size(MB(10));
     client->persistent_allocator = cord_bump_create_with_size(MB(4));
     client->temporary_allocator = cord_bump_create_with_size(MB(1));
 

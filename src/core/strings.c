@@ -195,7 +195,8 @@ cord_strbuf_t *cord_strbuf_create_with_allocator(cord_bump_t *allocator) {
 }
 
 cord_strbuf_t *cord_strbuf_create(void) {
-    cord_bump_t *allocator = cord_bump_create_with_size(64);
+    // FIXME: This will stop working if we surpass the size
+    cord_bump_t *allocator = cord_bump_create_with_size(KB(4));
     return cord_strbuf_create_with_allocator(allocator);
 }
 
@@ -222,11 +223,13 @@ cord_strbuf_t *cord_strbuf_from_cstring(const char *cstring) {
 }
 
 void cord_strbuf_append(cord_strbuf_t *builder, cord_str_t string) {
+    // FIXME: Update this to use pool allocator
     if ((size_t)string.length > strbuf_memory_left(builder)) {
-        builder->data =
-            realloc(builder->data, builder->capacity * STRBUF_GROWTH_FACTOR);
-
-        assert(builder->data && "Failed to realloc string buffer");
+        char *new_memory = balloc(builder->allocator, builder->capacity * STRBUF_GROWTH_FACTOR);
+        if (!new_memory) {
+            return;
+        }
+        builder->data = new_memory;
         builder->capacity *= STRBUF_GROWTH_FACTOR;
     }
 

@@ -11,15 +11,15 @@
 #define GB(n) (n * 1024 * 1024 * 1024)
 
 /*
- *   Memory pool allocator
+ * Memory pool allocator
  *
- *   Suitable for allocating a lot of objects of the same type.
- *   The memory is allocated in blocks of a fixed size and when we
- *   request more memory than available, the allocator creates a new
- *   pool.
+ * Suitable for allocating a lot of objects of the same type.
+ * The memory is allocated in blocks of a fixed size and when we
+ * request more memory than available, the allocator creates a new
+ * pool.
  *
- *   Pool allocator allows us to free objects that were allocated
- *   in the middle of the allocator's lifetime.
+ * Pool allocator allows us to free objects that were allocated
+ * in the middle of the allocator's lifetime.
  */
 typedef struct cord_pool_t {
     u8 *data;
@@ -38,11 +38,10 @@ void cord_pool_destroy(cord_pool_t *pool);
 void *palloc(cord_pool_t *pool, size_t size);
 
 /*
- *   Bump style allocator
+ * Bump style allocator
  *
- *   Suitable for allocating a lot of object of the same type.
- *   The underlying memory is allocated linearly and can grow indefinetly
- *   as long as there is enough available memory.
+ * Suitable for allocating a lot of object of variable size that can be free'd
+ * at once. The underlying memory is a linear fixed size buffer
  */
 typedef struct cord_bump_t {
     u8 *data;
@@ -59,12 +58,12 @@ size_t cord_bump_remaining_memory(cord_bump_t *bump);
 void *balloc(cord_bump_t *bump, size_t size);
 
 /*
- *   Bump memory allocator wrapper for allocating/freeing short-lived objects
+ * Bump memory allocator wrapper for allocating/freeing short-lived objects
  *
- *   Used to mark the start and end memory index of an allocator so after the
- *   operations are performed the temp memory allocated can be poped like in
- *   a stack. It's backed by a bump allocator that provides and owns the actual
- *   memory.
+ * Used to mark the start and end memory index of an allocator so after the
+ * operations are performed the temp memory allocated can be poped like in
+ * a stack. It's backed by a bump allocator that provides and owns the actual
+ * memory.
  *
  */
 typedef struct cord_temp_memory_t {

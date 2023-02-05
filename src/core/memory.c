@@ -93,12 +93,8 @@ size_t cord_bump_remaining_memory(cord_bump_t *bump) {
 
 void *balloc(cord_bump_t *bump, size_t size) {
     if (size > cord_bump_remaining_memory(bump)) {
-        void *reallocated = realloc(bump->data, bump->capacity * 2);
-        if (!reallocated) {
-            return NULL;
-        }
-        bump->data = reallocated;
-        bump->capacity *= 2;
+        // Out of memory
+        return NULL;
     }
 
     void *block = bump->data + bump->used;
