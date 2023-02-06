@@ -15,21 +15,22 @@ enum {
     HTTP_DELETE,
 };
 
-typedef struct http_request_t {
+typedef struct cord_http_request_t {
     int type;
     struct curl_slist *header;
     char *body;
     char *url;
-} http_request_t;
+} cord_http_request_t;
 
-http_request_t *http_request_create(int type, char *url,
-                                    struct curl_slist *header, char *content);
+cord_http_request_t *cord_http_request_create(int type, char *url,
+                                              struct curl_slist *header,
+                                              char *content);
 
-cord_http_client_t *http_client_create(const char *bot_token);
-void http_client_destroy(cord_http_client_t *client);
-struct curl_slist *discord_api_header(cord_http_client_t *client);
+cord_http_client_t *cord_http_client_create(const char *bot_token);
+void cord_http_client_destroy(cord_http_client_t *client);
+struct curl_slist *cord_discord_api_header(cord_http_client_t *client);
 
-int http_client_perform_request(cord_http_client_t *client,
-                                http_request_t *req);
+int cord_http_client_perform_request(cord_http_client_t *client,
+                                     cord_http_request_t *reqquest);
 
 #endif

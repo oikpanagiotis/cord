@@ -8,6 +8,7 @@ set(Sources
     client.c
     events.c
     types.c
+    entities.c
 )
 
 add_library(discord SHARED ${Sources})

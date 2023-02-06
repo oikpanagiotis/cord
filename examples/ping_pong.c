@@ -10,9 +10,9 @@ static bool string_equals(const char *s1, const char *s2) {
 	return strcmp(s1, s2) == 0;
 }
 
-void on_message(cord_message_t *message) {
+void on_message(cord_t *ctx, cord_message_t *message) {
 	if (string_equals(get_message_content(message), "ping")) {
-
+		cord_send_text(ctx, "Pong!");
 	}
 }
 

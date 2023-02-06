@@ -6,7 +6,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-cord_http_client_t *http_client_create(const char *bot_token) {
+cord_http_client_t *cord_http_client_create(const char *bot_token) {
     cord_http_client_t *client = malloc(sizeof(cord_http_client_t));
     if (!client) {
         logger_error("Failed to allocate http client");
@@ -33,7 +33,7 @@ cord_http_client_t *http_client_create(const char *bot_token) {
     return client;
 }
 
-void http_client_destroy(cord_http_client_t *client) {
+void cord_http_client_destroy(cord_http_client_t *client) {
     if (client) {
         if (client->curl) {
             curl_easy_cleanup(client->curl);
@@ -46,7 +46,7 @@ void http_client_destroy(cord_http_client_t *client) {
     curl_global_cleanup();
 }
 
-struct curl_slist *discord_api_header(cord_http_client_t *client) {
+struct curl_slist *cord_discord_api_header(cord_http_client_t *client) {
     struct curl_slist *list = NULL;
     char auth[256] = {0};
     snprintf(auth, 256, "Authorization: Bot %s", client->bot_token);
@@ -58,31 +58,34 @@ struct curl_slist *discord_api_header(cord_http_client_t *client) {
     return list;
 }
 
-http_request_t *http_request_create(int type, char *url,
-                                    struct curl_slist *header, char *content) {
-    http_request_t *req = malloc(sizeof(http_request_t));
+cord_http_request_t *cord_http_request_create(int type, char *url,
+                                              struct curl_slist *headers,
+                                              char *content) {
+    cord_http_request_t *req = malloc(sizeof(cord_http_request_t));
     if (!req) {
         logger_error("Failed to allocate http request");
         return NULL;
     }
 
     req->url = url;
-    req->header = header;
+    req->header = headers;
     req->type = type;
     req->body = content;
     return req;
 }
 
-int http_client_perform_request(cord_http_client_t *client,
-                                http_request_t *req) {
-    char req_type[6] = {0};
+int cord_http_client_perform_request(cord_http_client_t *client,
+                                     cord_http_request_t *req) {
+    static char *GET = "GET";
+    static char *POST = "POST";
+    char *request_type = NULL;
     if (req->type == HTTP_GET) {
-        strcpy(req_type, "GET");
+        request_type = GET;
     } else if (req->type == HTTP_POST) {
-        strcpy(req_type, "POST");
+        request_type = POST;
     }
 
-    curl_easy_setopt(client->curl, CURLOPT_CUSTOMREQUEST, req_type);
+    curl_easy_setopt(client->curl, CURLOPT_CUSTOMREQUEST, request_type);
     curl_easy_setopt(client->curl, CURLOPT_URL, req->url);
     curl_easy_setopt(client->curl, CURLOPT_HTTPHEADER, req->header);
     if (req->type == HTTP_POST) {

@@ -43,8 +43,10 @@ enum {
     ACTION_COUNT
 };
 
+typedef struct cord_t cord_t;
+
 typedef struct cord_gateway_event_callbacks_t {
-    void (*on_message_cb)(cord_message_t *message);
+    void (*on_message_cb)(cord_t *ctx, cord_message_t *message);
 } cord_gateway_event_callbacks_t;
 
 typedef struct discord_event_t {
@@ -68,6 +70,7 @@ typedef struct cord_client_t {
     cord_bump_t *persistent_allocator;
     cord_bump_t *message_allocator;
     cord_bump_t *temporary_allocator;
+    cord_bump_t *message_lifecycle_allocator;
 
     bool heartbeat_acknowledged;
     bool must_reconnect;
@@ -86,15 +89,14 @@ typedef struct cord_client_t {
 
 cord_client_t *discord_create(void);
 // do these need to be in a header file?
-int discord_connect(cord_client_t *disc, const char *url);
-void discord_destroy(cord_client_t *disc);
+i32 cord_client_connect(cord_client_t *client, const char *url);
+void discord_destroy(cord_client_t *client);
 
-cord_message_t *message_from_json(json_t *data);
+i32 cord_client_send_message(cord_client_t *client, cord_message_t *message);
 
-int discord_send_message(cord_client_t *disc, cord_message_t *msg);
-void discord_message_set_content(cord_message_t *msg, char *content);
-void discord_message_set_content_c(cord_message_t *msg, char *content);
-void discord_message_destroy(cord_message_t *msg);
+// Move this to discord module on entities where all the getters/setters reside
+void discord_message_set_content(cord_message_t *message, char *content);
+void discord_message_destroy(cord_message_t *message);
 
 // Events
 enum {

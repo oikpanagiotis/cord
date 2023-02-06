@@ -137,6 +137,7 @@ static void sigint_cb(struct ev_loop *loop, ev_signal *signal, int revents) {
     cord_bump_destroy(client->temporary_allocator);
     cord_bump_destroy(client->message_allocator);
     cord_bump_destroy(client->persistent_allocator);
+    // cord_bump_destroy(client->message_lifecycle_allocator);
 
     // 3. Break out of the loop
     if (signal->signum == SIGINT) {
@@ -273,7 +274,7 @@ void discord_message_set_content(cord_message_t *msg, char *content) {
 }
 
 char *DISCORD_API_URL = "https://discordapp.com/api";
-int discord_send_message(cord_client_t *client, cord_message_t *msg) {
+i32 cord_client_send_message(cord_client_t *client, cord_message_t *msg) {
     assert(msg);
     // TODO: Prefix the channel and ids based on our cache
     const int URL_LEN = 1024;
@@ -287,62 +288,13 @@ int discord_send_message(cord_client_t *client, cord_message_t *msg) {
              (int)msg->channel_id->length, msg->channel_id->data);
 
     char *data = cord_strbuf_to_cstring(msg->content);
-    http_request_t *req = http_request_create(
-        HTTP_POST, final_url, discord_api_header(client->http), data);
+    cord_http_request_t *request = cord_http_request_create(
+        HTTP_POST, final_url, cord_discord_api_header(client->http), data);
 
-    http_client_perform_request(client->http, req);
+    cord_http_client_perform_request(client->http, request);
     free(data);
     free(final_url);
     return 0;
-}
-
-// Used from events module
-cord_message_t *message_from_json(json_t *data) {
-    cord_message_t *msg = malloc(sizeof(cord_message_t));
-    if (!msg) {
-        logger_error("Failed to allocate discord message");
-        return NULL;
-    }
-
-    const char *key = NULL;
-    json_t *value = NULL;
-
-    json_object_foreach(data, key, value) {
-        if (json_is_string(value)) {
-            const char *str = json_string_value(value);
-
-            cord_strbuf_t *value_copy = cord_strbuf_from_cstring(str);
-            map_property(msg, id, "id", key, value_copy);
-            map_property(msg, content, "content", key, value_copy);
-            map_property(msg, channel_id, "channel_id", key, value_copy);
-            map_property(msg, guild_id, "guild_id", key, value_copy);
-            map_property(msg, timestamp, "timestamp", key, value_copy);
-            map_property(msg, nonce, "nonce", key, value_copy);
-
-            // Serialize author object
-            if (string_is_equal(key, "author")) {
-            }
-
-        } else if (json_is_boolean(value)) {
-            bool val = json_boolean_value(value);
-            map_property(msg, tts, "tts", key, val);
-            map_property(msg, pinned, "pinned", key, val);
-            map_property(msg, mention_everyone, "mention_everyone", key, val);
-
-        } else if (json_is_array(value)) {
-            // todo
-        } else if (json_is_object(value)) {
-            // check this out
-            // how do we traverse the tree
-        } else if (json_is_integer(value)) {
-            json_int_t val = json_integer_value(value);
-            int num = (int)val; // long long -> int
-            map_property(msg, type, "type", key, num);
-        } else if (json_is_null(value)) {
-        }
-    }
-
-    return msg;
 }
 
 void discord_message_destroy(cord_message_t *msg) {
@@ -469,7 +421,7 @@ cord_client_t *discord_create(void) {
         return NULL;
     }
 
-    client->http = http_client_create(id.token);
+    client->http = cord_http_client_create(id.token);
     if (!client->http->bot_token) {
         logger_error("Failed to create bot token");
         free(client);
@@ -511,6 +463,8 @@ static void report_memory(struct ev_loop *loop, ev_timer *timer, int revents) {
         (f64)client->temporary_allocator->used / (1024 * 1024);
     f64 persistent_allocator_used =
         (f64)client->persistent_allocator->used / (1024 * 1024);
+    f64 message_lifecycle_allocator_used =
+        (f64)client->message_lifecycle_allocator->used / (1024 * 1024);
 
     f64 message_allocator_capacity =
         (f64)client->message_allocator->capacity / (1024 * 1024);
@@ -518,6 +472,8 @@ static void report_memory(struct ev_loop *loop, ev_timer *timer, int revents) {
         (f64)client->temporary_allocator->capacity / (1024 * 1024);
     f64 persistent_allocator_capacity =
         (f64)client->persistent_allocator->capacity / (1024 * 1024);
+    f64 message_lifecycle_allocator_capacity =
+        (f64)client->message_lifecycle_allocator->capacity / (1024 * 1024);
 
     logger_info("    Message Allocator (%.2f / %.2f)MB", message_allocator_used,
                 message_allocator_capacity);
@@ -525,6 +481,9 @@ static void report_memory(struct ev_loop *loop, ev_timer *timer, int revents) {
                 temporary_allocator_used, temporary_allocator_capacity);
     logger_info("    Persistent Allocator (%.2f / %.2f)MB",
                 persistent_allocator_used, persistent_allocator_capacity);
+    logger_info("    Capacity Allocator (%.2f / %.2f)MB",
+                message_lifecycle_allocator_used,
+                message_lifecycle_allocator_capacity);
 
     ev_timer_again(loop, timer);
 }
@@ -541,6 +500,7 @@ static void client_init(cord_client_t *client, const char *url) {
     client->message_allocator = cord_bump_create_with_size(MB(10));
     client->persistent_allocator = cord_bump_create_with_size(MB(4));
     client->temporary_allocator = cord_bump_create_with_size(MB(1));
+    client->message_lifecycle_allocator = cord_bump_create_with_size(KB(16));
 
     client->ws_client->onopen = on_open;
     client->ws_client->onmessage = on_message;
@@ -577,7 +537,7 @@ static void check_reconnect_cb(struct ev_loop *loop, ev_check *w, int revents) {
     }
 }
 
-int discord_connect(cord_client_t *client, const char *url) {
+i32 cord_client_connect(cord_client_t *client, const char *url) {
     client->loop = ev_default_loop(0);
     client_init(client, url);
     client->must_reconnect = false;
@@ -617,7 +577,7 @@ void discord_destroy(cord_client_t *client) {
             free(client->sigint_watcher);
         }
         if (client->http) {
-            http_client_destroy(client->http);
+            cord_http_client_destroy(client->http);
         }
         free(client);
     }
