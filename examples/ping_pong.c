@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <cord.h>
@@ -11,6 +12,7 @@ static bool string_equals(const char *s1, const char *s2) {
 }
 
 void on_message(cord_t *ctx, cord_message_t *message) {
+	printf("%.*s\n", message->content->length, message->content->data);
 	if (string_equals(get_message_content(message), "ping")) {
 		cord_send_text(ctx, "Pong!");
 	}

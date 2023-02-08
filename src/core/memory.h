@@ -6,6 +6,8 @@
 
 #include "typedefs.h"
 
+#define array_length(arr) (sizeof(arr) / sizeof(*arr))
+
 #define KB(n) (n * 1024)
 #define MB(n) (n * 1024 * 1024)
 #define GB(n) (n * 1024 * 1024 * 1024)

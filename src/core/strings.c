@@ -1,7 +1,6 @@
 #include "strings.h"
 #include "memory.h"
 #include "typedefs.h"
-#include "util.h"
 
 #include <assert.h>
 #include <ctype.h>
@@ -160,7 +159,9 @@ cord_str_t cord_str_pop_first_split(cord_str_t *string, cord_str_t split_by) {
     return first_split;
 }
 
-char cord_str_first_char(cord_str_t string) { return string.data[0]; }
+char cord_str_first_char(cord_str_t string) {
+    return string.data[0];
+}
 
 char cord_str_last_char(cord_str_t string) {
     return string.data[string.length - 1];
@@ -225,7 +226,8 @@ cord_strbuf_t *cord_strbuf_from_cstring(const char *cstring) {
 void cord_strbuf_append(cord_strbuf_t *builder, cord_str_t string) {
     // FIXME: Update this to use pool allocator
     if ((size_t)string.length > strbuf_memory_left(builder)) {
-        char *new_memory = balloc(builder->allocator, builder->capacity * STRBUF_GROWTH_FACTOR);
+        char *new_memory = balloc(builder->allocator,
+                                  builder->capacity * STRBUF_GROWTH_FACTOR);
         if (!new_memory) {
             return;
         }
@@ -245,4 +247,38 @@ cord_str_t cord_strbuf_to_str(cord_strbuf_t builder) {
 char *cord_strbuf_to_cstring(cord_strbuf_t *builder) {
     char *cstring = calloc(sizeof(char), sizeof(builder->length + 1));
     return memcpy(cstring, builder->data, builder->length);
+}
+
+bool cstring_is_empty(const char *string) {
+    return (strlen(string) == 0) ? true : false;
+}
+
+bool cstring_is_equal(const char *s1, const char *s2) {
+    return (strcmp(s1, s2) == 0);
+}
+
+bool cstring_is_null_or_empty(const char *string) {
+    if (!string) {
+        return true;
+    }
+    if (cstring_is_empty(string)) {
+        return true;
+    }
+    return false;
+}
+
+const char *bool_to_cstring(bool value) {
+    static const char *true_string = "true";
+    static const char *false_string = "false";
+    return value ? true_string : false_string;
+}
+
+char *not_null_cstring(char *string) {
+    static char *null_string = "null";
+    return string ? string : null_string;
+}
+
+char *not_null_cstring_dash(char *string) {
+    static char *dash = "-";
+    return string ? string : dash;
 }

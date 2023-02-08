@@ -1,6 +1,10 @@
 #ifndef ERRORS_H
 #define ERRORS_H
 
+#include <stdbool.h>
+
+#include "typedefs.h"
+
 // Library's API return values
 typedef enum cord_error_t {
     // Success
@@ -20,5 +24,7 @@ typedef enum cord_error_t {
 } cord_error_t;
 
 char *cord_error(int type);
+
+bool is_posix_error(i32 code);
 
 #endif

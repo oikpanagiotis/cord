@@ -11,7 +11,7 @@
 
 #define map_property_object_collectible(object, property, property_str, key, value, allocator,     \
                                         type, serialize)                                           \
-    if (string_is_equal(key, property_str)) {                                                      \
+    if (cstring_is_equal(key, property_str)) {                                                      \
         cord_serialize_result_t __result = serialize(value, allocator, NULL);                      \
         if (has_serialization_error(__result)) {                                                   \
             logger_error("Failed to serialize " #type ": %s", cord_error(__result.error));         \
@@ -22,7 +22,7 @@
 
 #define map_property_object(object, property, property_str, key, value, allocator, type,           \
                             serialize)                                                             \
-    if (string_is_equal(key, property_str)) {                                                      \
+    if (cstring_is_equal(key, property_str)) {                                                      \
         cord_serialize_result_t __result = serialize(value, allocator);                            \
         if (has_serialization_error(__result)) {                                                   \
             logger_error("Failed to serialize " #type ": %s", cord_error(__result.error));         \

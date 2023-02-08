@@ -31,7 +31,9 @@ void cord_destroy(cord_t *cord) {
     global_logger_destroy();
 }
 
-void cord_on_message(cord_t *cord, void (*on_message_cb)(cord_t *ctx, cord_message_t *message)) {
+void cord_on_message(cord_t *cord,
+                     void (*on_message_cb)(cord_t *ctx,
+                                           cord_message_t *message)) {
     cord->gateway_client->event_callbacks.on_message_cb = on_message_cb;
 }
 

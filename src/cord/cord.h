@@ -19,7 +19,9 @@ cord_t *cord_create(void);
 void cord_connect(cord_t *cord, const char *url);
 void cord_destroy(cord_t *cord);
 
-void cord_on_message(cord_t *cord, void (*on_message_cb)(cord_t *ctx, cord_message_t *message));
+void cord_on_message(cord_t *cord,
+                     void (*on_message_cb)(cord_t *ctx,
+                                           cord_message_t *message));
 // void cord_on_event(Context, EventType, FunctionCallback)
 // void cord_on_event(cord, EVENT_MESSAGE_RECEIVE, on_message);
 

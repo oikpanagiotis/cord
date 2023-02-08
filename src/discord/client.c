@@ -2,7 +2,6 @@
 #include "../core/errors.h"
 #include "../core/log.h"
 #include "../core/typedefs.h"
-#include "../core/util.h"
 #include "events.h"
 #include "types.h"
 
@@ -348,7 +347,7 @@ static void on_message(struct uwsc_client *ws_client, void *data, size_t length,
     switch (payload->op) {
         // Dispatch is returned if we've received an event from the gateway
         case OP_DISPATCH:
-            if (!string_is_empty(event)) {
+            if (!cstring_is_empty(event)) {
                 logger_debug("Received Event: %s", event);
 
                 cord_gateway_event_t *all_events = get_all_gateway_events();
@@ -491,6 +490,9 @@ static void report_memory(struct ev_loop *loop, ev_timer *timer, int revents) {
 static const int ping_interval = 5;
 
 static void client_init(cord_client_t *client, const char *url) {
+    assert(client && "cord_client_t must not be null");
+
+    client->loop = ev_default_loop(0);
     client->ws_client = uwsc_new(client->loop, url, ping_interval, NULL);
     if (!client->ws_client) {
         logger_error("Failed to initialize websocket client");
@@ -537,32 +539,41 @@ static void check_reconnect_cb(struct ev_loop *loop, ev_check *w, int revents) {
     }
 }
 
-i32 cord_client_connect(cord_client_t *client, const char *url) {
-    client->loop = ev_default_loop(0);
-    client_init(client, url);
-    client->must_reconnect = false;
+static void setup_event_watchers(cord_client_t *client) {
+    cord_bump_t *allocator = client->persistent_allocator;
+    assert(allocator && "allocator must not be null");
 
-    logger_debug("Attempting to connect to gateway");
-    struct ev_check *reconnect_watcher = malloc(sizeof(struct ev_check));
+    struct ev_check *reconnect_watcher =
+        balloc(allocator, sizeof(struct ev_check));
     reconnect_watcher->data = client;
+
     ev_check_init(reconnect_watcher, check_reconnect_cb);
     ev_check_start(client->loop, reconnect_watcher);
     client->reconnect_watcher = reconnect_watcher;
 
-    struct ev_signal *sigint_watcher = malloc(sizeof(struct ev_signal));
+    struct ev_signal *sigint_watcher =
+        balloc(allocator, sizeof(struct ev_signal));
     sigint_watcher->data = client;
+
     ev_signal_init(sigint_watcher, sigint_cb, SIGINT);
     ev_signal_start(client->loop, sigint_watcher);
     client->sigint_watcher = sigint_watcher;
 
-    struct ev_timer *health_report_timer = malloc(sizeof(struct ev_timer));
+    struct ev_timer *health_report_timer =
+        balloc(allocator, sizeof(struct ev_timer));
+
     ev_init(health_report_timer, report_memory);
-    health_report_timer->repeat = 120;
+    health_report_timer->repeat = 160;
     health_report_timer->data = client;
     ev_timer_start(client->loop, health_report_timer);
+}
 
-    ev_run(client->loop, 0);
-    return 0;
+i32 cord_client_connect(cord_client_t *client, const char *url) {
+    logger_debug("Attempting to connect to gateway");
+
+    client_init(client, url);
+    setup_event_watchers(client);
+    return ev_run(client->loop, 0);
 }
 
 void discord_destroy(cord_client_t *client) {

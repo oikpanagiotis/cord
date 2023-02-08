@@ -1,7 +1,7 @@
 #include "serialization.h"
 #include "../core/log.h"
-#include "../core/util.h"
 #include "../strings.h"
+#include "../core/errors.h"
 
 #include <jansson.h>
 #include <stdio.h>
@@ -71,10 +71,10 @@ static bool copy_i64_to_string(char *format, i64 value) {
 
 static bool copy_bool_to_string(char *format, bool value) {
     i32 rc =
-        snprintf(format, MAX_FORMAT_BUFFER_LENGTH, "%s", bool_to_string(value));
+        snprintf(format, MAX_FORMAT_BUFFER_LENGTH, "%s", bool_to_cstring(value));
     if (is_posix_error(rc)) {
         logger_warn("Could not convert bool (%s) to string",
-                    bool_to_string(value));
+                    bool_to_cstring(value));
     }
     return is_posix_error(rc);
 }
@@ -99,7 +99,7 @@ bool json_payload_write_boolean(json_payload_t payload, cord_str_t key,
     bool success = copy_bool_to_string(format, value);
     if (!success) {
         logger_warn("Failed to convert bool: %s to string",
-                    bool_to_string(value));
+                    bool_to_cstring(value));
         return false;
     }
     append_non_final_value(payload, format);

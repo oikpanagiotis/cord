@@ -8,7 +8,6 @@ set(Sources
     array.c
     errors.c
     memory.c
-    util.c
     strings.c
     log.c
 )

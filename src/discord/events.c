@@ -1,7 +1,6 @@
 #include "events.h"
 #include "../core/errors.h"
 #include "../core/log.h"
-#include "../core/util.h"
 #include "client.h"
 #include "types.h"
 
@@ -54,8 +53,8 @@ bool event_has_handler(cord_gateway_event_t *event) {
 
 cord_gateway_event_t *get_gateway_event(cord_gateway_event_t *events, char *key) {
     cord_gateway_event_t *iter = events;
-    while (!string_is_empty(iter->name)) {
-        if (string_is_equal(iter->name, key)) {
+    while (!cstring_is_empty(iter->name)) {
+        if (cstring_is_equal(iter->name, key)) {
             return iter;
         }
         iter++;
