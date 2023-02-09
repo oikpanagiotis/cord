@@ -32,8 +32,8 @@ bool cord_str_equals_ignore_case(cord_str_t first, cord_str_t second);
 bool cord_str_contains(cord_str_t haystack, cord_str_t needle);
 
 /*
- * Returns substring of <string> as defined by the indices <begin> inclusive,
- * <end> non-inclusive
+ * Returns substring of cord_str_t as defined by the indices (begin inclusive,
+ * end non-inclusive)
  */
 cord_str_t cord_str_substring(cord_str_t string, size_t begin, size_t end);
 
@@ -45,7 +45,7 @@ cord_str_t cord_str_remove_prefix(cord_str_t string, cord_str_t prefix);
 cord_str_t cord_str_remove_suffix(cord_str_t string, cord_str_t suffix);
 
 /*
- * Splits the passed <string> and returns the first split found
+ * Splits the passed cord_str_t and returns the first split found
  */
 cord_str_t cord_str_pop_first_split(cord_str_t *string, cord_str_t split_by);
 char cord_str_first_char(cord_str_t string);

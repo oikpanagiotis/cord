@@ -22,7 +22,7 @@ void test_teardown(void) {
 }
 
 /*
- *   Test cases related to <cord_str_t>
+ *   Test cases related to cord_str_t
  */
 MU_TEST(test_cord_str_equality) {
     string_ref rick = "Rick";
@@ -99,7 +99,7 @@ MU_TEST(test_cord_str_pop_first_split) {
 }
 
 /*
- *   Test cases related to <cord_strbuf_t>
+ *   Test cases related to cord_strbuf_t
  */
 MU_TEST(test_cord_strbuf_create) {
     cord_strbuf_t *builder = cord_strbuf_create_with_allocator(allocator);
