@@ -7,7 +7,7 @@
 #include <assert.h>
 
 /*
- *  Dictionary of all the possible events as documented in Discord Gateway API
+ *  Dictionary of all the possible discord gateway events
  */
 static cord_gateway_event_t gateway_events[] = {{"CHANNEL_CREATE", NULL},
                                                 {"CHANNEL_UPDATE", NULL},
@@ -38,10 +38,6 @@ static cord_gateway_event_t gateway_events[] = {{"CHANNEL_CREATE", NULL},
 
                                                 {"", NULL}};
 
-cord_gateway_event_t *get_all_gateway_events(void) {
-    return gateway_events;
-}
-
 bool event_has_handler(cord_gateway_event_t *event) {
     if (event) {
         if (event->handler) {
@@ -51,24 +47,103 @@ bool event_has_handler(cord_gateway_event_t *event) {
     return false;
 }
 
-cord_gateway_event_t *get_gateway_event(cord_gateway_event_t *events, char *key) {
-    cord_gateway_event_t *iter = events;
-    while (!cstring_is_empty(iter->name)) {
-        if (cstring_is_equal(iter->name, key)) {
-            return iter;
+cord_gateway_event_t *get_gateway_event_from_cstring(char *event) {
+    cord_gateway_event_t *event_iterator = gateway_events;
+    while (!cstring_is_empty(event_iterator->name)) {
+        if (cstring_is_equal(event_iterator->name, event)) {
+            return event_iterator;
         }
-        iter++;
+        event_iterator++;
     }
 
     return NULL;
+}
+
+cord_gateway_event_t *get_gateway_event(gateway_event_t event) {
+    i32 event_table_index = (i32)event;
+    assert((event_table_index >= 0) && (event_table_index < (i32)GATEWAY_EVENT_COUNT));
+
+    return &gateway_events[event_table_index];
 }
 
 static void clear_message_lifecycle_allocator(cord_client_t *client) {
     cord_bump_clear(client->message_lifecycle_allocator);
 }
 
+void on_channel_create(cord_client_t *client, json_t *data, char *event) {
+    assert(false && "Not Implemented");
+}
+
+void on_channel_update(cord_client_t *client, json_t *data, char *event) {
+    assert(false && "Not Implemented");
+}
+
+void on_channel_delete(cord_client_t *client, json_t *data, char *event) {
+    assert(false && "Not Implemented");
+}
+
+void on_channel_pins_update(cord_client_t *client, json_t *data, char *event) {
+    assert(false && "Not Implemented");
+}
+
+void on_guild_create(cord_client_t *client, json_t *data, char *event) {
+    assert(false && "Not Implemented");
+}
+
+void on_guild_update(cord_client_t *client, json_t *data, char *event) {
+    assert(false && "Not Implemented");
+}
+
+void on_guild_delete(cord_client_t *client, json_t *data, char *event) {
+    assert(false && "Not Implemented");
+}
+
+void on_guild_ban_add(cord_client_t *client, json_t *data, char *event) {
+    assert(false && "Not Implemented");
+}
+
+void on_guild_ban_remove(cord_client_t *client, json_t *data, char *event) {
+    assert(false && "Not Implemented");
+}
+
+void on_guild_emojis_update(cord_client_t *client, json_t *data, char *event) {
+    assert(false && "Not Implemented");
+}
+
+void on_guild_member_add(cord_client_t *client, json_t *data, char *event) {
+    assert(false && "Not Implemented");
+}
+
+void on_guild_member_update(cord_client_t *client, json_t *data, char *event) {
+    assert(false && "Not Implemented");
+}
+
+void on_guild_members_chunk(cord_client_t *client, json_t *data, char *event) {
+    assert(false && "Not Implemented");
+}
+
+void on_guild_role_create(cord_client_t *client, json_t *data, char *event) {
+    assert(false && "Not Implemented");
+}
+
+void on_guild_role_update(cord_client_t *client, json_t *data, char *event) {
+    assert(false && "Not Implemented");
+}
+
+void on_guild_role_delete(cord_client_t *client, json_t *data, char *event) {
+    assert(false && "Not Implemented");
+}
+
+void on_invite_create(cord_client_t *client, json_t *data, char *event) {
+    assert(false && "Not Implemented");
+}
+
+void on_invite_delete(cord_client_t *client, json_t *data, char *event) {
+    assert(false && "Not Implemented");
+}
+
 void on_message_create(cord_client_t *client, json_t *data, char *event) {
-    cord_t *ctx = (cord_t *)client->user_data;
+    cord_t *cord = (cord_t *)client->user_data;
     logger_debug("Got event: %s", event);
 
     cord_serialize_result_t message =
@@ -79,7 +154,34 @@ void on_message_create(cord_client_t *client, json_t *data, char *event) {
         return;
     }
 
-    client->event_callbacks.on_message_cb(ctx, message.obj);
-
+    client->event_callbacks.on_message_cb(cord, message.obj);
     clear_message_lifecycle_allocator(client);
+}
+
+void on_message_update(cord_client_t *client, json_t *data, char *event) {
+    assert(false && "Not Implemented");
+}
+
+void on_message_delete_bulk(cord_client_t *client, json_t *data, char *event) {
+    assert(false && "Not Implemented");
+}
+
+void on_message_reaction_add(cord_client_t *client, json_t *data, char *event) {
+    assert(false && "Not Implemented");
+}
+
+void on_message_reaction_remove(cord_client_t *client, json_t *data, char *event) {
+    assert(false && "Not Implemented");
+}
+
+void on_message_reaction_remove_all(cord_client_t *client, json_t *data, char *event) {
+    assert(false && "Not Implemented");
+}
+
+void on_message_reaction_remove_emoji(cord_client_t *client, json_t *data, char *event) {
+    assert(false && "Not Implemented");
+}
+
+void on_presence_update(cord_client_t *client, json_t *data, char *event) {
+    assert(false && "Not Implemented");
 }

@@ -6,15 +6,15 @@ typedef struct api_error {
 } api_error;
 
 static api_error errors[] = {
-    { CORD_OK, "" },
+    {CORD_OK, ""},
 
-    { CORD_ERR_MALLOC, "Memory allocation failed" },
-    
-    { CORD_ERR_USER_SERIALIZATION, "Failed to serialize user object" },
-    { CORD_ERR_GUILD_MEMBER_SERIALIZATION, "Failed to serialize guild member object" },
-    { CORD_ERR_MSG_SERIALIZATION, "Failed to serialize message object" },
+    {CORD_ERR_MALLOC, "Memory allocation failed"},
 
-    { CORD_ERR_EMOJI_SERIALIZATION, "Failed to serialize emoji object" },
+    {CORD_ERR_USER_SERIALIZATION, "Failed to serialize user object"},
+    {CORD_ERR_GUILD_MEMBER_SERIALIZATION, "Failed to serialize guild member object"},
+    {CORD_ERR_MSG_SERIALIZATION, "Failed to serialize message object"},
+
+    {CORD_ERR_EMOJI_SERIALIZATION, "Failed to serialize emoji object"},
 
 };
 

@@ -34,18 +34,10 @@ json_payload_t json_payload_create(cord_bump_t *allocator);
 
 void json_payload_start_writing(json_payload_t payload);
 void json_payload_finish_writing(json_payload_t payload);
-bool json_payload_write_string(json_payload_t payload, cord_str_t key,
-                               cord_str_t value);
-
-bool json_payload_write_number(json_payload_t payload, cord_str_t key,
-                               i64 value);
-
-bool json_payload_write_boolean(json_payload_t payload, cord_str_t key,
-                                bool value);
-
-bool json_payload_write_object(json_payload_t payload, cord_str_t key,
-                               json_t *object);
-
+bool json_payload_write_string(json_payload_t payload, cord_str_t key, cord_str_t value);
+bool json_payload_write_number(json_payload_t payload, cord_str_t key, i64 value);
+bool json_payload_write_boolean(json_payload_t payload, cord_str_t key, bool value);
+bool json_payload_write_object(json_payload_t payload, cord_str_t key, json_t *object);
 bool json_payload_write_null(json_payload_t payload, cord_str_t key);
 bool json_payload_write_array(json_payload_t payload, cord_str_t key,
                               cord_array_t *array);

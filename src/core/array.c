@@ -1,4 +1,5 @@
 #include "array.h"
+#include "memory.h"
 
 #include <assert.h>
 #include <stdlib.h>
@@ -7,27 +8,27 @@
 cord_array_t *cord_array_create(cord_bump_t *allocator, size_t element_size) {
     assert(allocator);
     assert(element_size > 0);
-    cord_array_t *arr = balloc(allocator, sizeof(cord_array_t));
-    if (!arr) {
+    cord_array_t *array = balloc(allocator, sizeof(cord_array_t));
+    if (!array) {
         return NULL;
     }
 
-    arr->element_size = element_size;
-    arr->num_elements = 0;
-    arr->allocator = allocator;
+    array->element_size = element_size;
+    array->num_elements = 0;
+    array->allocator = allocator;
 
     const int default_capacity = 16;
-    arr->capacity = default_capacity;
+    array->capacity = default_capacity;
 
-    const size_t initial_array_size = element_size * (size_t)arr->capacity;
-    arr->data = balloc(allocator, initial_array_size);
-    assert(arr->data);
+    const size_t initial_array_size = element_size * (size_t)array->capacity;
+    array->data = balloc(allocator, initial_array_size);
+    assert(array->data);
 
-    if (!arr->data) {
+    if (!array->data) {
         cord_bump_destroy(allocator);
         return NULL;
     }
-    return arr;
+    return array;
 }
 
 void *cord_array_push(cord_array_t *array) {
@@ -40,25 +41,23 @@ void *cord_array_push(cord_array_t *array) {
         }
 
         array->capacity *= 2;
-        memcpy(new_array, current_array,
-               array->num_elements * array->element_size);
+        memcpy(new_array, current_array, array->num_elements * array->element_size);
         array->data = new_array;
     }
 
-    void *new_element =
-        array->data + (array->element_size * array->num_elements);
+    void *new_element = array->data + (array->element_size * array->num_elements);
     array->num_elements++;
     return new_element;
 }
 
-void *cord_array_get(cord_array_t *arr, int index) {
-    if (index < 0 || index > (int)arr->capacity) {
+void *cord_array_get(cord_array_t *array, int index) {
+    if (index < 0 || index > (int)array->capacity) {
         return NULL;
     }
 
-    return arr->data + arr->element_size * index;
+    return array->data + array->element_size * index;
 }
 
-void cord_array_destroy(cord_array_t *arr) {
-    // Free underlying arena to free the array
+void cord_array_destroy(cord_array_t *array) {
+    cord_bump_destroy(array->allocator);
 }

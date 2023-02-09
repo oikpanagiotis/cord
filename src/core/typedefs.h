@@ -5,8 +5,18 @@
 #include <sys/types.h>
 
 #define LIBRARY_NAME "cord"
-#define LIBRARY_VERSION "0.1.0dev"
+#define LIBRARY_VERSION "0..0dev"
 #define LIBRARY_REPOSITORY "github.com/oikpanagiotis/cord"
+
+#if defined(_WIN32)
+#define OS "Windows"
+#elif defined(__linux__)
+#define OS "GNU/Linux"
+#elif defined(__APPLE__)
+#define OS "OS X"
+#else
+#define OS "Unknown"
+#endif
 
 // Used as a read-only reference to a C string
 typedef const char *string_ref;

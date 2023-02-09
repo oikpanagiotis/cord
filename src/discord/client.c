@@ -6,29 +6,27 @@
 #include "types.h"
 
 #include <assert.h>
-#include <ev.h>
+#include <event.h>
 #include <jansson.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <uwsc/config.h>
 
-static string_ref OS_NAME = "Linux";
-
-static void load_identification_info(identification *id) {
-    id->token = getenv("CORD_APPLICATION_TOKEN");
-    assert(id->token);
-    if (!id->token) {
-        logger_error(
-            "Bot token not found. Please set CORD_APPLICATION_TOKEN envar");
+static void load_identity_info(identity_info_t *identity) {
+    identity->token = getenv("CORD_APPLICATION_TOKEN");
+    if (!identity->token) {
+        logger_error("Bot token not found. Please set CORD_APPLICATION_TOKEN envar");
         exit(1);
     }
 
-    id->os = (char *)OS_NAME;
-    id->device = LIBRARY_NAME;
-    id->library = LIBRARY_NAME;
+    identity->os = (char *)OS;
+    identity->device = LIBRARY_NAME;
+    identity->library = LIBRARY_NAME;
 }
 
-// Assumes that sequence is initialized to -1
+/*
+ * Assumes that sequence is initialized to -1
+ */
 static bool is_valid_sequence(int s) {
     return s >= 0;
 }
@@ -68,14 +66,9 @@ static void json_payload_destroy(json_payload_t payload) {
     }
 }
 
-static void debug_sent_payload(json_payload_t payload) {
-    logger_debug("Sent JSON payload of size(%d): %s", payload.length,
-                 payload.json_string);
-}
-
 static void send_json_payload(cord_client_t *client, json_payload_t payload) {
-    client->ws_client->send(client->ws_client, payload.json_string,
-                            payload.length, UWSC_OP_TEXT);
+    client->ws_client->send(client->ws_client, payload.json_string, payload.length,
+                            UWSC_OP_TEXT);
 }
 
 static json_t *heartbeat_json_object_create(i32 sequence) {
@@ -136,13 +129,16 @@ static void sigint_cb(struct ev_loop *loop, ev_signal *signal, int revents) {
     cord_bump_destroy(client->temporary_allocator);
     cord_bump_destroy(client->message_allocator);
     cord_bump_destroy(client->persistent_allocator);
-    // cord_bump_destroy(client->message_lifecycle_allocator);
+    cord_bump_destroy(client->message_lifecycle_allocator);
 
     // 3. Break out of the loop
     if (signal->signum == SIGINT) {
         ev_break(loop, EVBREAK_ALL);
     }
     ev_default_destroy();
+
+    // 4. Destroy cord_t context
+    // ...
 }
 
 static void on_open(struct uwsc_client *ws_client) {
@@ -160,7 +156,6 @@ static void on_heartbeat(struct uwsc_client *ws_client, json_t *data) {
     }
     client->hb_interval = (int)json_integer_value(hb_interval_json);
 
-    // Send heartbeat
     send_heartbeat(client);
 
     if (!client->sent_initial_heartbeat) {
@@ -181,16 +176,9 @@ static void on_heartbeat(struct uwsc_client *ws_client, json_t *data) {
 static int send_to_gateway(cord_client_t *client, json_t *payload) {
     char *buffer = json_dumps(payload, 0);
     size_t length = strlen(buffer);
-    int rc = client->ws_client->send(client->ws_client, buffer, length,
-                                     UWSC_OP_TEXT);
+    int rc = client->ws_client->send(client->ws_client, buffer, length, UWSC_OP_TEXT);
     free(buffer);
     return rc;
-}
-
-static void debug_identify(json_t *payload) {
-    char *debug_dump = json_dumps(payload, 0);
-    logger_debug("Sending identify payload: %s", debug_dump);
-    free(debug_dump);
 }
 
 static void send_identify(struct uwsc_client *ws_client) {
@@ -202,17 +190,26 @@ static void send_identify(struct uwsc_client *ws_client) {
     json_t *d = json_object();
     json_object_set_new(payload, PAYLOAD_KEY_DATA, d);
 
-    json_object_set_new(d, "token", json_string(client->id.token));
-    // json_object_set_new(d, "intents", json_integer(7));
+    json_object_set_new(d, "token", json_string(client->identity.token));
+
+    // TODO: Refactor these
+    const i32 MESSAGE_CONTENT_EVENT = (1 << 15);
+    const i32 GUILDS_EVENT = (1 << 0);
+    const i32 GUILD_MESSAGE_TYPING_EVENT = (1 << 11);
+    const i32 GUILD_MESSAGES_EVENT = (1 << 9);
+    const i32 intents = GUILDS_EVENT | MESSAGE_CONTENT_EVENT |
+                        GUILD_MESSAGE_TYPING_EVENT | GUILD_MESSAGES_EVENT;
+
+    json_object_set_new(d, "intents", json_integer(intents));
     json_object_set_new(d, "large_threshold", json_integer(50));
     json_object_set_new(d, "compress", json_boolean(false));
 
     json_t *properties = json_object();
     json_object_set_new(d, "properties", properties);
 
-    json_object_set_new(properties, "os", json_string(client->id.os));
-    json_object_set_new(properties, "browser", json_string(client->id.library));
-    json_object_set_new(properties, "device", json_string(client->id.device));
+    json_object_set_new(properties, "os", json_string(client->identity.os));
+    json_object_set_new(properties, "browser", json_string(client->identity.library));
+    json_object_set_new(properties, "device", json_string(client->identity.device));
 
     send_to_gateway(client, payload);
     json_decref(payload);
@@ -298,30 +295,17 @@ i32 cord_client_send_message(cord_client_t *client, cord_message_t *msg) {
 
 void discord_message_destroy(cord_message_t *msg) {
     if (msg) {
-        // if (msg->content) free(msg->content);
-
         free(msg);
     }
 }
 
-static void debug_payload(gateway_payload *payload) {
-    logger_debug("------------------");
-    logger_debug("  Parser Payload");
-    char *dump = json_dumps(payload->d, 0);
-    logger_debug("  d %s", dump);
-    logger_debug("  s %d", payload->s);
-    logger_debug("  t %s", payload->t);
-    logger_debug("  op %d", payload->op);
-    logger_debug("------------------");
-    free(dump);
-}
-
 static void on_message(struct uwsc_client *ws_client, void *data, size_t length,
                        bool binary) {
+    (void)binary;
+
     cord_client_t *client = ws_client->ext;
     json_error_t err = {0};
 
-    // Serialize payload
     json_t *raw_payload = json_loadb(data, length, 0, &err);
     if (!raw_payload) {
         logger_error("Failed to serialize payload: %s", err.text);
@@ -338,22 +322,17 @@ static void on_message(struct uwsc_client *ws_client, void *data, size_t length,
         logger_error("Failed to parse gateway payload");
     }
 
-    // When the reference count of a json object reaches decreases
-    // by one, the reference count of all it's children is also
-    // decreased by 1, so the whole object tree can be cleaned up
     json_decref(raw_payload);
 
-    char *event = payload->t;
+    char *event_name = payload->t;
     switch (payload->op) {
-        // Dispatch is returned if we've received an event from the gateway
         case OP_DISPATCH:
-            if (!cstring_is_empty(event)) {
-                logger_debug("Received Event: %s", event);
+            if (!cstring_is_empty(event_name)) {
+                logger_debug("Received Event: %s", event_name);
 
-                cord_gateway_event_t *all_events = get_all_gateway_events();
-                cord_gateway_event_t *ev = get_gateway_event(all_events, event);
-                if (event_has_handler(ev)) {
-                    ev->handler(client, payload->d, event);
+                cord_gateway_event_t *event = get_gateway_event_from_cstring(event_name);
+                if (event_has_handler(event)) {
+                    event->handler(client, payload->d, event_name);
                 } else {
                     logger_warn("No handler for event(%s)", event);
                 }
@@ -404,15 +383,14 @@ static void on_error(struct uwsc_client *ws_client, int err, const char *msg) {
     logger_error("Connection error (%d): %s", err, msg);
 }
 
-static void on_close(struct uwsc_client *ws_client, int code,
-                     const char *reason) {
+static void on_close(struct uwsc_client *ws_client, int code, const char *reason) {
     (void)ws_client;
     logger_debug("Closing connection to gateway (%d): %s", code, reason);
 }
 
 cord_client_t *discord_create(void) {
-    identification id = {0};
-    load_identification_info(&id);
+    identity_info_t identity = {0};
+    load_identity_info(&identity);
 
     cord_client_t *client = malloc(sizeof(cord_client_t));
     if (!client) {
@@ -420,7 +398,7 @@ cord_client_t *discord_create(void) {
         return NULL;
     }
 
-    client->http = cord_http_client_create(id.token);
+    client->http = cord_http_client_create(identity.token);
     if (!client->http->bot_token) {
         logger_error("Failed to create bot token");
         free(client);
@@ -432,18 +410,15 @@ cord_client_t *discord_create(void) {
         free(client);
         return NULL;
     }
-    client->id = id;
+    client->identity = identity;
     client->hb_interval = -1;
     client->sequence = -1;
     client->sent_initial_heartbeat = false;
     client->loop = NULL;
     client->must_reconnect = false;
 
-    // TODO: Refactor. Move this somewhere else
-    // Assign callbacks
-    cord_gateway_event_t *all_events = get_all_gateway_events();
     cord_gateway_event_t *on_message_event =
-        get_gateway_event(all_events, "MESSAGE_CREATE");
+        get_gateway_event(GATEWAY_EVENT_CHANNEL_CREATE);
 
     on_message_event->handler = on_message_create;
 
@@ -456,10 +431,8 @@ static void report_memory(struct ev_loop *loop, ev_timer *timer, int revents) {
     cord_client_t *client = timer->data;
 
     logger_info("Memory Report");
-    f64 message_allocator_used =
-        (f64)client->message_allocator->used / (1024 * 1024);
-    f64 temporary_allocator_used =
-        (f64)client->temporary_allocator->used / (1024 * 1024);
+    f64 message_allocator_used = (f64)client->message_allocator->used / (1024 * 1024);
+    f64 temporary_allocator_used = (f64)client->temporary_allocator->used / (1024 * 1024);
     f64 persistent_allocator_used =
         (f64)client->persistent_allocator->used / (1024 * 1024);
     f64 message_lifecycle_allocator_used =
@@ -474,14 +447,13 @@ static void report_memory(struct ev_loop *loop, ev_timer *timer, int revents) {
     f64 message_lifecycle_allocator_capacity =
         (f64)client->message_lifecycle_allocator->capacity / (1024 * 1024);
 
-    logger_info("    Message Allocator (%.2f / %.2f)MB", message_allocator_used,
+    logger_info("  Message Allocator (%.2f / %.2f)MB", message_allocator_used,
                 message_allocator_capacity);
-    logger_info("    Temporary Allocator (%.2f / %.2f)MB",
-                temporary_allocator_used, temporary_allocator_capacity);
-    logger_info("    Persistent Allocator (%.2f / %.2f)MB",
-                persistent_allocator_used, persistent_allocator_capacity);
-    logger_info("    Capacity Allocator (%.2f / %.2f)MB",
-                message_lifecycle_allocator_used,
+    logger_info("  Temporary Allocator (%.2f / %.2f)MB", temporary_allocator_used,
+                temporary_allocator_capacity);
+    logger_info("  Persistent Allocator (%.2f / %.2f)MB", persistent_allocator_used,
+                persistent_allocator_capacity);
+    logger_info("  Capacity Allocator (%.2f / %.2f)MB", message_lifecycle_allocator_used,
                 message_lifecycle_allocator_capacity);
 
     ev_timer_again(loop, timer);
@@ -510,14 +482,13 @@ static void client_init(cord_client_t *client, const char *url) {
     client->ws_client->onclose = on_close;
     client->sent_initial_heartbeat = false;
     client->must_reconnect = false;
-    // Store the wrapper client pointer to be accessed in the callbacks
     client->ws_client->ext = client;
 }
 
 static void client_reconnect_to(cord_client_t *client, const char *url) {
     logger_debug("Attempting to reconnect");
 
-    // Turn off timers
+    // Stop timers
     ev_timer_stop(client->loop, client->hb_watcher);
     free(client->hb_watcher);
     free(client->ws_client);
@@ -543,27 +514,28 @@ static void setup_event_watchers(cord_client_t *client) {
     cord_bump_t *allocator = client->persistent_allocator;
     assert(allocator && "allocator must not be null");
 
-    struct ev_check *reconnect_watcher =
-        balloc(allocator, sizeof(struct ev_check));
+    /*
+     * Keep these ass malloc for now because persistent_allocator is
+     * destroyed before the loop closes and we crash.
+     * check if we can work around it by destroying the persistent allocator
+     * the latest possible time.
+     * If not just move the allocator to cord_t
+     */
+    struct ev_check *reconnect_watcher = malloc(sizeof(struct ev_check));
     reconnect_watcher->data = client;
-
     ev_check_init(reconnect_watcher, check_reconnect_cb);
     ev_check_start(client->loop, reconnect_watcher);
     client->reconnect_watcher = reconnect_watcher;
 
-    struct ev_signal *sigint_watcher =
-        balloc(allocator, sizeof(struct ev_signal));
+    struct ev_signal *sigint_watcher = malloc(sizeof(struct ev_signal));
     sigint_watcher->data = client;
-
     ev_signal_init(sigint_watcher, sigint_cb, SIGINT);
     ev_signal_start(client->loop, sigint_watcher);
     client->sigint_watcher = sigint_watcher;
 
-    struct ev_timer *health_report_timer =
-        balloc(allocator, sizeof(struct ev_timer));
-
+    struct ev_timer *health_report_timer = malloc(sizeof(struct ev_timer));
     ev_init(health_report_timer, report_memory);
-    health_report_timer->repeat = 160;
+    health_report_timer->repeat = 120;
     health_report_timer->data = client;
     ev_timer_start(client->loop, health_report_timer);
 }

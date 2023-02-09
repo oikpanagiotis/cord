@@ -25,4 +25,4 @@ target_include_directories(cord PUBLIC
 )
 
 install(TARGETS cord DESTINATION)
-install(FILES cord.h DESTINATION /usr/local/include)
+install(FILES cord/cord.h DESTINATION /usr/local/include)

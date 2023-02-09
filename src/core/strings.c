@@ -90,8 +90,7 @@ cord_str_t cord_str_trim(cord_str_t string) {
 }
 
 cord_str_t cord_str_remove_prefix(cord_str_t string, cord_str_t prefix) {
-    if ((string.data[0] != prefix.data[0]) ||
-        (string.length <= prefix.length)) {
+    if ((string.data[0] != prefix.data[0]) || (string.length <= prefix.length)) {
         return string;
     }
     ssize_t index = 0;
@@ -100,8 +99,7 @@ cord_str_t cord_str_remove_prefix(cord_str_t string, cord_str_t prefix) {
     }
 
     ssize_t offset = (index == prefix.length) ? index : 0;
-    cord_str_t clean =
-        (cord_str_t){string.data + offset, string.length - offset};
+    cord_str_t clean = (cord_str_t){string.data + offset, string.length - offset};
     return cord_str_remove_prefix(clean, prefix);
 }
 
@@ -113,8 +111,7 @@ cord_str_t cord_str_remove_suffix(cord_str_t string, cord_str_t suffix) {
 
     ssize_t matches = 0;
     for (ssize_t i = 0; i < suffix.length; i++) {
-        if (string.data[string.length - i - 1] ==
-            suffix.data[suffix.length - i - 1]) {
+        if (string.data[string.length - i - 1] == suffix.data[suffix.length - i - 1]) {
             matches++;
         }
     }
@@ -226,8 +223,8 @@ cord_strbuf_t *cord_strbuf_from_cstring(const char *cstring) {
 void cord_strbuf_append(cord_strbuf_t *builder, cord_str_t string) {
     // FIXME: Update this to use pool allocator
     if ((size_t)string.length > strbuf_memory_left(builder)) {
-        char *new_memory = balloc(builder->allocator,
-                                  builder->capacity * STRBUF_GROWTH_FACTOR);
+        char *new_memory =
+            balloc(builder->allocator, builder->capacity * STRBUF_GROWTH_FACTOR);
         if (!new_memory) {
             return;
         }
@@ -274,7 +271,7 @@ const char *bool_to_cstring(bool value) {
 }
 
 char *not_null_cstring(char *string) {
-    static char *null_string = "null";
+    static char *null_string = "";
     return string ? string : null_string;
 }
 

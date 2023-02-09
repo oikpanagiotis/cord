@@ -1,5 +1,3 @@
-# Add identification loading from os
-# non-primitive / non-domain abstractions
 # utility/bridge functions to give allocators to the user
 # maybe also give allocator callbacks?
 

@@ -28,14 +28,6 @@
 #define OP_HELLO 10
 #define OP_HEARTBEAT_ACK 11
 
-// Load these from enviroment variables
-typedef struct identification {
-    char *token;
-    char *os;
-    char *library;
-    char *device;
-} identification;
-
 enum {
     ACTION_NONE,
     ACTION_SEND_MESSAGE,
@@ -48,6 +40,13 @@ typedef struct cord_t cord_t;
 typedef struct cord_gateway_event_callbacks_t {
     void (*on_message_cb)(cord_t *ctx, cord_message_t *message);
 } cord_gateway_event_callbacks_t;
+
+typedef struct identity_info_t {
+    char *token;
+    char *os;
+    char *library;
+    char *device;
+} identity_info_t;
 
 typedef struct discord_event_t {
     int type;
@@ -79,7 +78,7 @@ typedef struct cord_client_t {
     i32 sequence;
     bool sent_initial_heartbeat;
 
-    identification id;
+    identity_info_t identity;
     cord_http_client_t *http;
 
     cord_gateway_event_callbacks_t event_callbacks;
@@ -88,22 +87,10 @@ typedef struct cord_client_t {
 } cord_client_t;
 
 cord_client_t *discord_create(void);
-// do these need to be in a header file?
+
 i32 cord_client_connect(cord_client_t *client, const char *url);
 void discord_destroy(cord_client_t *client);
 
 i32 cord_client_send_message(cord_client_t *client, cord_message_t *message);
-
-// Move this to discord module on entities where all the getters/setters reside
-void discord_message_set_content(cord_message_t *message, char *content);
-void discord_message_destroy(cord_message_t *message);
-
-// Events
-enum {
-    CHANNEL_CREATE,
-    MESSAGE_CREATE,
-
-    EVENT_COUNT
-};
 
 #endif
