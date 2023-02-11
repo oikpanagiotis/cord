@@ -360,9 +360,11 @@ static void on_message(struct uwsc_client *ws_client, void *data, size_t length,
             logger_warn("Invalid Session");
             break;
         case OP_HELLO:
-            on_heartbeat(ws_client, payload->d);
             if (!client->sent_initial_heartbeat) {
+                on_heartbeat(ws_client, payload->d);
                 send_identify(ws_client);
+            } else {
+                on_heartbeat(ws_client, payload->d);
             }
             break;
         case OP_HEARTBEAT_ACK:
