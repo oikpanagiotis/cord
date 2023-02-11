@@ -6,6 +6,7 @@
 #include "types.h"
 
 #include <assert.h>
+#include <ev.h>
 #include <event.h>
 #include <jansson.h>
 #include <stdio.h>
@@ -155,7 +156,6 @@ static void on_heartbeat(struct uwsc_client *ws_client, json_t *data) {
         return;
     }
     client->hb_interval = (int)json_integer_value(hb_interval_json);
-
     send_heartbeat(client);
 
     if (!client->sent_initial_heartbeat) {
@@ -299,6 +299,16 @@ void discord_message_destroy(cord_message_t *msg) {
     }
 }
 
+static void log_on_message_status(cord_client_t *client) {
+    if (client->sent_initial_heartbeat) {
+        if (client->heartbeat_acknowledged) {
+            logger_debug("ACK");
+        } else {
+            logger_debug("Zombie");
+        }
+    }
+}
+
 static void on_message(struct uwsc_client *ws_client, void *data, size_t length,
                        bool binary) {
     (void)binary;
@@ -321,7 +331,6 @@ static void on_message(struct uwsc_client *ws_client, void *data, size_t length,
     if (rc < 0) {
         logger_error("Failed to parse gateway payload");
     }
-
     json_decref(raw_payload);
 
     char *event_name = payload->t;
@@ -332,6 +341,7 @@ static void on_message(struct uwsc_client *ws_client, void *data, size_t length,
 
                 cord_gateway_event_t *event = get_gateway_event_from_cstring(event_name);
                 if (event_has_handler(event)) {
+                    logger_info("Handling event(%s)", event);
                     event->handler(client, payload->d, event_name);
                 } else {
                     logger_warn("No handler for event(%s)", event);
@@ -350,11 +360,9 @@ static void on_message(struct uwsc_client *ws_client, void *data, size_t length,
             logger_warn("Invalid Session");
             break;
         case OP_HELLO:
+            on_heartbeat(ws_client, payload->d);
             if (!client->sent_initial_heartbeat) {
-                on_heartbeat(ws_client, payload->d);
                 send_identify(ws_client);
-            } else {
-                on_heartbeat(ws_client, payload->d);
             }
             break;
         case OP_HEARTBEAT_ACK:
@@ -365,14 +373,7 @@ static void on_message(struct uwsc_client *ws_client, void *data, size_t length,
             break;
     }
 
-    if (client->sent_initial_heartbeat) {
-        if (client->heartbeat_acknowledged) {
-            logger_debug("ACK");
-        } else {
-            logger_debug("Zombie");
-        }
-    }
-
+    log_on_message_status(client);
     // json_decref(payload->d);
     cord_bump_clear(client->temporary_allocator);
 }
@@ -388,7 +389,7 @@ static void on_close(struct uwsc_client *ws_client, int code, const char *reason
     logger_debug("Closing connection to gateway (%d): %s", code, reason);
 }
 
-cord_client_t *discord_create(void) {
+cord_client_t *cord_client_create(void) {
     identity_info_t identity = {0};
     load_identity_info(&identity);
 

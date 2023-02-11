@@ -39,12 +39,7 @@ static cord_gateway_event_t gateway_events[] = {{"CHANNEL_CREATE", NULL},
                                                 {"", NULL}};
 
 bool event_has_handler(cord_gateway_event_t *event) {
-    if (event) {
-        if (event->handler) {
-            return true;
-        }
-    }
-    return false;
+    return event && event->handler;
 }
 
 cord_gateway_event_t *get_gateway_event_from_cstring(char *event) {

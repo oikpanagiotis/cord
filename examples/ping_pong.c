@@ -1,29 +1,37 @@
 #include <cord.h>
-#include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 
-static char *get_message_content(cord_message_t *message) {
-    return cord_strbuf_to_cstring(message->content);
+// Function to get content of cord_message_t as a C string
+char *get_message_content(cord_t *cord, cord_message_t *message) {
+    int allocator_id = *(int *)cord->user_data;
+
+    cord_str_t content = cord_strbuf_to_str(*message->content);
+    char *memory = cord_alloc(cord, allocator_id, content.length + 1);
+    memset(memory, 0, content.length);
+    return memcpy(memory, content.data, content.length);
 }
 
-static bool string_equals(const char *s1, const char *s2) {
-    return strcmp(s1, s2) == 0;
-}
+void on_message(cord_t *cord, cord_message_t *message) {
+    int allocator_id = *(int *)cord->user_data;
 
-void on_message(cord_t *ctx, cord_message_t *message) {
-    if (string_equals(get_message_content(message), "ping")) {
-        cord_send_text(ctx, "Pong!");
+    char *content = get_message_content(cord, message);
+    if (strcmp(content, "ping") == 0) {
+        cord_send_text(cord, message->guild_id, "Pong!");
     }
+
+    // At the end of each call we clear the allocated memory with a single call
+    cord_clear_allocator(cord, allocator_id);
 }
 
 int main(void) {
-    const char *url = "wss://gateway.discord.gg";
-    cord_t *context = cord_create();
+    cord_t *cord = cord_create();
+    int allocator_id = cord_get_allocator(cord);
 
-    cord_on_message(context, on_message);
+    // Pass allocator_id to user_data in order to access it in on_message
+    cord->user_data = &allocator_id;
+    cord_on_message(cord, on_message);
 
-    cord_connect(context, url);
-    cord_destroy(context);
+    cord_connect(cord, "wss://gateway.discord.gg");
+    cord_destroy(cord);
     return 0;
 }

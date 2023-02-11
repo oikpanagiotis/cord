@@ -86,7 +86,7 @@ typedef struct cord_client_t {
     void *user_data;
 } cord_client_t;
 
-cord_client_t *discord_create(void);
+cord_client_t *cord_client_create(void);
 
 i32 cord_client_connect(cord_client_t *client, const char *url);
 void discord_destroy(cord_client_t *client);

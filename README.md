@@ -10,34 +10,44 @@ NOTE: The library is still in early development stage and many features are miss
 ## Example
 The following example bot uses cord to create a simple echo bot  
 ```
-#include <stdlib.h>
-#include <string.h>
 #include <cord.h>
+#include <string.h>
 
-void on_message(discord_t *client, cord_message_t *msg) {
-	if (strcmp(msg->content, "ping") == 0) {
-		// Allocate a response
-		cord_message_t *response = malloc(sizeof(cord_message_t));
-		response->channel_id = calloc(1, 256);
-		strcpy(response->channel_id, msg->channel_id);
+// Function to get content of cord_message_t as a C string
+char *get_message_content(cord_t *cord, cord_message_t *message) {
+    int allocator_id = *(int *)cord->user_data;
 
-		// Write & send the message
-		discord_message_set_content(response, "Pong!");
-		discord_send_message(client, response);
-	}
+    cord_str_t content = cord_strbuf_to_str(*message->content);
+    char *memory = cord_alloc(cord, allocator_id, content.length + 1);
+    memset(memory, 0, content.length);
+    return memcpy(memory, content.data, content.length);
+}
+
+void on_message(cord_t *cord, cord_message_t *message) {
+    int allocator_id = *(int *)cord->user_data;
+
+    char *content = get_message_content(cord, message);
+    if (strcmp(content, "ping") == 0) {
+        cord_send_text(cord, message->guild_id, "Pong!");
+    }
+
+    // At the end of each call we clear the allocated memory with a single call
+    cord_clear_allocator(cord, allocator_id);
 }
 
 int main(void) {
-	const char *url = "wss://gateway.discord.gg/?v=6&encoding=json";
-	cord_t *context = cord_create();
+    cord_t *cord = cord_create();
+    int allocator_id = cord_get_allocator(cord);
 
-	// Provide callback
-	cord_on_message(context, on_message);
+    // Pass allocator_id to user_data in order to access it in on_message
+    cord->user_data = &allocator_id;
+    cord_on_message(cord, on_message);
 
-	cord_connect(context, url);
-	cord_destroy(context);
-	return 0;
+    cord_connect(cord, "wss://gateway.discord.gg");
+    cord_destroy(cord);
+    return 0;
 }
+
 
 ```
 ## Building
