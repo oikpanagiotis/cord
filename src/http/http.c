@@ -1,10 +1,39 @@
 #include "http.h"
 #include "../core/log.h"
 
+#include <assert.h>
 #include <curl/curl.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
+static bool is_curl_error(CURLcode code) {
+    return code != CURLE_OK;
+}
+
+static const char *curl_error(CURLcode code) {
+    return curl_easy_strerror(code);
+}
+
+cord_url_builder_t cord_url_builder_create(cord_bump_t *allocator) {
+    return (cord_url_builder_t){.string_builder =
+                                    cord_strbuf_create_with_allocator(allocator),
+                                .allocator = allocator};
+}
+
+void cord_url_builder_add_route(cord_url_builder_t url_builder, cord_str_t route) {
+    cord_strbuf_t *builder = url_builder.string_builder;
+    bool is_first_route = builder->length == 0;
+
+    if (!is_first_route) {
+        cord_strbuf_append(builder, cstr("/"));
+    }
+    cord_strbuf_append(builder, route);
+}
+
+char *cord_url_builder_build(cord_url_builder_t url_builder) {
+    return cord_strbuf_to_cstring(url_builder.string_builder);
+}
 
 cord_http_client_t *cord_http_client_create(const char *bot_token) {
     cord_http_client_t *client = malloc(sizeof(cord_http_client_t));
@@ -13,6 +42,7 @@ cord_http_client_t *cord_http_client_create(const char *bot_token) {
         return NULL;
     }
 
+    // FIXME: We never free this
     client->bot_token = strdup(bot_token);
     if (!client->bot_token) {
         logger_error("Failed to allocate bot_token");
@@ -46,10 +76,10 @@ void cord_http_client_destroy(cord_http_client_t *client) {
     curl_global_cleanup();
 }
 
-struct curl_slist *cord_discord_api_header(cord_http_client_t *client) {
+struct curl_slist *discord_api_headers(const char *bot_token) {
     struct curl_slist *list = NULL;
     char auth[256] = {0};
-    snprintf(auth, 256, "Authorization: Bot %s", client->bot_token);
+    snprintf(auth, 256, "Authorization: Bot %s", bot_token);
     list = curl_slist_append(list, auth);
     list = curl_slist_append(list, "Accept: application/json");
     list = curl_slist_append(list, "charset: utf-8");
@@ -58,43 +88,61 @@ struct curl_slist *cord_discord_api_header(cord_http_client_t *client) {
     return list;
 }
 
-cord_http_request_t *cord_http_request_create(int type, char *url,
-                                              struct curl_slist *headers,
-                                              char *content) {
-    cord_http_request_t *req = malloc(sizeof(cord_http_request_t));
-    if (!req) {
+cord_http_request_t *cord_http_request_create(int type, char *url, char *content) {
+    cord_http_request_t *request = malloc(sizeof(cord_http_request_t));
+    if (!request) {
         logger_error("Failed to allocate http request");
         return NULL;
     }
 
-    req->url = url;
-    req->header = headers;
-    req->type = type;
-    req->body = content;
-    return req;
+    request->url = url;
+    request->header = NULL;
+    request->type = type;
+    request->body = content;
+    return request;
+}
+
+static void log_request(cord_http_request_t *request) {
+    static const char *types[] = {"GET", "POST", "DELETE"};
+
+    logger_info("Performing HTTP %s to %s with %s", types[request->type],
+                not_null_cstring_dash(request->url),
+                not_null_cstring_dash(request->body));
+}
+
+static char *get_request_type_cstring(cord_http_request_t *request) {
+    static char *GET = "GET";
+    static char *POST = "POST";
+    if (request->type == HTTP_GET) {
+        return GET;
+    } else if (request->type == HTTP_POST) {
+        return POST;
+    }
+    return NULL;
+}
+
+static void prepare_request_options(cord_http_client_t *client,
+                                    cord_http_request_t *request) {
+    char *request_type = get_request_type_cstring(request);
+    assert(request_type && "Request type can not be null");
+
+    request->header = discord_api_headers(client->bot_token);
+    curl_easy_setopt(client->curl, CURLOPT_CUSTOMREQUEST, request_type);
+    curl_easy_setopt(client->curl, CURLOPT_URL, request->url);
+    curl_easy_setopt(client->curl, CURLOPT_HTTPHEADER, request->header);
+    if (request->type == HTTP_POST) {
+        curl_easy_setopt(client->curl, CURLOPT_POSTFIELDS, request->body);
+    }
 }
 
 int cord_http_client_perform_request(cord_http_client_t *client,
-                                     cord_http_request_t *req) {
-    static char *GET = "GET";
-    static char *POST = "POST";
-    char *request_type = NULL;
-    if (req->type == HTTP_GET) {
-        request_type = GET;
-    } else if (req->type == HTTP_POST) {
-        request_type = POST;
-    }
-
-    curl_easy_setopt(client->curl, CURLOPT_CUSTOMREQUEST, request_type);
-    curl_easy_setopt(client->curl, CURLOPT_URL, req->url);
-    curl_easy_setopt(client->curl, CURLOPT_HTTPHEADER, req->header);
-    if (req->type == HTTP_POST) {
-        curl_easy_setopt(client->curl, CURLOPT_POSTFIELDS, req->body);
-    }
+                                     cord_http_request_t *request) {
+    prepare_request_options(client, request);
+    // log_request(request);
 
     CURLcode rc = curl_easy_perform(client->curl);
-    if (rc != CURLE_OK) {
-        logger_error("HTTP Request failed: %s", curl_easy_strerror(rc));
+    if (is_curl_error(rc)) {
+        logger_error("HTTP %s Request failed: %s", curl_error(rc));
     }
     return (int)rc;
 }

@@ -775,8 +775,6 @@ static void message_strings(cord_message_t *message, string_ref key, string_ref 
     cord_strbuf_t *builder = cord_strbuf_create_with_allocator(message->allocator);
     cord_strbuf_append(builder, cstr(cstring));
 
-    logger_debug("Message strings  %s %s", key, cstring);
-
     map_property(message, id, "id", key, builder);
     map_property(message, channel_id, "channel_id", key, builder);
     map_property(message, guild_id, "guild_id", key, builder);

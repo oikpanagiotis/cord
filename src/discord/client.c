@@ -3,6 +3,7 @@
 #include "../core/log.h"
 #include "../core/typedefs.h"
 #include "events.h"
+#include "serialization.h"
 #include "types.h"
 
 #include <assert.h>
@@ -265,12 +266,8 @@ int parse_gatway_payload(json_t *raw_payload, gateway_payload *payload) {
     return 0;
 }
 
-void discord_message_set_content(cord_message_t *msg, char *content) {
-    cord_strbuf_append(msg->content, cstr(content));
-}
-
 char *DISCORD_API_URL = "https://discordapp.com/api";
-i32 cord_client_send_message(cord_client_t *client, cord_message_t *msg) {
+void cord_client_send_message(cord_client_t *client, cord_message_t *msg) {
     assert(msg);
     // TODO: Prefix the channel and ids based on our cache
     const int URL_LEN = 1024;
@@ -280,17 +277,32 @@ i32 cord_client_send_message(cord_client_t *client, cord_message_t *msg) {
         return -1;
     }
 
+    /*
+     * Here we should call a serialize function
+     * payload = payload_from_message(writer *w, cord_message_t *m)
+     */
+
+    // cord_url_builder_t url_builder =
+    //     cord_url_builder_create(client->persistent_allocator);
+    // cord_url_builder_add_route(url_builder, cstr(DISCORD_API_URL));
+    // cord_url_builder_add_route(url_builder, cstr("channels"));
+    // cord_url_builder_add_route(url_builder, cord_strbuf_to_str(*msg->channel_id));
+    // cord_url_builder_add_route(url_builder, cstr("messages"));
+    // cord_str_t url = cord_url_builder_build(url_builder);
+
+    cord_str_t channel_id = cord_strbuf_to_str(*msg->channel_id);
+    logger_debug("Channel ID resolved to: %.*s", channel_id.length, channel_id.data);
     snprintf(final_url, URL_LEN, "%s/channels/%.*s/messages", DISCORD_API_URL,
-             (int)msg->channel_id->length, msg->channel_id->data);
+             (int)channel_id.length, channel_id.data);
 
-    char *data = cord_strbuf_to_cstring(msg->content);
-    cord_http_request_t *request = cord_http_request_create(
-        HTTP_POST, final_url, cord_discord_api_header(client->http), data);
-
+    cord_json_writer_t writer = cord_json_writer_create(client->persistent_allocator);
+    char *json = cord_message_get_json(writer, msg);
+    logger_debug("Data returned by our new cord_json_writer_t %s", json);
+    
+    cord_http_request_t *request = cord_http_request_create(HTTP_POST, final_url, json);
     cord_http_client_perform_request(client->http, request);
-    free(data);
+
     free(final_url);
-    return 0;
 }
 
 void discord_message_destroy(cord_message_t *msg) {
@@ -337,11 +349,8 @@ static void on_message(struct uwsc_client *ws_client, void *data, size_t length,
     switch (payload->op) {
         case OP_DISPATCH:
             if (!cstring_is_empty(event_name)) {
-                logger_debug("Received Event: %s", event_name);
-
                 cord_gateway_event_t *event = get_gateway_event_from_cstring(event_name);
                 if (event_has_handler(event)) {
-                    logger_info("Handling event(%s)", event);
                     event->handler(client, payload->d, event_name);
                 } else {
                     logger_warn("No handler for event(%s)", event);
@@ -421,7 +430,7 @@ cord_client_t *cord_client_create(void) {
     client->must_reconnect = false;
 
     cord_gateway_event_t *on_message_event =
-        get_gateway_event(GATEWAY_EVENT_CHANNEL_CREATE);
+        get_gateway_event(GATEWAY_EVENT_MESSAGE_CREATE);
 
     on_message_event->handler = on_message_create;
 
@@ -434,21 +443,21 @@ static void report_memory(struct ev_loop *loop, ev_timer *timer, int revents) {
     cord_client_t *client = timer->data;
 
     logger_info("Memory Report");
-    f64 message_allocator_used = (f64)client->message_allocator->used / (1024 * 1024);
-    f64 temporary_allocator_used = (f64)client->temporary_allocator->used / (1024 * 1024);
+    f64 message_allocator_used = (f64)client->message_allocator->used / MB(1);
+    f64 temporary_allocator_used = (f64)client->temporary_allocator->used / MB(1);
     f64 persistent_allocator_used =
-        (f64)client->persistent_allocator->used / (1024 * 1024);
+        (f64)client->persistent_allocator->used / MB(1);
     f64 message_lifecycle_allocator_used =
-        (f64)client->message_lifecycle_allocator->used / (1024 * 1024);
+        (f64)client->message_lifecycle_allocator->used / MB(1);
 
     f64 message_allocator_capacity =
-        (f64)client->message_allocator->capacity / (1024 * 1024);
+        (f64)client->message_allocator->capacity / MB(1);
     f64 temporary_allocator_capacity =
-        (f64)client->temporary_allocator->capacity / (1024 * 1024);
+        (f64)client->temporary_allocator->capacity / MB(1);
     f64 persistent_allocator_capacity =
-        (f64)client->persistent_allocator->capacity / (1024 * 1024);
+        (f64)client->persistent_allocator->capacity / MB(1);
     f64 message_lifecycle_allocator_capacity =
-        (f64)client->message_lifecycle_allocator->capacity / (1024 * 1024);
+        (f64)client->message_lifecycle_allocator->capacity / MB(1);
 
     logger_info("  Message Allocator (%.2f / %.2f)MB", message_allocator_used,
                 message_allocator_capacity);
@@ -456,8 +465,8 @@ static void report_memory(struct ev_loop *loop, ev_timer *timer, int revents) {
                 temporary_allocator_capacity);
     logger_info("  Persistent Allocator (%.2f / %.2f)MB", persistent_allocator_used,
                 persistent_allocator_capacity);
-    logger_info("  Capacity Allocator (%.2f / %.2f)MB", message_lifecycle_allocator_used,
-                message_lifecycle_allocator_capacity);
+    logger_info("  Message Lifecycle Allocator (%.2f / %.2f)MB",
+                message_lifecycle_allocator_used, message_lifecycle_allocator_capacity);
 
     ev_timer_again(loop, timer);
 }

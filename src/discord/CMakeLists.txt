@@ -9,6 +9,7 @@ set(Sources
     events.c
     types.c
     entities.c
+    serialization.c
 )
 
 add_library(discord SHARED ${Sources})

@@ -65,6 +65,11 @@ static void clear_message_lifecycle_allocator(cord_client_t *client) {
     cord_bump_clear(client->message_lifecycle_allocator);
 }
 
+
+static void log_event(char *event) {
+    logger_info("Received event: [%s]", event);
+}
+
 void on_channel_create(cord_client_t *client, json_t *data, char *event) {
     assert(false && "Not Implemented");
 }
@@ -139,7 +144,7 @@ void on_invite_delete(cord_client_t *client, json_t *data, char *event) {
 
 void on_message_create(cord_client_t *client, json_t *data, char *event) {
     cord_t *cord = (cord_t *)client->user_data;
-    logger_debug("Got event: %s", event);
+    log_event(event);
 
     cord_serialize_result_t message =
         cord_message_serialize(data, client->message_lifecycle_allocator);

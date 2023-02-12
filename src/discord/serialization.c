@@ -2,58 +2,38 @@
 #include "../core/errors.h"
 #include "../core/log.h"
 #include "../strings.h"
+#include "entities.h"
 
 #include <assert.h>
 #include <jansson.h>
 #include <stdio.h>
 
-static void append_quote(json_payload_t payload) {
-    cord_strbuf_append(&payload.buffer, cstr("\""));
+static void append_quote(cord_json_writer_t writer) {
+    cord_strbuf_append(writer.buffer, cstr("\""));
 }
 
-static void end_append_key(json_payload_t payload) {
-    cord_strbuf_append(&payload.buffer, cstr(": "));
+static void end_append_key(cord_json_writer_t writer) {
+    cord_strbuf_append(writer.buffer, cstr(": "));
 }
 
-static void append_key(json_payload_t payload, cord_str_t key) {
-    append_quote(payload);
-    cord_strbuf_append(&payload.buffer, key);
-    append_quote(payload);
-    end_append_key(payload);
+static void append_key(cord_json_writer_t writer, cord_str_t key) {
+    append_quote(writer);
+    cord_strbuf_append(writer.buffer, key);
+    append_quote(writer);
+    end_append_key(writer);
 }
 
-static void append_comma(json_payload_t payload) {
-    cord_strbuf_append(&payload.buffer, cstr(","));
+static void append_comma(cord_json_writer_t writer) {
+    cord_strbuf_append(writer.buffer, cstr(","));
 }
 
-static void append_final_value(json_payload_t payload, char *cstring) {
-    cord_strbuf_append(&payload.buffer, cstr(cstring));
+static void append_final_value(cord_json_writer_t writer, char *cstring) {
+    cord_strbuf_append(writer.buffer, cstr(cstring));
 }
 
-static void append_non_final_value(json_payload_t payload, char *cstring) {
-    append_final_value(payload, cstring);
-    append_comma(payload);
-}
-
-json_payload_t json_payload_create(cord_bump_t *allocator) {
-    return (json_payload_t){.buffer = cord_strbuf_create_with_allocator(allocator),
-                            .allocator = allocator};
-}
-
-void json_payload_start_writing(json_payload_t payload) {
-    cord_strbuf_append(&payload.buffer, cstr("{"));
-}
-
-void json_payload_finish_writing(json_payload_t payload) {
-    cord_strbuf_append(&payload.buffer, cstr("}"));
-}
-
-bool json_payload_write_string(json_payload_t payload, cord_str_t key, cord_str_t value) {
-    append_key(payload, key);
-    append_quote(payload);
-    cord_strbuf_append(&payload.buffer, value);
-    append_quote(payload);
-    return true;
+static void append_non_final_value(cord_json_writer_t writer, char *cstring) {
+    append_final_value(writer, cstring);
+    append_comma(writer);
 }
 
 #define MAX_FORMAT_BUFFER_LENGTH 64
@@ -70,6 +50,28 @@ static bool copy_i64_to_string(char *format, i64 value) {
     return true;
 }
 
+cord_json_writer_t cord_json_writer_create(cord_bump_t *allocator) {
+    return (cord_json_writer_t){.buffer = cord_strbuf_create_with_allocator(allocator),
+                                .allocator = allocator};
+}
+
+void cord_json_writer_start(cord_json_writer_t writer) {
+    cord_strbuf_append(writer.buffer, cstr("{"));
+}
+
+void cord_json_writer_end(cord_json_writer_t writer) {
+    cord_strbuf_append(writer.buffer, cstr("}"));
+}
+
+bool cord_json_writer_write_string(cord_json_writer_t writer, cord_str_t key,
+                              cord_str_t value) {
+    append_key(writer, key);
+    append_quote(writer);
+    cord_strbuf_append(writer.buffer, value);
+    append_quote(writer);
+    return true;
+}
+
 static bool copy_bool_to_string(char *format, bool value) {
     i32 rc = snprintf(format, MAX_FORMAT_BUFFER_LENGTH, "%s", bool_to_cstring(value));
     if (is_posix_error(rc)) {
@@ -78,46 +80,64 @@ static bool copy_bool_to_string(char *format, bool value) {
     return is_posix_error(rc);
 }
 
-bool json_payload_write_number(json_payload_t payload, cord_str_t key, i64 value) {
-    append_key(payload, key);
+bool cord_json_writer_write_number(cord_json_writer_t writer, cord_str_t key, i64 value) {
+    append_key(writer, key);
     char format[MAX_FORMAT_BUFFER_LENGTH] = {0};
     bool success = copy_i64_to_string(format, value);
     if (!success) {
         logger_warn("Failed to convert i64: %ld to string", value);
         return false;
     }
-    append_non_final_value(payload, format);
+    append_non_final_value(writer, format);
     return true;
 }
 
-bool json_payload_write_boolean(json_payload_t payload, cord_str_t key, bool value) {
-    append_key(payload, key);
+bool cord_json_writer_write_boolean(cord_json_writer_t writer, cord_str_t key,
+                                    bool value) {
+    append_key(writer, key);
     char format[MAX_FORMAT_BUFFER_LENGTH] = {0};
     bool success = copy_bool_to_string(format, value);
     if (!success) {
         logger_warn("Failed to convert bool: %s to string", bool_to_cstring(value));
         return false;
     }
-    append_non_final_value(payload, format);
+    append_non_final_value(writer, format);
     return true;
 }
 
-bool json_payload_write_null(json_payload_t payload, cord_str_t key) {
-    append_key(payload, key);
-    append_non_final_value(payload, "null");
+bool cord_json_writer_write_null(cord_json_writer_t writer, cord_str_t key) {
+    append_key(writer, key);
+    append_non_final_value(writer, "null");
     return true;
 }
 
-bool json_payload_write_object(json_payload_t payload, cord_str_t key, json_t *object) {
-    append_key(payload, key);
+bool cord_json_writer_write_object(cord_json_writer_t writer, cord_str_t key,
+                                   json_t *object) {
+    append_key(writer, key);
     // foreach field write using write functions
     // for each object write using itself
     assert(0 && "Not Implemented");
     return false;
 }
 
-bool json_payload_write_array(json_payload_t payload, cord_str_t key,
-                              cord_array_t *array) {
+bool cord_json_writer_write_array(cord_json_writer_t writer, cord_str_t key,
+                                  cord_array_t *array) {
     assert(0 && "Not Implemented");
     return false;
+}
+
+#define serialize_string(writer, string, obj, field)                                     \
+    if (obj->field) {                                                                    \
+        cord_json_writer_write_string(writer, cstr(string),                              \
+                                      cord_strbuf_to_str(*((obj)->field)));              \
+    }
+
+char *cord_message_get_json(cord_json_writer_t writer, cord_message_t *message) {
+    cord_bump_t *allocator = writer.allocator;
+    cord_json_writer_start(writer);
+    {
+        serialize_string(writer, "content", message, content);
+    }
+    cord_json_writer_end(writer);
+    return cord_strbuf_to_cstring(writer.buffer);
 }

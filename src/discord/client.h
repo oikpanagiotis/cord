@@ -91,6 +91,6 @@ cord_client_t *cord_client_create(void);
 i32 cord_client_connect(cord_client_t *client, const char *url);
 void discord_destroy(cord_client_t *client);
 
-i32 cord_client_send_message(cord_client_t *client, cord_message_t *message);
+void cord_client_send_message(cord_client_t *client, cord_message_t *message);
 
 #endif
