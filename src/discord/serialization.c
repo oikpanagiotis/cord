@@ -133,11 +133,10 @@ bool cord_json_writer_write_array(cord_json_writer_t writer, cord_str_t key,
     }
 
 char *cord_message_get_json(cord_json_writer_t writer, cord_message_t *message) {
-    cord_bump_t *allocator = writer.allocator;
     cord_json_writer_start(writer);
     {
         serialize_string(writer, "content", message, content);
     }
     cord_json_writer_end(writer);
-    return cord_strbuf_to_cstring(writer.buffer);
+    return cstring_of(writer.buffer, writer.allocator);
 }

@@ -12,6 +12,7 @@
 #include <jansson.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <uwsc/config.h>
 
 static void load_identity_info(identity_info_t *identity) {
@@ -274,7 +275,7 @@ void cord_client_send_message(cord_client_t *client, cord_message_t *msg) {
     char *final_url = calloc(1, sizeof(char) * URL_LEN);
     if (!final_url) {
         logger_error("Failed to allocate final url");
-        return -1;
+        return;
     }
 
     /*
@@ -295,10 +296,8 @@ void cord_client_send_message(cord_client_t *client, cord_message_t *msg) {
     snprintf(final_url, URL_LEN, "%s/channels/%.*s/messages", DISCORD_API_URL,
              (int)channel_id.length, channel_id.data);
 
-    cord_json_writer_t writer = cord_json_writer_create(client->persistent_allocator);
+    cord_json_writer_t writer = cord_json_writer_create(client->temporary_allocator);
     char *json = cord_message_get_json(writer, msg);
-    logger_debug("Data returned by our new cord_json_writer_t %s", json);
-    
     cord_http_request_t *request = cord_http_request_create(HTTP_POST, final_url, json);
     cord_http_client_perform_request(client->http, request);
 

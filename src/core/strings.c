@@ -241,9 +241,9 @@ cord_str_t cord_strbuf_to_str(cord_strbuf_t builder) {
     return (cord_str_t){.data = builder.data, .length = builder.length};
 }
 
-char *cord_strbuf_to_cstring(cord_strbuf_t *builder) {
-    char *cstring = calloc(sizeof(char), sizeof(builder->length + 1));
-    return memcpy(cstring, builder->data, builder->length);
+char *cord_strbuf_to_cstring(cord_strbuf_t builder) {
+    char *cstring = calloc(1, builder.length + 1);
+    return memcpy(cstring, builder.data, builder.length);
 }
 
 bool cstring_is_empty(const char *string) {
@@ -278,4 +278,10 @@ char *not_null_cstring(char *string) {
 char *not_null_cstring_dash(char *string) {
     static char *dash = "-";
     return string ? string : dash;
+}
+
+char *cstring_of(cord_strbuf_t *builder, cord_bump_t *allocator) {
+    const size_t size = builder->length + 1;
+    char *cstring = balloc(allocator, size);
+    return memcpy(cstring, builder->data, size);
 }

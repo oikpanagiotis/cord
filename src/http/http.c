@@ -32,7 +32,7 @@ void cord_url_builder_add_route(cord_url_builder_t url_builder, cord_str_t route
 }
 
 char *cord_url_builder_build(cord_url_builder_t url_builder) {
-    return cord_strbuf_to_cstring(url_builder.string_builder);
+    return cord_strbuf_to_cstring(*url_builder.string_builder);
 }
 
 cord_http_client_t *cord_http_client_create(const char *bot_token) {

@@ -150,11 +150,11 @@ MU_TEST(test_cord_strbuf_to_cstring) {
     cord_strbuf_t *builder = cord_strbuf_create();
     cord_strbuf_append(builder, cstr(test_string));
 
-    char *cstring = cord_strbuf_to_cstring(builder);
+    char *cstring = cord_strbuf_to_cstring(*builder);
     mu_assert_string_eq(test_string, cstring);
 
     cord_strbuf_append(builder, cstr(" edited"));
-    char *edited_cstring = cord_strbuf_to_cstring(builder);
+    char *edited_cstring = cord_strbuf_to_cstring(*builder);
     mu_assert_string_eq("my test string edited", edited_cstring);
 
     free(cstring);
