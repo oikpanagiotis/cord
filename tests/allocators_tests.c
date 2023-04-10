@@ -9,12 +9,12 @@ static cord_pool_t *pool_allocator = NULL;
 
 void test_setup(void) {
     bump_allocator = cord_bump_create_with_size(SIZE);
-    pool_allocator = cord_pool_create_with_size(SIZE);
+    // pool_allocator = cord_pool_create_with_size(SIZE);
 }
 
 void test_teardown(void) {
     cord_bump_destroy(bump_allocator);
-    cord_pool_destroy(pool_allocator);
+    // cord_pool_destroy(pool_allocator);
     bump_allocator = NULL;
     pool_allocator = NULL;
 }

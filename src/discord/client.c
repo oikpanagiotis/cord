@@ -444,15 +444,12 @@ static void report_memory(struct ev_loop *loop, ev_timer *timer, int revents) {
     logger_info("Memory Report");
     f64 message_allocator_used = (f64)client->message_allocator->used / MB(1);
     f64 temporary_allocator_used = (f64)client->temporary_allocator->used / MB(1);
-    f64 persistent_allocator_used =
-        (f64)client->persistent_allocator->used / MB(1);
+    f64 persistent_allocator_used = (f64)client->persistent_allocator->used / MB(1);
     f64 message_lifecycle_allocator_used =
         (f64)client->message_lifecycle_allocator->used / MB(1);
 
-    f64 message_allocator_capacity =
-        (f64)client->message_allocator->capacity / MB(1);
-    f64 temporary_allocator_capacity =
-        (f64)client->temporary_allocator->capacity / MB(1);
+    f64 message_allocator_capacity = (f64)client->message_allocator->capacity / MB(1);
+    f64 temporary_allocator_capacity = (f64)client->temporary_allocator->capacity / MB(1);
     f64 persistent_allocator_capacity =
         (f64)client->persistent_allocator->capacity / MB(1);
     f64 message_lifecycle_allocator_capacity =

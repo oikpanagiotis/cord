@@ -1,6 +1,7 @@
 #ifndef MEMORY_H
 #define MEMORY_H
 
+#include <stddef.h>
 #include <stdint.h>
 #include <stdlib.h>
 
@@ -8,9 +9,27 @@
 
 #define array_length(arr) (sizeof(arr) / sizeof(*arr))
 
-#define KB(n) (n * 1024)
-#define MB(n) (n * 1024 * 1024)
-#define GB(n) (n * 1024 * 1024 * 1024)
+#define KB(n) (size_t)(n * 1024)
+#define MB(n) (size_t)(n * 1024 * 1024)
+#define GB(n) (size_t)(n * 1024 * 1024 * 1024)
+
+/*
+ * General purpose byte buffer object
+ * Used as a building block for allocators or other structures
+ */
+typedef struct cord_buffer_t {
+    u8 *data;
+    size_t size;
+    size_t used;
+} cord_buffer_t;
+
+typedef struct cord_memory_entry_t {
+    uintptr_t *base_address;
+    size_t end_of_entry_index;
+    u32 pool_index;
+
+    struct cord_memory_entry_t *next;
+} cord_memory_entry_t;
 
 /*
  * Memory pool allocator
@@ -24,20 +43,20 @@
  * in the middle of the allocator's lifetime.
  */
 typedef struct cord_pool_t {
-    u8 *data;
-    size_t offset;
-    size_t size;
-    struct cord_pool_t *next;
+    cord_buffer_t internal;
+    cord_buffer_t buffer;
+    cord_buffer_t *next;
 
     // Points to unoccupied pools so we can reuse them.
-    struct cord_pool_t *free_list;
+    cord_memory_entry_t free_list;
 } cord_pool_t;
 
-cord_pool_t *cord_pool_create(void);
-cord_pool_t *cord_pool_create_with_size(size_t size);
-void cord_pool_destroy(cord_pool_t *pool);
+// cord_pool_t *cord_pool_create(void);
+// cord_pool_t *cord_pool_create_with_size(size_t size);
+// void cord_pool_destroy(cord_pool_t *pool);
 
-void *palloc(cord_pool_t *pool, size_t size);
+// void *palloc(cord_pool_t *pool, size_t size);
+// void pfree(cord_pool_t *pool);
 
 /*
  * Bump style allocator
