@@ -41,6 +41,6 @@ bool cord_json_writer_write_null(cord_json_writer_t writer, cord_str_t key);
 bool cord_json_writer_write_array(cord_json_writer_t writer, cord_str_t key,
                                   cord_array_t *array);
 
-char *cord_message_get_json(cord_json_writer_t writer, cord_message_t *message);
+char *cord_message_to_json(cord_json_writer_t writer, cord_message_t *message);
 
 #endif

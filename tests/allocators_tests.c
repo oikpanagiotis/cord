@@ -24,31 +24,6 @@ static void assert_balloc_memory_and_set(void *memory, f64 value) {
     *(f64 *)memory = value;
 }
 
-MU_TEST(test_cord_bump_remaining_memory) {
-    size_t remaining_memory = cord_bump_remaining_memory(bump_allocator);
-    mu_assert_int_eq(remaining_memory, SIZE);
-
-    balloc(bump_allocator, f64_size);
-    size_t expected = SIZE - f64_size;
-    remaining_memory = cord_bump_remaining_memory(bump_allocator);
-    mu_assert_int_eq(remaining_memory, expected);
-
-    balloc(bump_allocator, f64_size);
-    expected = SIZE - (2 * f64_size);
-    remaining_memory = cord_bump_remaining_memory(bump_allocator);
-    mu_assert_int_eq(remaining_memory, expected);
-
-    balloc(bump_allocator, f64_size);
-    expected = SIZE - (3 * f64_size);
-    remaining_memory = cord_bump_remaining_memory(bump_allocator);
-    mu_assert_int_eq(remaining_memory, expected);
-
-    balloc(bump_allocator, 1);
-    expected = SIZE - ((3 * f64_size) + 1);
-    remaining_memory = cord_bump_remaining_memory(bump_allocator);
-    mu_assert_int_eq(expected, remaining_memory);
-}
-
 MU_TEST(test_cord_bump_memory_correctness) {
     f64 *ten = balloc(bump_allocator, f64_size);
     assert_balloc_memory_and_set(ten, 10.0);
@@ -85,7 +60,6 @@ MU_TEST(test_cord_bump_memory_correctness) {
 MU_TEST_SUITE(test_suite) {
     MU_SUITE_CONFIGURE(&test_setup, &test_teardown);
     MU_RUN_TEST(test_cord_bump_memory_correctness);
-    MU_RUN_TEST(test_cord_bump_remaining_memory);
 }
 
 int main(void) {

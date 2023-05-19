@@ -236,8 +236,7 @@ void cord_message_init(cord_message_t *message, cord_bump_t *allocator) {
 }
 
 void cord_message_set_content(cord_message_t *message, const char *content) {
-    cord_strbuf_t *builder =
-        cord_strbuf_create_with_allocator(message->allocator);
+    cord_strbuf_t *builder = cord_strbuf_create();
     if (!builder) {
         logger_error("Failed to allocate memory for message content");
         return;

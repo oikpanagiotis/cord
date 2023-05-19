@@ -268,40 +268,28 @@ int parse_gatway_payload(json_t *raw_payload, gateway_payload *payload) {
 }
 
 char *DISCORD_API_URL = "https://discordapp.com/api";
+
+static const char *resolve_message_url(cord_temp_memory_t memory, cord_message_t *msg) {
+    // This returns misaligned error which is usually caused by uninitial;ized members?
+    cord_url_builder_t url_builder =
+        cord_url_builder_create(memory.allocator);
+    cord_url_builder_add_route(url_builder, cstr(DISCORD_API_URL));
+    cord_url_builder_add_route(url_builder, cstr("channels"));
+    cord_url_builder_add_route(url_builder, cord_strbuf_to_str(*msg->channel_id));
+    cord_url_builder_add_route(url_builder, cstr("messages"));
+    return cord_url_builder_build(url_builder);
+}
+
 void cord_client_send_message(cord_client_t *client, cord_message_t *msg) {
     assert(msg);
     // TODO: Prefix the channel and ids based on our cache
-    const int URL_LEN = 1024;
-    char *final_url = calloc(1, sizeof(char) * URL_LEN);
-    if (!final_url) {
-        logger_error("Failed to allocate final url");
-        return;
-    }
-
-    /*
-     * Here we should call a serialize function
-     * payload = payload_from_message(writer *w, cord_message_t *m)
-     */
-
-    // cord_url_builder_t url_builder =
-    //     cord_url_builder_create(client->persistent_allocator);
-    // cord_url_builder_add_route(url_builder, cstr(DISCORD_API_URL));
-    // cord_url_builder_add_route(url_builder, cstr("channels"));
-    // cord_url_builder_add_route(url_builder, cord_strbuf_to_str(*msg->channel_id));
-    // cord_url_builder_add_route(url_builder, cstr("messages"));
-    // cord_str_t url = cord_url_builder_build(url_builder);
-
-    cord_str_t channel_id = cord_strbuf_to_str(*msg->channel_id);
-    logger_debug("Channel ID resolved to: %.*s", channel_id.length, channel_id.data);
-    snprintf(final_url, URL_LEN, "%s/channels/%.*s/messages", DISCORD_API_URL,
-             (int)channel_id.length, channel_id.data);
-
-    cord_json_writer_t writer = cord_json_writer_create(client->temporary_allocator);
-    char *json = cord_message_get_json(writer, msg);
-    cord_http_request_t *request = cord_http_request_create(HTTP_POST, final_url, json);
-    cord_http_client_perform_request(client->http, request);
-
-    free(final_url);
+    // TODO: BUG: This may cause a bug when using temporary memory. Try and see
+    cord_temp_memory_t memory = cord_temp_memory_start(client->persistent_allocator);
+    assert(memory.allocator);
+    cord_json_writer_t writer = cord_json_writer_create(memory.allocator);
+    char *json = cord_message_to_json(writer, msg);
+    cord_http_post(client->http, resolve_message_url(memory, msg), json);
+    cord_temp_memory_end(memory);
 }
 
 void discord_message_destroy(cord_message_t *msg) {

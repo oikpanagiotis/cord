@@ -9,6 +9,7 @@ static api_error errors[] = {
     {CORD_OK, ""},
 
     {CORD_ERR_MALLOC, "Memory allocation failed"},
+    {CORD_ERR_HTTP_REQUEST, "Failed to perform HTTP request"},
 
     {CORD_ERR_USER_SERIALIZATION, "Failed to serialize user object"},
     {CORD_ERR_GUILD_MEMBER_SERIALIZATION, "Failed to serialize guild member object"},
@@ -19,7 +20,7 @@ static api_error errors[] = {
 };
 
 char *cord_error(int type) {
-    if (type < 0 || type > ERR_COUNT) {
+    if (type < 0 || type >= ERR_COUNT) {
         return "";
     }
 

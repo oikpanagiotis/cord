@@ -1,4 +1,5 @@
 #include "http.h"
+#include "../core/errors.h"
 #include "../core/log.h"
 
 #include <assert.h>
@@ -16,8 +17,7 @@ static const char *curl_error(CURLcode code) {
 }
 
 cord_url_builder_t cord_url_builder_create(cord_bump_t *allocator) {
-    return (cord_url_builder_t){.string_builder =
-                                    cord_strbuf_create_with_allocator(allocator),
+    return (cord_url_builder_t){.string_builder = cord_strbuf_create(),
                                 .allocator = allocator};
 }
 
@@ -32,7 +32,7 @@ void cord_url_builder_add_route(cord_url_builder_t url_builder, cord_str_t route
 }
 
 char *cord_url_builder_build(cord_url_builder_t url_builder) {
-    return cord_strbuf_to_cstring(*url_builder.string_builder);
+    return cord_strbuf_build(*url_builder.string_builder);
 }
 
 cord_http_client_t *cord_http_client_create(const char *bot_token) {
@@ -41,8 +41,10 @@ cord_http_client_t *cord_http_client_create(const char *bot_token) {
         logger_error("Failed to allocate http client");
         return NULL;
     }
+    client->allocator = cord_bump_create_with_size(KB(1));
+    client->last_error = NULL;
 
-    // FIXME: We never free this
+    // FIXME (LEAK): We never free this
     client->bot_token = strdup(bot_token);
     if (!client->bot_token) {
         logger_error("Failed to allocate bot_token");
@@ -88,8 +90,10 @@ struct curl_slist *discord_api_headers(const char *bot_token) {
     return list;
 }
 
-cord_http_request_t *cord_http_request_create(int type, char *url, char *content) {
-    cord_http_request_t *request = malloc(sizeof(cord_http_request_t));
+static cord_http_request_t *cord_http_request_create(cord_temp_memory_t memory, int type,
+                                                     const char *url, const char *body) {
+
+    cord_http_request_t *request = balloc(memory.allocator, sizeof(cord_http_request_t));
     if (!request) {
         logger_error("Failed to allocate http request");
         return NULL;
@@ -98,17 +102,18 @@ cord_http_request_t *cord_http_request_create(int type, char *url, char *content
     request->url = url;
     request->header = NULL;
     request->type = type;
-    request->body = content;
+    request->body = body;
     return request;
 }
 
-static void log_request(cord_http_request_t *request) {
-    static const char *types[] = {"GET", "POST", "DELETE"};
+// TODO: Write unit test for these
+// static void log_request(cord_http_request_t *request) {
+//     static const char *types[] = {"GET", "POST", "DELETE"};
 
-    logger_info("Performing HTTP %s to %s with %s", types[request->type],
-                not_null_cstring_dash(request->url),
-                not_null_cstring_dash(request->body));
-}
+//     logger_debug("Performing HTTP %s to %s with %s", types[request->type],
+//                  not_null_cstring_dash(request->url),
+//                  not_null_cstring_dash(request->body));
+// }
 
 static char *get_request_type_cstring(cord_http_request_t *request) {
     static char *GET = "GET";
@@ -135,14 +140,37 @@ static void prepare_request_options(cord_http_client_t *client,
     }
 }
 
-int cord_http_client_perform_request(cord_http_client_t *client,
-                                     cord_http_request_t *request) {
+static cord_error_t perform(cord_http_client_t *client, cord_http_request_t *request) {
     prepare_request_options(client, request);
-    // log_request(request);
-
     CURLcode rc = curl_easy_perform(client->curl);
     if (is_curl_error(rc)) {
         logger_error("HTTP %s Request failed: %s", curl_error(rc));
+        return CORD_ERR_HTTP_REQUEST;
     }
-    return (int)rc;
+    return is_curl_error(rc) ? CORD_ERR_HTTP_REQUEST : CORD_OK;
+}
+
+cord_error_t cord_http_get(cord_http_client_t *client, const char *url) {
+    cord_temp_memory_t memory = cord_temp_memory_start(client->allocator);
+    cord_error_t result =
+        perform(client, cord_http_request_create(memory, HTTP_GET, url, NULL));
+    cord_temp_memory_end(memory);
+    return result;
+}
+
+cord_error_t cord_http_post(cord_http_client_t *client, const char *url,
+                            const char *body) {
+    cord_temp_memory_t memory = cord_temp_memory_start(client->allocator);
+    cord_error_t result =
+        perform(client, cord_http_request_create(memory, HTTP_POST, url, body));
+    cord_temp_memory_end(memory);
+    return result;
+}
+
+cord_error_t cord_http_delete(cord_http_client_t *client, const char *url) {
+    cord_temp_memory_t memory = cord_temp_memory_start(client->allocator);
+    cord_error_t result =
+        perform(client, cord_http_request_create(memory, HTTP_DELETE, url, NULL));
+    cord_temp_memory_end(memory);
+    return result;
 }

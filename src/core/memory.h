@@ -58,6 +58,20 @@ typedef struct cord_pool_t {
 // void *palloc(cord_pool_t *pool, size_t size);
 // void pfree(cord_pool_t *pool);
 
+
+// TODO : TOTAL REFACTOR OF ALLOCATIONS / DEALLOCATIONS
+// Sharing the same allocator is too complicated to do right
+// SOLUTION 1:
+// Each large object should have it's own cord_bump_t allocator and containers will store pointers
+// SOLUTION 2:
+// Containers, Builders and any large object that is used to work with an entity and ISN't an entity itself
+// should have it's own allocator. Memory for entities will be allocated by other data structures
+// so we will need to be able to do resizing which means the apis will need to accept constructors
+// and destructors for the entities we are going to use
+// (NOTE: destructors might not be mandatory since when resizing we will need the constructor to replicate
+// the entity and we are going to free all of the old-container-memory at once)
+
+
 /*
  * Bump style allocator
  *

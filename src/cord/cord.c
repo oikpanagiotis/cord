@@ -136,7 +136,7 @@ void cord_send_text(cord_t *cord, cord_strbuf_t *channel_id, char *message) {
     cord_bump_t *allocator = cord->gateway_client->message_lifecycle_allocator;
 
     cord_message_t *msg = balloc(allocator, sizeof(cord_message_t));
-    cord_strbuf_t *content = cord_strbuf_create_with_allocator(allocator);
+    cord_strbuf_t *content = cord_strbuf_create();
     cord_strbuf_append(content, cstr(message));
     msg->content = content;
     msg->channel_id = channel_id;

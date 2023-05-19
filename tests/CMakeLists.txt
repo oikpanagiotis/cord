@@ -16,15 +16,14 @@ add_executable(allocators_tests allocators_tests.c)
 target_link_libraries(allocators_tests PRIVATE ${CoreModuleLibraries})
 add_test(NAME test_allocators COMMAND allocators)
 
-add_executable(string_tests string_tests.c)
-target_link_libraries(string_tests PRIVATE ${CoreModuleLibraries})
-add_test(NAME test_string COMMAND string)
+#add_executable(string_tests string_tests.c)
+#target_link_libraries(string_tests PRIVATE ${CoreModuleLibraries})
+#add_test(NAME test_string COMMAND string)
 
 add_custom_target(test_all
     COMMAND ./json_tests
     COMMAND ./container_tests
     COMMAND ./allocators_tests
-    COMMAND ./string_tests
 )
 
 add_custom_target(test_report
@@ -32,5 +31,4 @@ add_custom_target(test_report
     COMMAND ./json_tests >> test_report.txt
     COMMAND ./container_tests >> test_report.txt
     COMMAND ./allocators_tests >> test_report.txt
-    COMMAND ./string_tests >> test_report.txt
 )

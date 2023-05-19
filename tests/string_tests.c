@@ -236,7 +236,7 @@ MU_TEST(test_not_null_cstring_dash) {
     char *input = NULL;
     char *input2 = "2";
 
-    char *result = not_null_cstring_dash(input);
+    const char *result = not_null_cstring_dash(input);
     mu_assert(streq(result, expected), "result should be equal to expected");
 
     result = not_null_cstring_dash(input2);

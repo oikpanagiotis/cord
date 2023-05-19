@@ -1,6 +1,7 @@
 #include "memory.h"
 
 #include <assert.h>
+#include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
 
@@ -94,15 +95,45 @@ size_t cord_bump_remaining_memory(cord_bump_t *bump) {
     return bump->capacity - bump->used;
 }
 
+static bool is_power_of_two(uintptr_t x) {
+	return (x & (x-1)) == 0;
+}
+
+/**
+ * Aligned Memory:
+ *  https://www.gingerbill.org/article/2019/02/08/memory-allocation-strategies-002/
+ *  https://developer.ibm.com/technologies/systems/articles/pa-dalign/
+*/
+static uintptr_t align_forward(uintptr_t ptr, size_t align) {
+    uintptr_t p, a, modulo;
+    assert(is_power_of_two(align));
+
+    p = ptr;
+    a = (uintptr_t)align;
+    // Same as (p % a) but faster as 'a' is a power of two
+    modulo = p & (a - 1);
+
+    if (modulo != 0) {
+        // If 'p' address is not aligned, push the address to the
+        // next value which is aligned
+        p += a - modulo;
+    }
+    return p;
+}
+
 void *balloc(cord_bump_t *bump, size_t size) {
     if (size > cord_bump_remaining_memory(bump)) {
         // Out of memory
         return NULL;
     }
 
-    void *block = bump->data + bump->used;
-    bump->used += size;
-    return block;
+    uintptr_t curr = (uintptr_t)bump->data + (uintptr_t)bump->used;
+    uintptr_t offset = align_forward(curr, 2 * sizeof(void *));
+    offset -= (uintptr_t)bump->data;
+
+    void *ptr = &bump->data[offset];
+    bump->used += offset + size;
+    return ptr;
 }
 
 cord_temp_memory_t cord_temp_memory_start(cord_bump_t *bump) {

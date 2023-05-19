@@ -10,8 +10,8 @@ typedef enum cord_error_t {
     // Success
     CORD_OK = 0,
 
-    // Malloc failed
     CORD_ERR_MALLOC,
+    CORD_ERR_HTTP_REQUEST,
 
     // Object serialization errors
     CORD_ERR_USER_SERIALIZATION,

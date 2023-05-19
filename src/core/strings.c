@@ -174,35 +174,34 @@ static size_t strbuf_memory_left(cord_strbuf_t *builder) {
     return builder->capacity - builder->length;
 }
 
-cord_strbuf_t *cord_strbuf_create_with_allocator(cord_bump_t *allocator) {
-    if (!allocator) {
-        return NULL;
-    }
-
-    cord_strbuf_t *builder = balloc(allocator, sizeof(cord_strbuf_t));
+cord_strbuf_t *cord_strbuf_create_with_size(size_t size) {
+    cord_strbuf_t *builder = malloc(sizeof(cord_strbuf_t));
     if (!builder) {
         return NULL;
     }
 
-    builder->data = balloc(allocator, 64);
+    builder->data = calloc(1, size);
+    if (builder->data) {
+        free(builder);
+        return NULL;
+    }
     builder->length = 0;
-    builder->capacity = 64;
-    builder->allocator = allocator;
-
+    builder->capacity = size;
     return builder;
 }
 
 cord_strbuf_t *cord_strbuf_create(void) {
-    // FIXME: This will stop working if we surpass the size
-    cord_bump_t *allocator = cord_bump_create_with_size(KB(4));
-    return cord_strbuf_create_with_allocator(allocator);
+    return cord_strbuf_create_with_size(KB(4));
 }
 
 void cord_strbuf_destroy(cord_strbuf_t *builder) {
     if (builder) {
-        if (builder->allocator) {
-            cord_bump_destroy(builder->allocator);
+        if (builder->data) {
+            free(builder->data);
+            builder->data = NULL;
         }
+        free(builder);
+        builder = NULL;
     }
 }
 
@@ -221,10 +220,8 @@ cord_strbuf_t *cord_strbuf_from_cstring(const char *cstring) {
 }
 
 void cord_strbuf_append(cord_strbuf_t *builder, cord_str_t string) {
-    // FIXME: Update this to use pool allocator
     if ((size_t)string.length > strbuf_memory_left(builder)) {
-        char *new_memory =
-            balloc(builder->allocator, builder->capacity * STRBUF_GROWTH_FACTOR);
+        char *new_memory = malloc(builder->capacity * STRBUF_GROWTH_FACTOR);
         if (!new_memory) {
             return;
         }
@@ -242,6 +239,11 @@ cord_str_t cord_strbuf_to_str(cord_strbuf_t builder) {
 }
 
 char *cord_strbuf_to_cstring(cord_strbuf_t builder) {
+    char *cstring = calloc(1, builder.length + 1);
+    return memcpy(cstring, builder.data, builder.length);
+}
+
+char *cord_strbuf_build(cord_strbuf_t builder) {
     char *cstring = calloc(1, builder.length + 1);
     return memcpy(cstring, builder.data, builder.length);
 }
@@ -275,8 +277,8 @@ char *not_null_cstring(char *string) {
     return string ? string : null_string;
 }
 
-char *not_null_cstring_dash(char *string) {
-    static char *dash = "-";
+const char *not_null_cstring_dash(const char *string) {
+    static const char *dash = "-";
     return string ? string : dash;
 }
 

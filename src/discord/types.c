@@ -61,7 +61,7 @@ static void user_read_boolean_json_field(cord_user_t *author, const char *key,
 
 static void user_read_string_json_field(cord_user_t *user, string_ref key,
                                         string_ref value) {
-    cord_strbuf_t *field_value = cord_strbuf_create_with_allocator(user->allocator);
+    cord_strbuf_t *field_value = cord_strbuf_create();
     cord_strbuf_append(field_value, cstr(value));
 
     map_property(user, id, "id", key, field_value);
@@ -116,7 +116,7 @@ static void guild_member_booleans(cord_guild_member_t *member, string_ref key,
 
 static void guild_member_strings(cord_guild_member_t *member, string_ref key,
                                  string_ref cstring) {
-    cord_strbuf_t *builder = cord_strbuf_create_with_allocator(member->allocator);
+    cord_strbuf_t *builder = cord_strbuf_create();
     cord_strbuf_append(builder, cstr(cstring));
 
     map_property(member, nick, "nick", key, builder);
@@ -168,7 +168,7 @@ cord_serialize_result_t cord_guild_member_serialize(json_t *json_message,
 }
 
 static void role_strings(cord_role_t *role, string_ref key, string_ref cstring) {
-    cord_strbuf_t *builder = cord_strbuf_create_with_allocator(role->allocator);
+    cord_strbuf_t *builder = cord_strbuf_create();
     cord_strbuf_append(builder, cstr(cstring));
 
     map_property(role, id, "id", key, builder);
@@ -237,7 +237,7 @@ cord_serialize_result_t cord_role_serialize(json_t *json_message, cord_bump_t *a
 
 static void role_tag_strings(cord_role_tag_t *role_tag, string_ref key,
                              string_ref cstring) {
-    cord_strbuf_t *builder = cord_strbuf_create_with_allocator(role_tag->allocator);
+    cord_strbuf_t *builder = cord_strbuf_create();
     cord_strbuf_append(builder, cstr(cstring));
 
     map_property(role_tag, bot_id, "bot_id", key, builder);
@@ -283,7 +283,7 @@ cord_serialize_result_t cord_role_tag_serialize(json_t *json_role_tag,
 
 static void channel_mention_strings(cord_channel_mention_t *mention, string_ref key,
                                     string_ref value) {
-    cord_strbuf_t *string_buffer = cord_strbuf_create_with_allocator(mention->allocator);
+    cord_strbuf_t *string_buffer  = cord_strbuf_create();
     cord_strbuf_append(string_buffer, cstr(value));
 
     map_property(mention, id, "id", key, string_buffer);
@@ -323,7 +323,7 @@ cord_serialize_result_t cord_channel_mention_serialize(json_t *json_mention,
 
 static void attachment_strings(cord_attachment_t *attachment, string_ref key,
                                string_ref cstring) {
-    cord_strbuf_t *builder = cord_strbuf_create_with_allocator(attachment->allocator);
+    cord_strbuf_t *builder = cord_strbuf_create();
     cord_strbuf_append(builder, cstr(cstring));
 
     map_property(attachment, id, "id", key, builder);
@@ -378,7 +378,7 @@ cord_serialize_result_t cord_embed_footer_serialize(json_t *json_embed_footer,
 
     json_object_foreach(json_embed_footer, key, value) {
         if (json_is_string(value)) {
-            cord_strbuf_t *builder = cord_strbuf_create_with_allocator(allocator);
+            cord_strbuf_t *builder = cord_strbuf_create();
             cord_strbuf_append(builder, cstr(json_string_value(value)));
 
             map_property(embed_footer, text, "text", key, builder);
@@ -406,7 +406,7 @@ cord_serialize_result_t cord_embed_image_serialize(json_t *json_embed_image,
 
     json_object_foreach(json_embed_image, key, value) {
         if (json_is_string(value)) {
-            cord_strbuf_t *builder = cord_strbuf_create_with_allocator(allocator);
+            cord_strbuf_t *builder = cord_strbuf_create();
             cord_strbuf_append(builder, cstr(json_string_value(value)));
 
             map_property(embed_image, url, "url", key, builder);
@@ -439,7 +439,7 @@ cord_embed_thumbnail_serialize(json_t *json_embed_thumbnail, cord_bump_t *alloca
 
     json_object_foreach(json_embed_thumbnail, key, value) {
         if (json_is_string(value)) {
-            cord_strbuf_t *builder = cord_strbuf_create_with_allocator(allocator);
+            cord_strbuf_t *builder = cord_strbuf_create();
             cord_strbuf_append(builder, cstr(json_string_value(value)));
 
             map_property(embed_thumbnail, url, "url", key, builder);
@@ -471,7 +471,7 @@ cord_serialize_result_t cord_embed_video_serialize(json_t *json_embed_video,
 
     json_object_foreach(json_embed_video, key, value) {
         if (json_is_string(value)) {
-            cord_strbuf_t *builder = cord_strbuf_create_with_allocator(allocator);
+            cord_strbuf_t *builder = cord_strbuf_create();
             cord_strbuf_append(builder, cstr(json_string_value(value)));
 
             map_property(embed_video, url, "url", key, builder);
@@ -501,7 +501,7 @@ cord_serialize_result_t cord_embed_provider_serialize(json_t *json_message,
 
     json_object_foreach(json_message, key, value) {
         if (json_is_string(value)) {
-            cord_strbuf_t *builder = cord_strbuf_create_with_allocator(allocator);
+            cord_strbuf_t *builder = cord_strbuf_create();
             cord_strbuf_append(builder, cstr(json_string_value(value)));
 
             map_property(embed_provider, name, "name", key, builder);
@@ -527,7 +527,7 @@ cord_serialize_result_t cord_embed_author_serialize(json_t *json_embed_author,
 
     json_object_foreach(json_embed_author, key, value) {
         if (json_is_string(value)) {
-            cord_strbuf_t *builder = cord_strbuf_create_with_allocator(allocator);
+            cord_strbuf_t *builder = cord_strbuf_create();
             cord_strbuf_append(builder, cstr(json_string_value(value)));
 
             map_property(embed_author, name, "name", key, builder);
@@ -555,7 +555,7 @@ cord_serialize_result_t cord_embed_field_serialize(json_t *json_embed_field,
 
     json_object_foreach(json_embed_field, key, value) {
         if (json_is_string(value)) {
-            cord_strbuf_t *builder = cord_strbuf_create_with_allocator(allocator);
+            cord_strbuf_t *builder = cord_strbuf_create();
             cord_strbuf_append(builder, cstr(json_string_value(value)));
 
             map_property(embed_field, name, "name", key, builder);
@@ -581,7 +581,7 @@ cord_serialize_result_t cord_embed_serialize(json_t *json_embed, cord_bump_t *al
 
     json_object_foreach(json_embed, key, value) {
         if (json_is_string(value)) {
-            cord_strbuf_t *builder = cord_strbuf_create_with_allocator(allocator);
+            cord_strbuf_t *builder = cord_strbuf_create();
             cord_strbuf_append(builder, cstr(json_string_value(value)));
 
             map_property(embed, title, "title", key, builder);
@@ -637,7 +637,7 @@ cord_serialize_result_t cord_emoji_serialize(json_t *json_emoji, cord_bump_t *al
 
     json_object_foreach(json_emoji, key, value) {
         if (json_is_string(value)) {
-            cord_strbuf_t *builder = cord_strbuf_create_with_allocator(allocator);
+            cord_strbuf_t *builder = cord_strbuf_create();
             cord_strbuf_append(builder, cstr(json_string_value(value)));
 
             map_property(emoji, id, "id", key, builder);
@@ -702,7 +702,7 @@ cord_serialize_result_t cord_message_activity_serialize(json_t *json_message_act
             map_property(message_activity, type, "type", key,
                          (i32)json_integer_value(value));
         } else if (json_is_string(value)) {
-            cord_strbuf_t *builder = cord_strbuf_create_with_allocator(allocator);
+            cord_strbuf_t *builder = cord_strbuf_create();
             cord_strbuf_append(builder, cstr(json_string_value(value)));
 
             map_property(message_activity, party_id, "party_id", key, builder);
@@ -725,8 +725,7 @@ cord_serialize_result_t cord_message_application_serialize(json_t *json_message,
 
     json_object_foreach(json_message, key, value) {
         if (json_is_string(value)) {
-            cord_strbuf_t *builder = cord_strbuf_create_with_allocator(allocator);
-            ;
+            cord_strbuf_t *builder = cord_strbuf_create();
             cord_strbuf_append(builder, cstr(json_string_value(value)));
 
             map_property(message_app, id, "id", key, builder);
@@ -753,7 +752,7 @@ cord_serialize_result_t cord_message_sticker_serialize(json_t *json_message_stic
 
     json_object_foreach(json_message_sticker, key, value) {
         if (json_is_string(value)) {
-            cord_strbuf_t *builder = cord_strbuf_create_with_allocator(allocator);
+            cord_strbuf_t *builder = cord_strbuf_create();
             cord_strbuf_append(builder, cstr(json_string_value(value)));
 
             map_property(message_sticker, id, "id", key, builder);
@@ -772,7 +771,7 @@ cord_serialize_result_t cord_message_sticker_serialize(json_t *json_message_stic
 }
 
 static void message_strings(cord_message_t *message, string_ref key, string_ref cstring) {
-    cord_strbuf_t *builder = cord_strbuf_create_with_allocator(message->allocator);
+    cord_strbuf_t *builder = cord_strbuf_create();
     cord_strbuf_append(builder, cstr(cstring));
 
     map_property(message, id, "id", key, builder);
@@ -805,7 +804,6 @@ cord_serialize_result_t cord_message_serialize(json_t *json_message,
     }
 
     cord_message_init(message, allocator);
-
     string_ref key = NULL;
     json_t *value = NULL;
     json_object_foreach(json_message, key, value) {
@@ -837,7 +835,7 @@ cord_serialize_result_t cord_guild_serialize(json_t *json_message,
 
     json_object_foreach(json_message, key, value) {
         if (json_is_string(value)) {
-            cord_strbuf_t *builder = cord_strbuf_create_with_allocator(allocator);
+            cord_strbuf_t *builder = cord_strbuf_create();
             cord_strbuf_append(builder, cstr(json_string_value(value)));
 
             map_property(guild, id, "id", key, builder);

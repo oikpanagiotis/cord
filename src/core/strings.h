@@ -64,7 +64,6 @@ typedef struct cord_strbuf_t {
     char *data;
     size_t length;
     size_t capacity;
-    cord_bump_t *allocator;
 } cord_strbuf_t;
 
 #define cord_strbuf_undefined (cord_strbuf_t){NULL, 0, 0, NULL};
@@ -80,7 +79,7 @@ cord_strbuf_t *cord_strbuf_from_cstring(const char *cstring);
  * to cord_str_t with cstr() function.
  */
 void cord_strbuf_append(cord_strbuf_t *builder, cord_str_t string);
-cord_strbuf_t *cord_strbuf_create_with_allocator(cord_bump_t *allocator);
+cord_strbuf_t *cord_strbuf_create_with_size(size_t size);
 cord_str_t cord_strbuf_to_str(cord_strbuf_t builder);
 
 /*
@@ -88,13 +87,14 @@ cord_str_t cord_strbuf_to_str(cord_strbuf_t builder);
  * The caller is responsible for freeing the returned string.
  */
 char *cord_strbuf_to_cstring(cord_strbuf_t builder);
+char *cord_strbuf_build(cord_strbuf_t builder);
 
 bool cstring_is_empty(const char *string);
 bool cstring_is_equal(const char *s1, const char *s2);
 bool cstring_is_null_or_empty(const char *string);
 const char *bool_to_cstring(bool value);
 char *not_null_cstring(char *string);
-char *not_null_cstring_dash(char *string);
+const char *not_null_cstring_dash(const char *string);
 
 char *cstring_of(cord_strbuf_t *builder, cord_bump_t *allocator);
 

@@ -12,15 +12,19 @@ static void append_quote(cord_json_writer_t writer) {
     cord_strbuf_append(writer.buffer, cstr("\""));
 }
 
-static void end_append_key(cord_json_writer_t writer) {
+static void append_key_name(cord_json_writer_t writer, cord_str_t key) {
+    cord_strbuf_append(writer.buffer, key);
+}
+
+static void append_colon(cord_json_writer_t writer) {
     cord_strbuf_append(writer.buffer, cstr(": "));
 }
 
 static void append_key(cord_json_writer_t writer, cord_str_t key) {
     append_quote(writer);
-    cord_strbuf_append(writer.buffer, key);
+    append_key_name(writer, key);
     append_quote(writer);
-    end_append_key(writer);
+    append_colon(writer);
 }
 
 static void append_comma(cord_json_writer_t writer) {
@@ -51,7 +55,7 @@ static bool copy_i64_to_string(char *format, i64 value) {
 }
 
 cord_json_writer_t cord_json_writer_create(cord_bump_t *allocator) {
-    return (cord_json_writer_t){.buffer = cord_strbuf_create_with_allocator(allocator),
+    return (cord_json_writer_t){.buffer = cord_strbuf_create(),
                                 .allocator = allocator};
 }
 
@@ -132,7 +136,7 @@ bool cord_json_writer_write_array(cord_json_writer_t writer, cord_str_t key,
                                       cord_strbuf_to_str(*((obj)->field)));              \
     }
 
-char *cord_message_get_json(cord_json_writer_t writer, cord_message_t *message) {
+char *cord_message_to_json(cord_json_writer_t writer, cord_message_t *message) {
     cord_json_writer_start(writer);
     {
         serialize_string(writer, "content", message, content);

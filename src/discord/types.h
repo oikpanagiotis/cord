@@ -9,6 +9,7 @@
 #include <jansson.h>
 #include <stdbool.h>
 
+
 #define map_property_object_collectible(object, property, property_str, key, value,      \
                                         allocator, type, serialize)                      \
     if (cstring_is_equal(key, property_str)) {                                           \

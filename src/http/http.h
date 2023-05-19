@@ -5,6 +5,7 @@
 
 #include "../core/memory.h"
 #include "../core/strings.h"
+#include "../core/errors.h"
 
 typedef struct cord_http_client_t {
     CURL *curl;
@@ -42,16 +43,18 @@ char *cord_url_builder_build(cord_url_builder_t url_builder);
 typedef struct cord_http_request_t {
     int type;
     struct curl_slist *header;
-    char *body;
-    char *url;
+    const char *body;
+    const char *url;
 } cord_http_request_t;
-
-cord_http_request_t *cord_http_request_create(int type, char *url, char *content);
 
 cord_http_client_t *cord_http_client_create(const char *bot_token);
 void cord_http_client_destroy(cord_http_client_t *client);
 
 int cord_http_client_perform_request(cord_http_client_t *client,
                                      cord_http_request_t *request);
+
+cord_error_t cord_http_get(cord_http_client_t *client, const char *url);
+cord_error_t cord_http_post(cord_http_client_t *client, const char *url, const char *body);
+cord_error_t cord_http_delete(cord_http_client_t *client, const char *url);
 
 #endif
