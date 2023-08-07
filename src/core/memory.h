@@ -9,6 +9,7 @@
 
 #define array_length(arr) (sizeof(arr) / sizeof(*arr))
 
+#define Bytes(n) ((size_t)n)
 #define KB(n) (size_t)(n * 1024)
 #define MB(n) (size_t)(n * 1024 * 1024)
 #define GB(n) (size_t)(n * 1024 * 1024 * 1024)

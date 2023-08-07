@@ -70,7 +70,7 @@ void on_message_reaction_remove_all(cord_client_t *client, json_t *data, char *e
 void on_message_reaction_remove_emoji(cord_client_t *client, json_t *data, char *event);
 void on_presence_update(cord_client_t *client, json_t *data, char *event);
 
-bool event_has_handler(cord_gateway_event_t *event);
+bool cord_gateway_event_has_handler(cord_gateway_event_t *event);
 cord_gateway_event_t *get_gateway_event_from_cstring(char *event_name);
 cord_gateway_event_t *get_gateway_event(gateway_event_t event);
 

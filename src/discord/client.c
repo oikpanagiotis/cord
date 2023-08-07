@@ -271,8 +271,7 @@ char *DISCORD_API_URL = "https://discordapp.com/api";
 
 static const char *resolve_message_url(cord_temp_memory_t memory, cord_message_t *msg) {
     // This returns misaligned error which is usually caused by uninitial;ized members?
-    cord_url_builder_t url_builder =
-        cord_url_builder_create(memory.allocator);
+    cord_url_builder_t url_builder = cord_url_builder_create(memory.allocator);
     cord_url_builder_add_route(url_builder, cstr(DISCORD_API_URL));
     cord_url_builder_add_route(url_builder, cstr("channels"));
     cord_url_builder_add_route(url_builder, cord_strbuf_to_str(*msg->channel_id));
@@ -337,7 +336,7 @@ static void on_message(struct uwsc_client *ws_client, void *data, size_t length,
         case OP_DISPATCH:
             if (!cstring_is_empty(event_name)) {
                 cord_gateway_event_t *event = get_gateway_event_from_cstring(event_name);
-                if (event_has_handler(event)) {
+                if (cord_gateway_event_has_handler(event)) {
                     event->handler(client, payload->d, event_name);
                 } else {
                     logger_warn("No handler for event(%s)", event);
@@ -511,7 +510,7 @@ static void setup_event_watchers(cord_client_t *client) {
     assert(allocator && "allocator must not be null");
 
     /*
-     * Keep these ass malloc for now because persistent_allocator is
+     * Keep these as malloc for now because persistent_allocator is
      * destroyed before the loop closes and we crash.
      * check if we can work around it by destroying the persistent allocator
      * the latest possible time.

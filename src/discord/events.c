@@ -38,13 +38,17 @@ static cord_gateway_event_t gateway_events[] = {{"CHANNEL_CREATE", NULL},
 
                                                 {"", NULL}};
 
-bool event_has_handler(cord_gateway_event_t *event) {
+bool cord_gateway_event_has_handler(cord_gateway_event_t *event) {
     return event && event->handler;
+}
+
+static inline bool is_last_event(cord_gateway_event_t *event) {
+    return cstring_is_empty(event->name) && event->handler == NULL;
 }
 
 cord_gateway_event_t *get_gateway_event_from_cstring(char *event) {
     cord_gateway_event_t *event_iterator = gateway_events;
-    while (!cstring_is_empty(event_iterator->name)) {
+    while (!is_last_event(event_iterator)) {
         if (cstring_is_equal(event_iterator->name, event)) {
             return event_iterator;
         }
