@@ -1,12 +1,24 @@
 #ifndef CORD_H
 #define CORD_H
 
+// core
+#include "../core/array.h"
+#include "../core/errors.h"
 #include "../core/log.h"
 #include "../core/memory.h"
+#include "../core/strings.h"
+#include "../core/typedefs.h"
+
+// discord
 #include "../discord/client.h"
+#include "../discord/entities.h"
 #include "../discord/events.h"
+#include "../discord/serialization.h"
 #include "../discord/types.h"
+
+// http
 #include "../http/http.h"
+#include "../http/rest.h"
 
 #define MAX_USER_ALLOCATORS 6
 

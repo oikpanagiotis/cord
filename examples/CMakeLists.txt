@@ -1,28 +1,15 @@
 cmake_minimum_required(VERSION 3.10)
 
-set(Libraries
-    crypto
-    ev
-    uwsc
-    jansson
-    curl
+set(Libraries 
     cord
-    discord
-    core
-    http
 )
 
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS}")
 
 add_executable(ping_pong ping_pong.c)
 
-target_include_directories(ping_pong PUBLIC
+target_include_directories(ping_pong PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}/../src/
-    ${CMAKE_CURRENT_SOURCE_DIR}/../src/core
-    ${CMAKE_CURRENT_SOURCE_DIR}/../src/cord
-    ${CMAKE_CURRENT_SOURCE_DIR}/../src/discord
-    ${CMAKE_CURRENT_SOURCE_DIR}/../src/http
 )
 
 target_link_libraries(ping_pong PUBLIC ${Libraries})

@@ -5,18 +5,14 @@
 static const size_t f64_size = sizeof(f64);
 static const size_t SIZE = KB(1);
 static cord_bump_t *bump_allocator = NULL;
-static cord_pool_t *pool_allocator = NULL;
 
 void test_setup(void) {
     bump_allocator = cord_bump_create_with_size(SIZE);
-    // pool_allocator = cord_pool_create_with_size(SIZE);
 }
 
 void test_teardown(void) {
     cord_bump_destroy(bump_allocator);
-    // cord_pool_destroy(pool_allocator);
     bump_allocator = NULL;
-    pool_allocator = NULL;
 }
 
 static void assert_balloc_memory_and_set(void *memory, f64 value) {
@@ -29,8 +25,8 @@ MU_TEST(test_cord_bump_memory_correctness) {
     assert_balloc_memory_and_set(ten, 10.0);
     mu_assert_int_eq(bump_allocator->capacity, SIZE);
 
-    f64 *tewlve = balloc(bump_allocator, f64_size);
-    assert_balloc_memory_and_set(tewlve, 12.0);
+    f64 *twelve = balloc(bump_allocator, f64_size);
+    assert_balloc_memory_and_set(twelve, 12.0);
     mu_assert_int_eq(bump_allocator->capacity, SIZE);
 
     f64 *fourteen = balloc(bump_allocator, f64_size);
@@ -50,7 +46,7 @@ MU_TEST(test_cord_bump_memory_correctness) {
     mu_assert_int_eq(bump_allocator->capacity, SIZE);
 
     mu_assert_double_eq(10.0, *ten);
-    mu_assert_double_eq(12.0, *tewlve);
+    mu_assert_double_eq(12.0, *twelve);
     mu_assert_double_eq(14.0, *fourteen);
     mu_assert_double_eq(16.0, *sixteen);
     mu_assert_double_eq(18.0, *eighteen);

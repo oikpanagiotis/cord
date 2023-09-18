@@ -20,17 +20,6 @@ enum {
     HTTP_DELETE,
 };
 
-/*
-    Ideal API
-    The url builder takes memory from an arena that belongs to http_client_t
-        cord_url_builder(client->allocator)
-        cord_url_builder_add_route()
-        cord_url_builder_build()
-
-        cord_discord_rest_post(const char *fmt, data);
-        cord_discord_rest_get
-*/
-
 typedef struct cord_url_builder_t {
     cord_strbuf_t *string_builder;
     cord_bump_t *allocator;

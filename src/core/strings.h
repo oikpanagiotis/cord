@@ -12,7 +12,7 @@
  *
  * This is is an allocation-free string view structure that performs
  * every operation by changing the length field and where the data pointer
- * points. It will never attempty to overwrite the underlying memory.
+ * points. It will never attempt to overwrite the underlying memory.
  *
  */
 typedef struct cord_str_t {
@@ -66,7 +66,7 @@ typedef struct cord_strbuf_t {
     size_t capacity;
 } cord_strbuf_t;
 
-#define cord_strbuf_undefined (cord_strbuf_t){NULL, 0, 0, NULL};
+#define cord_strbuf_null (cord_strbuf_t){NULL, 0, 0, NULL}
 
 cord_strbuf_t *cord_strbuf_create(void);
 void cord_strbuf_destroy(cord_strbuf_t *builder);

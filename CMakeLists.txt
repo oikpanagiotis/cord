@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.10)
 project(cord)
 
 # Transition to C23
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra -ggdb -fsanitize=undefined")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O2 -Wall -Wextra -ggdb -fsanitize=undefined")
 
 add_subdirectory(src)
 

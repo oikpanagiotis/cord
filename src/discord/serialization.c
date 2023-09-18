@@ -117,6 +117,7 @@ bool cord_json_writer_write_null(cord_json_writer_t writer, cord_str_t key) {
 
 bool cord_json_writer_write_object(cord_json_writer_t writer, cord_str_t key,
                                    json_t *object) {
+    (void)object;
     append_key(writer, key);
     // foreach field write using write functions
     // for each object write using itself
@@ -126,6 +127,9 @@ bool cord_json_writer_write_object(cord_json_writer_t writer, cord_str_t key,
 
 bool cord_json_writer_write_array(cord_json_writer_t writer, cord_str_t key,
                                   cord_array_t *array) {
+    (void)writer;
+    (void)key;
+    (void)array;
     assert(0 && "Not Implemented");
     return false;
 }

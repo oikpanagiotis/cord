@@ -30,7 +30,7 @@ static void load_identity_info(identity_info_t *identity) {
 /*
  * Assumes that sequence is initialized to -1
  */
-static bool is_valid_sequence(int s) {
+static bool is_valid_sequence(i32 s) {
     return s >= 0;
 }
 
@@ -110,7 +110,7 @@ static void send_heartbeat(cord_client_t *client) {
     json_decref(heartbeat_object);
 }
 
-static void heartbeat_cb(struct ev_loop *loop, ev_timer *timer, int revents) {
+static void heartbeat_cb(struct ev_loop *loop, ev_timer *timer, i32 revents) {
     (void)revents;
 
     struct uwsc_client *ws_client = timer->data;
@@ -120,7 +120,7 @@ static void heartbeat_cb(struct ev_loop *loop, ev_timer *timer, int revents) {
     ev_timer_again(loop, timer);
 }
 
-static void sigint_cb(struct ev_loop *loop, ev_signal *signal, int revents) {
+static void sigint_cb(struct ev_loop *loop, ev_signal *signal, i32 revents) {
     (void)revents;
 
     cord_client_t *client = signal->data;
@@ -175,12 +175,24 @@ static void on_heartbeat(struct uwsc_client *ws_client, json_t *data) {
     }
 }
 
-static int send_to_gateway(cord_client_t *client, json_t *payload) {
+static i32 send_to_gateway(cord_client_t *client, json_t *payload) {
     char *buffer = json_dumps(payload, 0);
     size_t length = strlen(buffer);
-    int rc = client->ws_client->send(client->ws_client, buffer, length, UWSC_OP_TEXT);
+
+    i32 rc = client->ws_client->send(client->ws_client, buffer, length, UWSC_OP_TEXT);
+
     free(buffer);
     return rc;
+}
+
+static i32 default_intents(void) {
+    const i32 MESSAGE_CONTENT_EVENT = (1 << 15);
+    const i32 GUILDS_EVENT = (1 << 0);
+    const i32 GUILD_MESSAGE_TYPING_EVENT = (1 << 11);
+    const i32 GUILD_MESSAGES_EVENT = (1 << 9);
+    const i32 intents = GUILDS_EVENT | MESSAGE_CONTENT_EVENT |
+                        GUILD_MESSAGE_TYPING_EVENT | GUILD_MESSAGES_EVENT;
+    return intents;
 }
 
 static void send_identify(struct uwsc_client *ws_client) {
@@ -194,15 +206,7 @@ static void send_identify(struct uwsc_client *ws_client) {
 
     json_object_set_new(d, "token", json_string(client->identity.token));
 
-    // TODO: Refactor these
-    const i32 MESSAGE_CONTENT_EVENT = (1 << 15);
-    const i32 GUILDS_EVENT = (1 << 0);
-    const i32 GUILD_MESSAGE_TYPING_EVENT = (1 << 11);
-    const i32 GUILD_MESSAGES_EVENT = (1 << 9);
-    const i32 intents = GUILDS_EVENT | MESSAGE_CONTENT_EVENT |
-                        GUILD_MESSAGE_TYPING_EVENT | GUILD_MESSAGES_EVENT;
-
-    json_object_set_new(d, "intents", json_integer(intents));
+    json_object_set_new(d, "intents", json_integer(default_intents()));
     json_object_set_new(d, "large_threshold", json_integer(50));
     json_object_set_new(d, "compress", json_boolean(false));
 
@@ -218,8 +222,8 @@ static void send_identify(struct uwsc_client *ws_client) {
 }
 
 typedef struct gateway_payload {
-    int op;    // opcode
-    int s;     // sequence
+    i32 op;    // opcode
+    i32 s;     // sequence
     char *t;   // event
     json_t *d; // json data
 } gateway_payload;
@@ -233,7 +237,7 @@ void gateway_payload_init(gateway_payload *payload) {
 
 // parse_gatway_payload() makes a copy of the payload data field
 // so the user is safe to free the original json payload
-int parse_gatway_payload(json_t *raw_payload, gateway_payload *payload) {
+i32 parse_gatway_payload(json_t *raw_payload, gateway_payload *payload) {
     json_t *opcode = json_object_get(raw_payload, PAYLOAD_KEY_OPCODE);
     if (!opcode) {
         logger_error("Failed to get \"op\"");
@@ -325,7 +329,7 @@ static void on_message(struct uwsc_client *ws_client, void *data, size_t length,
 
     gateway_payload_init(payload);
 
-    int rc = parse_gatway_payload(raw_payload, payload);
+    i32 rc = parse_gatway_payload(raw_payload, payload);
     if (rc < 0) {
         logger_error("Failed to parse gateway payload");
     }
@@ -375,13 +379,13 @@ static void on_message(struct uwsc_client *ws_client, void *data, size_t length,
     cord_bump_clear(client->temporary_allocator);
 }
 
-static void on_error(struct uwsc_client *ws_client, int err, const char *msg) {
+static void on_error(struct uwsc_client *ws_client, i32 err, const char *msg) {
     (void)ws_client;
 
     logger_error("Connection error (%d): %s", err, msg);
 }
 
-static void on_close(struct uwsc_client *ws_client, int code, const char *reason) {
+static void on_close(struct uwsc_client *ws_client, i32 code, const char *reason) {
     (void)ws_client;
     logger_debug("Closing connection to gateway (%d): %s", code, reason);
 }
@@ -422,7 +426,7 @@ cord_client_t *cord_client_create(void) {
 
     return client;
 }
-static void report_memory(struct ev_loop *loop, ev_timer *timer, int revents) {
+static void report_memory(struct ev_loop *loop, ev_timer *timer, i32 revents) {
     (void)loop;
     (void)revents;
 
@@ -454,7 +458,7 @@ static void report_memory(struct ev_loop *loop, ev_timer *timer, int revents) {
     ev_timer_again(loop, timer);
 }
 
-static const int ping_interval = 5;
+static const i32 ping_interval = 5;
 
 static void client_init(cord_client_t *client, const char *url) {
     assert(client && "cord_client_t must not be null");
@@ -492,7 +496,7 @@ static void client_reconnect_to(cord_client_t *client, const char *url) {
     ev_run(client->loop, 0);
 }
 
-static void check_reconnect_cb(struct ev_loop *loop, ev_check *w, int revents) {
+static void check_reconnect_cb(struct ev_loop *loop, ev_check *w, i32 revents) {
     (void)loop;
     (void)revents;
     cord_client_t *client = (cord_client_t *)w->data;
@@ -530,9 +534,13 @@ static void setup_event_watchers(cord_client_t *client) {
 
     struct ev_timer *health_report_timer = malloc(sizeof(struct ev_timer));
     ev_init(health_report_timer, report_memory);
-    health_report_timer->repeat = 120;
+    health_report_timer->repeat = 360;
     health_report_timer->data = client;
-    ev_timer_start(client->loop, health_report_timer);
+
+    // we need to abstract these
+    // ev_timer_start must be a cord_timer_start so we can swap out implementations in the
+    // future ev_timer must be a cord_timer ev_timer_start(client->loop,
+    // health_report_timer);
 }
 
 i32 cord_client_connect(cord_client_t *client, const char *url) {

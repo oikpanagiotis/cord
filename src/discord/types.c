@@ -43,6 +43,28 @@ static bool has_serialization_error(cord_serialize_result_t result) {
     return result.error == CORD_OK;
 }
 
+typedef enum property_type {
+    PROPERTY_INT,
+    PROPERTY_FLOAT,
+    PROPERTY_BOOL,
+    PROPERTY_STRING,
+    PROPERTY_ARRAY,
+    PROPERTY_OBJ
+} property_type;
+
+typedef struct property_t {
+    property_type type;
+    bool empty;
+    union {
+        i64 int_value;
+        f64 float_value;
+        bool bool_value;
+        cord_str_t string_value;
+        cord_array_t array_value;
+        void *object_value;
+    };
+} property_t;
+
 static cord_serialize_result_t serialized(void *obj) {
     return (cord_serialize_result_t){obj, CORD_OK};
 }
@@ -283,7 +305,7 @@ cord_serialize_result_t cord_role_tag_serialize(json_t *json_role_tag,
 
 static void channel_mention_strings(cord_channel_mention_t *mention, string_ref key,
                                     string_ref value) {
-    cord_strbuf_t *string_buffer  = cord_strbuf_create();
+    cord_strbuf_t *string_buffer = cord_strbuf_create();
     cord_strbuf_append(string_buffer, cstr(value));
 
     map_property(mention, id, "id", key, string_buffer);

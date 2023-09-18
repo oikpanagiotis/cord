@@ -1,25 +1,26 @@
 #include "errors.h"
+#include "memory.h"
+#include <assert.h>
+#include <stdlib.h>
 
-typedef struct api_error {
+typedef struct lib_error {
     int type;
     char *message;
-} api_error;
+} lib_error;
 
-static api_error errors[] = {
+static lib_error errors[] = {
     {CORD_OK, ""},
 
     {CORD_ERR_MALLOC, "Memory allocation failed"},
     {CORD_ERR_HTTP_REQUEST, "Failed to perform HTTP request"},
 
-    {CORD_ERR_USER_SERIALIZATION, "Failed to serialize user object"},
-    {CORD_ERR_GUILD_MEMBER_SERIALIZATION, "Failed to serialize guild member object"},
-    {CORD_ERR_MSG_SERIALIZATION, "Failed to serialize message object"},
-
-    {CORD_ERR_EMOJI_SERIALIZATION, "Failed to serialize emoji object"},
+    {CORD_ERR_OBJ_SERIALIZE, "Failed to serialize object"},
 
 };
 
 char *cord_error(int type) {
+    static_assert(array_length(errors) == ERR_COUNT, "cord_error_t mismatch");
+
     if (type < 0 || type >= ERR_COUNT) {
         return "";
     }
@@ -30,3 +31,4 @@ char *cord_error(int type) {
 bool is_posix_error(i32 code) {
     return code < (i32)0;
 }
+

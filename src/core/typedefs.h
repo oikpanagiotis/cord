@@ -20,7 +20,6 @@
 
 // Used as a read-only reference to a C string
 typedef const char *string_ref;
-typedef unsigned char byte;
 
 typedef float f32;
 typedef double f64;

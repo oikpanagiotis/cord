@@ -8,17 +8,12 @@
 // Library's API return values
 typedef enum cord_error_t {
     // Success
-    CORD_OK = 0,
+    CORD_OK,
 
     CORD_ERR_MALLOC,
     CORD_ERR_HTTP_REQUEST,
 
-    // Object serialization errors
-    CORD_ERR_USER_SERIALIZATION,
-    CORD_ERR_GUILD_MEMBER_SERIALIZATION,
-    CORD_ERR_MSG_SERIALIZATION,
-
-    CORD_ERR_EMOJI_SERIALIZATION,
+    CORD_ERR_OBJ_SERIALIZE,
 
     ERR_COUNT
 } cord_error_t;
