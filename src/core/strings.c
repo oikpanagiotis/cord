@@ -7,6 +7,8 @@
 #include <string.h>
 #include <sys/types.h>
 
+#define DEFAULT_STRBUF_SIZE 128
+
 cord_str_t cstr(string_ref string) {
     size_t length = strlen(string);
     return (cord_str_t){(char *)string, length};
@@ -181,7 +183,7 @@ cord_strbuf_t *cord_strbuf_create_with_size(size_t size) {
     }
 
     builder->data = calloc(1, size);
-    if (builder->data) {
+    if (!builder->data) {
         free(builder);
         return NULL;
     }
@@ -191,7 +193,7 @@ cord_strbuf_t *cord_strbuf_create_with_size(size_t size) {
 }
 
 cord_strbuf_t *cord_strbuf_create(void) {
-    return cord_strbuf_create_with_size(KB(4));
+    return cord_strbuf_create_with_size(DEFAULT_STRBUF_SIZE);
 }
 
 void cord_strbuf_destroy(cord_strbuf_t *builder) {
@@ -221,12 +223,13 @@ cord_strbuf_t *cord_strbuf_from_cstring(const char *cstring) {
 
 void cord_strbuf_append(cord_strbuf_t *builder, cord_str_t string) {
     if ((size_t)string.length > strbuf_memory_left(builder)) {
-        char *new_memory = malloc(builder->capacity * STRBUF_GROWTH_FACTOR);
+        size_t new_size = builder->capacity * STRBUF_GROWTH_FACTOR;
+        char *new_memory = realloc(builder->data, new_size);
         if (!new_memory) {
             return;
         }
         builder->data = new_memory;
-        builder->capacity *= STRBUF_GROWTH_FACTOR;
+        builder->capacity = new_size;
     }
 
     char *free_space = builder->data + builder->length;
@@ -234,8 +237,12 @@ void cord_strbuf_append(cord_strbuf_t *builder, cord_str_t string) {
     builder->length += string.length;
 }
 
+cord_str_t cord_strbuf_to_str_idx(cord_strbuf_t builder, size_t startIdx) {
+    return (cord_str_t){builder.data + startIdx, builder.length};
+}
+
 cord_str_t cord_strbuf_to_str(cord_strbuf_t builder) {
-    return (cord_str_t){.data = builder.data, .length = builder.length};
+    return cord_strbuf_to_str_idx(builder, (size_t)0);
 }
 
 char *cord_strbuf_to_cstring(cord_strbuf_t builder) {

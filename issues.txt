@@ -9,12 +9,6 @@ tests and update the old ones if needed.
 
 
 -- High --
-* Refactor string builder implementation
-We should refactor cord_strbuf_t, so it owns it's memory. Also write new tests
-and update old ones if needed.
-
-
--- High --
 * Refactor object serialization implementation
 We should be able to serialize discord json objects into 
 structs. We can do it in one of two ways:

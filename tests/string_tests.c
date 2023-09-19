@@ -6,20 +6,11 @@
 #include <stdbool.h>
 #include <string.h>
 
-static cord_bump_t *allocator = NULL;
-
 static inline bool streq(const char *s1, const char *s2) {
     return (strcmp(s1, s2) == 0);
 }
 
-void test_setup(void) {
-    allocator = cord_bump_create_with_size(KB(16));
-}
-
-void test_teardown(void) {
-    cord_bump_destroy(allocator);
-    allocator = NULL;
-}
+#define TEST_SIZE KB(16)
 
 /*
  *   Test cases related to cord_str_t
@@ -102,12 +93,12 @@ MU_TEST(test_cord_str_pop_first_split) {
  *   Test cases related to cord_strbuf_t
  */
 MU_TEST(test_cord_strbuf_create) {
-    cord_strbuf_t *builder = cord_strbuf_create_with_allocator(allocator);
+    cord_strbuf_t *builder = cord_strbuf_create_with_size(TEST_SIZE);
     bool result = cord_strbuf_valid(builder);
     bool expected = true;
     mu_assert(result == expected, "After creation string builder should not be null");
 
-    cord_strbuf_t invalid = (cord_strbuf_t){NULL, 0, 0, NULL};
+    cord_strbuf_t invalid = (cord_strbuf_t){NULL, 0, 0};
     mu_assert(cord_strbuf_valid(&invalid) == false,
               "Passing invalid string builder to cord_strbuf_valid should return false");
 }
@@ -115,7 +106,7 @@ MU_TEST(test_cord_strbuf_create) {
 MU_TEST(test_cord_strbuf_append) {
     cord_str_t expected1 = cstr("Hello");
     cord_str_t expected2 = cstr("Hello world");
-    cord_strbuf_t *builder = cord_strbuf_create_with_allocator(allocator);
+    cord_strbuf_t *builder = cord_strbuf_create_with_size(TEST_SIZE);
 
     cord_strbuf_append(builder, cstr("Hello"));
     cord_str_t result_string = cord_strbuf_to_str(*builder);
@@ -243,8 +234,7 @@ MU_TEST(test_not_null_cstring_dash) {
     mu_assert(streq(result, input2), "result should be equal to input2");
 }
 
-MU_TEST_SUITE(test_suite) {
-    MU_SUITE_CONFIGURE(&test_setup, &test_teardown);
+MU_TEST_SUITE(test_string_slice) {
 
     MU_RUN_TEST(test_cord_str_equality);
     MU_RUN_TEST(test_cord_str_contains);
@@ -253,11 +243,17 @@ MU_TEST_SUITE(test_suite) {
     MU_RUN_TEST(test_cord_str_remove_prefix_and_suffix);
     MU_RUN_TEST(test_cord_str_first_char_and_last_char);
     MU_RUN_TEST(test_cord_str_pop_first_split);
+}
+
+MU_TEST_SUITE(test_string_builder) {
 
     MU_RUN_TEST(test_cord_strbuf_create);
     MU_RUN_TEST(test_cord_strbuf_append);
     MU_RUN_TEST(test_cord_strbuf_to_str);
     MU_RUN_TEST(test_cord_strbuf_to_cstring);
+}
+
+MU_TEST_SUITE(test_string_utils) {
 
     MU_RUN_TEST(test_cstring_is_empty);
     MU_RUN_TEST(test_cstring_is_equal);
@@ -268,7 +264,9 @@ MU_TEST_SUITE(test_suite) {
 }
 
 int main(void) {
-    MU_RUN_SUITE(test_suite);
+    MU_RUN_SUITE(test_string_slice);
+    MU_RUN_SUITE(test_string_builder);
+    MU_RUN_SUITE(test_string_utils);
     MU_REPORT();
     return MU_EXIT_CODE;
 }
