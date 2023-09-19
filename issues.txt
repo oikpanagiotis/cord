@@ -2,13 +2,6 @@ Issues
 -------
 
 -- High --
-* Refactor array implementation
-We should refactor the dynamic array implementation, so it keeps it owns the
-memory and grows is by twice the capacity when needed. We should also add new
-tests and update the old ones if needed.
-
-
--- High --
 * Refactor object serialization implementation
 We should be able to serialize discord json objects into 
 structs. We can do it in one of two ways:

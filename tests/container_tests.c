@@ -1,10 +1,8 @@
 #include "minunit.h"
 
 #include "../src/core/array.h"
-#include <alloca.h>
 #include <stdbool.h>
 
-// Mock user strtucture
 typedef struct user {
     int id;
     char name[12];
@@ -22,9 +20,8 @@ void user_set(user *self, user new) {
 }
 
 bool user_equals(user *self, user *u) {
-    return self->id == u->id &&
-            self->time_logged_in == u->time_logged_in &&
-            strcmp(self->name, u->name) == 0;
+    return self->id == u->id && self->time_logged_in == u->time_logged_in &&
+           strcmp(self->name, u->name) == 0;
 }
 
 static user *my_user1 = NULL;
@@ -53,10 +50,10 @@ void init_four_users(void) {
     my_user3 = cord_array_push(users);
     my_user4 = cord_array_push(users);
 
-    user mock1 = { 1, "User 1", 30.32f };
-    user mock2 = { 2, "User 2", 2.26f };
-    user mock3 = { 3, "User 3", 58.63f };
-    user mock4 = { 4, "User 4", 11.97f };
+    user mock1 = {1, "User 1", 30.32f};
+    user mock2 = {2, "User 2", 2.26f};
+    user mock3 = {3, "User 3", 58.63f};
+    user mock4 = {4, "User 4", 11.97f};
 
     user_set(my_user1, mock1);
     user_set(my_user2, mock2);
@@ -76,16 +73,20 @@ MU_TEST(test_cord_array_push) {
 MU_TEST(test_cord_array_get) {
     init_four_users();
 
-    mu_assert(user_equals(cord_array_get(users, 0), &(user){ 1, "User 1", 30.32f }), "Users should be equal");
-    mu_assert(user_equals(cord_array_get(users, 1), &(user){ 2, "User 2", 2.26f }), "Users should be equal");
-    mu_assert(user_equals(cord_array_get(users, 2), &(user){ 3, "User 3", 58.63f }), "Users should be equal");
-    mu_assert(user_equals(cord_array_get(users, 3), &(user){ 4, "User 4", 11.97f }), "Users should be equal");
+    mu_assert(user_equals(cord_array_get(users, 0), &(user){1, "User 1", 30.32f}),
+              "Users should be equal");
+    mu_assert(user_equals(cord_array_get(users, 1), &(user){2, "User 2", 2.26f}),
+              "Users should be equal");
+    mu_assert(user_equals(cord_array_get(users, 2), &(user){3, "User 3", 58.63f}),
+              "Users should be equal");
+    mu_assert(user_equals(cord_array_get(users, 3), &(user){4, "User 4", 11.97f}),
+              "Users should be equal");
 }
 
 MU_TEST(test_cord_array_resize) {
-    user mock1 = { 1, "User 1", 30.32f };
-    user mock4 = { 4, "User 4", 11.97f };
-    for (int i = 0 ; i < 20; i++) {
+    user mock1 = {1, "User 1", 30.32f};
+    user mock4 = {4, "User 4", 11.97f};
+    for (int i = 0; i < 20; i++) {
         if (i == 14) {
             my_user4 = cord_array_push(users);
             user_set(my_user4, mock4);
@@ -96,10 +97,11 @@ MU_TEST(test_cord_array_resize) {
     }
     user_set(my_user1, mock1);
 
-    mu_assert(user_equals(cord_array_get(users, 19), &(user){ 1, "User 1", 30.32f }), "Users should be equal");
-    mu_assert(user_equals(cord_array_get(users, 14), &(user){ 4, "User 4", 11.97f }), "Users should be equal");
+    mu_assert(user_equals(cord_array_get(users, 19), &(user){1, "User 1", 30.32f}),
+              "Users should be equal");
+    mu_assert(user_equals(cord_array_get(users, 14), &(user){4, "User 4", 11.97f}),
+              "Users should be equal");
 }
-
 
 MU_TEST_SUITE(test_suite) {
     MU_SUITE_CONFIGURE(&test_setup, &test_teardown);

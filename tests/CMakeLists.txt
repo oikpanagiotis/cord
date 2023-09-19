@@ -20,7 +20,7 @@ add_executable(string_tests string_tests.c)
 target_link_libraries(string_tests ${CoreModuleLibraries})
 add_test(NAME test_string COMMAND string)
 
-add_custom_target(test_all
+add_custom_target(test
     COMMAND ./json_tests
     COMMAND ./container_tests
     COMMAND ./allocators_tests
