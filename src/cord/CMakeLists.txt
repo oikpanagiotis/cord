@@ -1,7 +1,4 @@
-# utility/bridge functions to give allocators to the user
-# maybe also give allocator callbacks?
-
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.21)
 
 set(Sources
     cord.c

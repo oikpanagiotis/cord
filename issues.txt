@@ -9,15 +9,6 @@ structs. We can do it in one of two ways:
 2. Create wrapper type cord_optional_t{type, value, exists}
 
 
--- High --
-* Update project to C23
-We should update project to C23 (CMake, gcc) to access newer features like
-- empty initializer {}
-- nullptr / nullptr_t
-- static_assert (keyword)
-- true / false (keyword)
-
-
 -- Medium --
 * Write json utility functions
 We should create some more abstract functions for handling JSON with jansson
@@ -41,3 +32,4 @@ We should implement all the REST APIs in discord
 * Abstract web socket operations
 We should abstract web socket structures and functions into our own
 so we can easily swap the implementation in the future
+

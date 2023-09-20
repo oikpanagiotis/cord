@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.21)
 
 # This module contains basic non-domain specific structures and functions
 # that are used throughout the rest of the library

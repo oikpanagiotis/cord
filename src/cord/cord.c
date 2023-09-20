@@ -14,7 +14,7 @@ cord_t *cord_create(void) {
 
     cord_t *cord = malloc(sizeof(cord_t));
     cord->allocator_count = 0;
-    for (u32 i = 0; i < (u32)cord->allocator_count; i++) {
+    for (i32 i = 0; i < cord->allocator_count; i++) {
         cord->user_allocators[i] = NULL;
     }
     cord->gateway_client = cord_client_create();

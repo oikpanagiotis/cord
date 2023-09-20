@@ -65,7 +65,8 @@ static json_payload_t json_payload_from_json(json_t *json) {
 static void json_payload_destroy(json_payload_t payload) {
     if (payload.json_string) {
         free(payload.json_string);
-        payload.json_string = NULL;
+        payload.json_string = nullptr;
+        //payload.json_string = NULL;
     }
 }
 
@@ -316,7 +317,7 @@ static void on_message(struct uwsc_client *ws_client, void *data, size_t length,
     (void)binary;
 
     cord_client_t *client = ws_client->ext;
-    json_error_t err = {0};
+    json_error_t err = {};
 
     json_t *raw_payload = json_loadb(data, length, 0, &err);
     if (!raw_payload) {
@@ -391,7 +392,7 @@ static void on_close(struct uwsc_client *ws_client, i32 code, const char *reason
 }
 
 cord_client_t *cord_client_create(void) {
-    identity_info_t identity = {0};
+    identity_info_t identity = {};
     load_identity_info(&identity);
 
     cord_client_t *client = malloc(sizeof(cord_client_t));
