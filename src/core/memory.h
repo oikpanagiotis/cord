@@ -58,6 +58,8 @@ void *balloc(cord_bump_t *bump, size_t size);
 typedef struct cord_temp_memory_t {
     size_t allocated;
     cord_bump_t *allocator;
+    size_t block_idx;
+    size_t block_off;
 } cord_temp_memory_t;
 
 cord_temp_memory_t cord_temp_memory_start(cord_bump_t *bump);

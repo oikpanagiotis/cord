@@ -43,72 +43,69 @@ static f64 heartbeat_to_double(i32 interval) {
     return decimal_d + floating_d;
 }
 
-typedef struct json_payload_t {
-    char *json_string;
+typedef struct payload_t {
+    char *json;
     size_t length;
-} json_payload_t;
+} payload_t;
 
-static bool is_valid_json_payload(json_payload_t payload) {
-    return payload.json_string && payload.length > 0;
+static bool is_valid_payload(payload_t payload) {
+    return payload.json && payload.length > 0;
 }
 
-static json_payload_t json_payload_from_json(json_t *json) {
+static payload_t payload_from_json(json_t *json) {
     char *json_string = json_dumps(json, 0);
     if (!json_string) {
-        return (json_payload_t){"", 0};
+        return (payload_t){"", 0};
     }
 
     size_t length = strlen(json_string);
-    return (json_payload_t){json_string, length};
+    return (payload_t){json_string, length};
 }
 
-static void json_payload_destroy(json_payload_t payload) {
-    if (payload.json_string) {
-        free(payload.json_string);
-        payload.json_string = nullptr;
-        //payload.json_string = NULL;
+static void payload_destroy(payload_t payload) {
+    if (payload.json) {
+        free(payload.json);
+        payload.json = NULL;
     }
 }
 
-static void send_json_payload(cord_client_t *client, json_payload_t payload) {
-    client->ws_client->send(client->ws_client, payload.json_string, payload.length,
+static void send_payload(cord_client_t *client, payload_t payload) {
+    client->ws_client->send(client->ws_client, payload.json, payload.length,
                             UWSC_OP_TEXT);
 }
 
-static json_t *heartbeat_json_object_create(i32 sequence) {
-    json_t *heartbeat_object = json_object();
-    if (!heartbeat_object) {
+static json_t *heartbeat_json_create(i32 sequence) {
+    json_t *heartbeat_json = json_object();
+    if (!heartbeat_json) {
         return NULL;
     }
-    json_object_set_new(heartbeat_object, PAYLOAD_KEY_OPCODE, json_integer(1));
+    json_object_set_new(heartbeat_json, PAYLOAD_KEY_OPCODE, json_integer(1));
 
     // Send sequence number unless we havent received one
-    json_t *sequence_object =
+    json_t *sequence_json =
         is_valid_sequence(sequence) ? json_integer(sequence) : json_null();
 
-    json_object_set_new(heartbeat_object, PAYLOAD_KEY_DATA, sequence_object);
-    return heartbeat_object;
+    json_object_set_new(heartbeat_json, PAYLOAD_KEY_DATA, sequence_json);
+    return heartbeat_json;
 }
 
 static void send_heartbeat(cord_client_t *client) {
-    json_t *heartbeat_object = heartbeat_json_object_create(client->sequence);
-    if (!heartbeat_object) {
+    json_t *heartbeat_json = heartbeat_json_create(client->sequence);
+    if (!heartbeat_json) {
         logger_error("Failed to create heartbeat json object");
         return;
     }
 
-    json_payload_t heartbeat = json_payload_from_json(heartbeat_object);
-    if (!is_valid_json_payload(heartbeat)) {
+    payload_t heartbeat = payload_from_json(heartbeat_json);
+    if (!is_valid_payload(heartbeat)) {
         logger_error("Failed to create json payload for heartbeat");
         return;
     }
-    send_json_payload(client, heartbeat);
+    send_payload(client, heartbeat);
     client->heartbeat_acknowledged = false;
 
-    logger_debug("Heartbeat");
-
-    json_payload_destroy(heartbeat);
-    json_decref(heartbeat_object);
+    payload_destroy(heartbeat);
+    json_decref(heartbeat_json);
 }
 
 static void heartbeat_cb(struct ev_loop *loop, ev_timer *timer, i32 revents) {
@@ -119,6 +116,8 @@ static void heartbeat_cb(struct ev_loop *loop, ev_timer *timer, i32 revents) {
 
     send_heartbeat(client);
     ev_timer_again(loop, timer);
+
+    logger_debug("Heartbeat");
 }
 
 static void sigint_cb(struct ev_loop *loop, ev_signal *signal, i32 revents) {
@@ -196,24 +195,25 @@ static i32 default_intents(void) {
     return intents;
 }
 
+static json_t *json_make_child(json_t *obj, const char *key) {
+    json_t *child = json_object();
+    json_object_set_new(obj, key, child);
+    return child;
+}
+
 static void send_identify(struct uwsc_client *ws_client) {
     cord_client_t *client = ws_client->ext;
 
     json_t *payload = json_object();
     json_object_set_new(payload, PAYLOAD_KEY_OPCODE, json_integer(OP_IDENTIFY));
 
-    json_t *d = json_object();
-    json_object_set_new(payload, PAYLOAD_KEY_DATA, d);
-
+    json_t *d = json_make_child(payload, PAYLOAD_KEY_DATA);
     json_object_set_new(d, "token", json_string(client->identity.token));
-
     json_object_set_new(d, "intents", json_integer(default_intents()));
     json_object_set_new(d, "large_threshold", json_integer(50));
     json_object_set_new(d, "compress", json_boolean(false));
 
-    json_t *properties = json_object();
-    json_object_set_new(d, "properties", properties);
-
+    json_t *properties = json_make_child(payload, "properties");
     json_object_set_new(properties, "os", json_string(client->identity.os));
     json_object_set_new(properties, "browser", json_string(client->identity.library));
     json_object_set_new(properties, "device", json_string(client->identity.device));
@@ -227,9 +227,9 @@ typedef struct gateway_payload {
     i32 s;     // sequence
     char *t;   // event
     json_t *d; // json data
-} gateway_payload;
+} gateway_payload_t;
 
-void gateway_payload_init(gateway_payload *payload) {
+void gateway_payload_init(gateway_payload_t *payload) {
     payload->op = -1;
     payload->s = -1;
     payload->t = NULL;
@@ -238,8 +238,8 @@ void gateway_payload_init(gateway_payload *payload) {
 
 // parse_gatway_payload() makes a copy of the payload data field
 // so the user is safe to free the original json payload
-i32 parse_gatway_payload(json_t *raw_payload, gateway_payload *payload) {
-    json_t *opcode = json_object_get(raw_payload, PAYLOAD_KEY_OPCODE);
+i32 parse_gatway_payload(json_t *payload_json, gateway_payload_t *payload) {
+    json_t *opcode = json_object_get(payload_json, PAYLOAD_KEY_OPCODE);
     if (!opcode) {
         logger_error("Failed to get \"op\"");
         return -1;
@@ -249,7 +249,7 @@ i32 parse_gatway_payload(json_t *raw_payload, gateway_payload *payload) {
     if (num_opcode != OP_DISPATCH) {
         payload->t = "";
     } else {
-        json_t *t = json_object_get(raw_payload, PAYLOAD_KEY_EVENT);
+        json_t *t = json_object_get(payload_json, PAYLOAD_KEY_EVENT);
         if (!t) {
             logger_error("Failed to get \"t\"");
             return -1;
@@ -258,21 +258,23 @@ i32 parse_gatway_payload(json_t *raw_payload, gateway_payload *payload) {
     }
     payload->op = (int)num_opcode;
 
-    json_t *s = json_object_get(raw_payload, PAYLOAD_KEY_SEQUENCE);
+    json_t *s = json_object_get(payload_json, PAYLOAD_KEY_SEQUENCE);
     if (s) {
         payload->s = json_integer_value(s);
     }
 
-    json_t *d = json_object_get(raw_payload, PAYLOAD_KEY_DATA);
+    json_t *d = json_object_get(payload_json, PAYLOAD_KEY_DATA);
     if (!d) {
         logger_error("Failed to get \"d\"");
         return -1;
     }
+
     payload->d = json_deep_copy(d);
     return 0;
 }
 
-char *DISCORD_API_URL = "https://discordapp.com/api";
+static char *DISCORD_API_URL = "https://discordapp.com/api";
+static char *DISCORD_WS_URL = "wss://gateway.discord.gg";
 
 static const char *resolve_message_url(cord_temp_memory_t memory, cord_message_t *msg) {
     // This returns misaligned error which is usually caused by uninitial;ized members?
@@ -319,22 +321,22 @@ static void on_message(struct uwsc_client *ws_client, void *data, size_t length,
     cord_client_t *client = ws_client->ext;
     json_error_t err = {};
 
-    json_t *raw_payload = json_loadb(data, length, 0, &err);
-    if (!raw_payload) {
+    json_t *payload_json = json_loadb(data, length, 0, &err);
+    if (!payload_json) {
         logger_error("Failed to serialize payload: %s", err.text);
         return;
     }
 
-    gateway_payload *payload =
-        balloc(client->temporary_allocator, sizeof(gateway_payload));
+    gateway_payload_t *payload =
+        balloc(client->temporary_allocator, sizeof(gateway_payload_t));
 
     gateway_payload_init(payload);
 
-    i32 rc = parse_gatway_payload(raw_payload, payload);
+    i32 rc = parse_gatway_payload(payload_json, payload);
     if (rc < 0) {
         logger_error("Failed to parse gateway payload");
     }
-    json_decref(raw_payload);
+    json_decref(payload_json);
 
     char *event_name = payload->t;
     switch (payload->op) {
@@ -386,9 +388,9 @@ static void on_error(struct uwsc_client *ws_client, i32 err, const char *msg) {
     logger_error("Connection error (%d): %s", err, msg);
 }
 
-static void on_close(struct uwsc_client *ws_client, i32 code, const char *reason) {
+static void on_close(struct uwsc_client *ws_client, i32 code, const char *msg) {
     (void)ws_client;
-    logger_debug("Closing connection to gateway (%d): %s", code, reason);
+    logger_debug("Closing connection to gateway (%d): %s", code, msg);
 }
 
 cord_client_t *cord_client_create(void) {
@@ -476,6 +478,7 @@ static void client_init(cord_client_t *client, const char *url) {
     client->temporary_allocator = cord_bump_create_with_size(MB(1));
     client->message_lifecycle_allocator = cord_bump_create_with_size(KB(16));
 
+    // TODO: Abstract these to client->on_xxxx
     client->ws_client->onopen = on_open;
     client->ws_client->onmessage = on_message;
     client->ws_client->onerror = on_error;
@@ -488,7 +491,7 @@ static void client_init(cord_client_t *client, const char *url) {
 static void client_reconnect_to(cord_client_t *client, const char *url) {
     logger_debug("Attempting to reconnect");
 
-    // Stop timers
+    // Stop heartbeat timer
     ev_timer_stop(client->loop, client->hb_watcher);
     free(client->hb_watcher);
     free(client->ws_client);
@@ -537,11 +540,6 @@ static void setup_event_watchers(cord_client_t *client) {
     ev_init(health_report_timer, report_memory);
     health_report_timer->repeat = 360;
     health_report_timer->data = client;
-
-    // we need to abstract these
-    // ev_timer_start must be a cord_timer_start so we can swap out implementations in the
-    // future ev_timer must be a cord_timer ev_timer_start(client->loop,
-    // health_report_timer);
 }
 
 i32 cord_client_connect(cord_client_t *client, const char *url) {

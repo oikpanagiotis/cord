@@ -41,7 +41,11 @@ void cord_bump_destroy(cord_bump_t *bump) {
 }
 
 void cord_bump_clear(cord_bump_t *bump) {
-    bump->used = 0;
+    cord_bump_t *it = bump;
+    while (it->next) {
+        it->used = 0;
+        it = it->next;
+    }
 }
 
 void cord_bump_pop(cord_bump_t *bump, size_t size) {
@@ -49,13 +53,28 @@ void cord_bump_pop(cord_bump_t *bump, size_t size) {
     bump->used -= safe_size;
 }
 
-static size_t cord_bump_remaining_memory(cord_bump_t *bump) {
-    cord_bump_t *it = bump;
-    // We can only allocate memory in the latest block
-    while (it->next) {
-        it = it->next;
+static cord_bump_t *find_last_block(cord_bump_t *bump) {
+    cord_bump_t *last = bump;
+    while (last->next) {
+        last = last->next;
     }
-    return it->capacity - it->used;
+    return last;
+}
+
+static size_t find_last_block_idx(cord_bump_t *bump) {
+    size_t last_block_idx = 0;
+    cord_bump_t *last = bump;
+    while (last->next) {
+        last_block_idx++;
+        last = last->next;
+    }
+    return last_block_idx;
+}
+
+static size_t cord_bump_remaining_memory(cord_bump_t *bump) {
+    // We can only allocate memory in the latest block
+    cord_bump_t *last = find_last_block(bump);
+    return last->capacity - last->used;
 }
 
 void *balloc(cord_bump_t *bump, size_t size) {
@@ -69,24 +88,49 @@ void *balloc(cord_bump_t *bump, size_t size) {
         }
     }
 
-    cord_bump_t *it = bump;
-    while (it->next) {
-        it = it->next;
-    }
+    cord_bump_t *last = find_last_block(bump);
+    assert((last->used + size) < last->capacity);
 
-    assert((it->used + size) < it->capacity);
-
-    void *memory = &it->data[it->used];
-    it->used += size;
+    void *memory = &last->data[last->used];
+    last->used += size;
 
     return memory;
 }
 
 cord_temp_memory_t cord_temp_memory_start(cord_bump_t *bump) {
-    return (cord_temp_memory_t){.allocator = bump, .allocated = 0};
+    size_t last_block_idx = find_last_block_idx(bump);
+    cord_bump_t *last_block = find_last_block(bump);
+
+    return (cord_temp_memory_t){
+        .allocator = bump,
+        .allocated = 0,
+        .block_idx = last_block_idx,
+        .block_off = last_block->used
+    };
 }
 
 void cord_temp_memory_end(cord_temp_memory_t temp_memory) {
-    cord_bump_t *bump = temp_memory.allocator;
-    cord_bump_pop(bump, temp_memory.allocated);
+    size_t last_block_idx = find_last_block_idx(temp_memory.allocator);
+
+    if (last_block_idx == temp_memory.block_idx) {
+        cord_bump_pop(temp_memory.allocator, temp_memory.allocated);
+    } else {
+        // Find block of temp memory start
+        cord_bump_t *temp_mem_block = temp_memory.allocator;
+        for (size_t i = 0; i <= temp_memory.block_idx; i++) {
+            temp_mem_block = temp_mem_block->next;
+        }
+
+        // Free only as much as we allocated in this temp context
+        size_t max_pop = temp_mem_block->capacity - temp_memory.block_off;
+        size_t pop_size = min(temp_memory.allocated, max_pop);
+        cord_bump_pop(temp_mem_block, pop_size);
+
+        cord_bump_t *it = temp_mem_block->next;
+        while (it->next) {
+            cord_bump_pop(it, it->capacity);
+            it = it->next;
+        }
+    }
 }
+

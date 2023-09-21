@@ -64,8 +64,6 @@ typedef struct cord_client_t {
     struct ev_signal *sigint_watcher;
     struct ev_check *reconnect_watcher;
 
-    // Architect so we can use memory pool
-    // Implement these as bump allocators
     cord_bump_t *persistent_allocator;
     cord_bump_t *message_allocator;
     cord_bump_t *temporary_allocator;
