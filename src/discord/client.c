@@ -213,7 +213,7 @@ static void send_identify(struct uwsc_client *ws_client) {
     json_object_set_new(d, "large_threshold", json_integer(50));
     json_object_set_new(d, "compress", json_boolean(false));
 
-    json_t *properties = json_make_child(payload, "properties");
+    json_t *properties = json_make_child(d, "properties");
     json_object_set_new(properties, "os", json_string(client->identity.os));
     json_object_set_new(properties, "browser", json_string(client->identity.library));
     json_object_set_new(properties, "device", json_string(client->identity.device));
@@ -236,8 +236,6 @@ void gateway_payload_init(gateway_payload_t *payload) {
     payload->d = NULL;
 }
 
-// parse_gatway_payload() makes a copy of the payload data field
-// so the user is safe to free the original json payload
 i32 parse_gatway_payload(json_t *payload_json, gateway_payload_t *payload) {
     json_t *opcode = json_object_get(payload_json, PAYLOAD_KEY_OPCODE);
     if (!opcode) {
@@ -508,7 +506,7 @@ static void check_reconnect_cb(struct ev_loop *loop, ev_check *w, i32 revents) {
 
     if (client) {
         if (client->must_reconnect) {
-            client_reconnect_to(client, "wss://gateway.discord.gg");
+            client_reconnect_to(client, DISCORD_WS_URL);
         }
     }
 }
