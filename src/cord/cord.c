@@ -48,13 +48,13 @@ static bool is_valid_allocator_id(cord_t *cord, i32 allocator_id) {
 
 i32 cord_get_allocator(cord_t *cord) {
     if (cord->allocator_count == MAX_USER_ALLOCATORS) {
-        logger_error("Failed to create user allocator");
+        log_err("Failed to create user allocator");
         return -1;
     }
 
     cord_bump_t *allocator = cord_bump_create_with_size(KB(4));
     if (!allocator) {
-        logger_error("Can not create more than %d user allocators", MAX_USER_ALLOCATORS);
+        log_err("Can not create more than %d user allocators", MAX_USER_ALLOCATORS);
         return -1;
     }
 
@@ -66,14 +66,14 @@ i32 cord_get_allocator(cord_t *cord) {
 
 void *cord_alloc(cord_t *cord, i32 allocator_id, size_t size) {
     if (!is_valid_allocator_id(cord, allocator_id)) {
-        logger_error("allocator with id %d does not exist", allocator_id);
+        log_err("allocator with id %d does not exist", allocator_id);
         return NULL;
     }
 
     cord_bump_t *allocator = cord->user_allocators[allocator_id];
     void *memory = balloc(allocator, size);
     if (!memory) {
-        logger_error("allocator with id %d does not have enough free space", allocator_id);
+        log_err("allocator with id %d does not have enough free space", allocator_id);
         return NULL;
     }
 
@@ -82,7 +82,7 @@ void *cord_alloc(cord_t *cord, i32 allocator_id, size_t size) {
 
 void cord_pop_allocator(cord_t *cord, i32 allocator_id, size_t size) {
     if (!is_valid_allocator_id(cord, allocator_id)) {
-        logger_error("allocator with id %d does not exist", allocator_id);
+        log_err("allocator with id %d does not exist", allocator_id);
         return;
     }
 
@@ -92,13 +92,13 @@ void cord_pop_allocator(cord_t *cord, i32 allocator_id, size_t size) {
 
 void cord_clear_allocator(cord_t *cord, i32 allocator_id) {
     if (!is_valid_allocator_id(cord, allocator_id)) {
-        logger_error("allocator with id %d does not exist", allocator_id);
+        log_err("allocator with id %d does not exist", allocator_id);
         return;
     }
 
     cord_bump_t *allocator = cord->user_allocators[allocator_id];
     if (!allocator) {
-        logger_error("Failed to clear user allocator with id %d", allocator_id);
+        log_err("Failed to clear user allocator with id %d", allocator_id);
         return;
     }
 
@@ -107,7 +107,7 @@ void cord_clear_allocator(cord_t *cord, i32 allocator_id) {
 
 void cord_destroy_allocator(cord_t *cord, i32 allocator_id) {
     if (!is_valid_allocator_id(cord, allocator_id)) {
-        logger_error("allocator with id %d does not exist", allocator_id);
+        log_err("allocator with id %d does not exist", allocator_id);
         return;
     }
 

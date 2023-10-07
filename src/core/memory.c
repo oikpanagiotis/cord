@@ -1,8 +1,12 @@
 #include "memory.h"
+#include "log.h"
 
 #include <assert.h>
+#include <stdalign.h>
 #include <stdbool.h>
+#include <stddef.h>
 #include <stdint.h>
+#include <string.h>
 #include <stdlib.h>
 
 #define DEFAULT_SIZE KB(4)
@@ -78,8 +82,11 @@ static size_t cord_bump_remaining_memory(cord_bump_t *bump) {
 }
 
 void *balloc(cord_bump_t *bump, size_t size) {
-    if (size > cord_bump_remaining_memory(bump)) {
-        size_t bump_size = max(DEFAULT_SIZE, size);
+    size_t alignment = alignof(max_align_t);
+    size_t aligned_size = (size +  alignment - 1) & ~(alignment - 1);
+
+    if (aligned_size > cord_bump_remaining_memory(bump)) {
+        size_t bump_size = max(DEFAULT_SIZE, aligned_size);
         cord_bump_t *new_bump = cord_bump_create_with_size(bump_size);
         if (new_bump) {
             bump->next = new_bump;
@@ -92,7 +99,8 @@ void *balloc(cord_bump_t *bump, size_t size) {
     assert((last->used + size) < last->capacity);
 
     void *memory = &last->data[last->used];
-    last->used += size;
+    memset(memory, 0, aligned_size);
+    last->used += aligned_size;
 
     return memory;
 }

@@ -21,9 +21,9 @@
  * General purpose byte buffer object
  */
 typedef struct cord_buffer_t {
-    u8 *data;
     size_t size;
     size_t used;
+    u8 data[];
 } cord_buffer_t;
 
 /*
@@ -31,7 +31,7 @@ typedef struct cord_buffer_t {
  *
  * Suitable for allocating a lot of small object (<4kb) that can be free'd
  * all at once. When a single block is full we create a new one pointed to
- * by next.
+ * by next. Calls to balloc will always return zeroed memory
  */
 typedef struct cord_bump_t {
     u8 *data;

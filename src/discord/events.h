@@ -37,7 +37,7 @@ typedef enum gateway_event_t {
 
 typedef void (*event_handler)(cord_client_t *client, json_t *data, char *event);
 
-#define MAX_EVENT_NAME_LEN 32
+#define MAX_EVENT_NAME_LEN 64
 typedef struct cord_gateway_event_t {
     char name[MAX_EVENT_NAME_LEN];
     event_handler handler;

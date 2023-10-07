@@ -8,7 +8,7 @@
 
 /*
  * Dynamic array implementation that can be used to store
- * any type
+ * POD type
  *
  * It's backed by a bump allocator and will request twice
  * the capacity in size when it runs out of memory. There

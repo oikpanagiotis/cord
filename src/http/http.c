@@ -44,7 +44,6 @@ cord_http_client_t *cord_http_client_create(const char *bot_token) {
     client->allocator = cord_bump_create_with_size(KB(1));
     client->last_error = NULL;
 
-    // FIXME (LEAK): We never free this
     client->bot_token = strdup(bot_token);
     if (!client->bot_token) {
         logger_error("Failed to allocate bot_token");
@@ -118,12 +117,11 @@ static cord_http_request_t *cord_http_request_create(cord_temp_memory_t memory, 
 static char *get_request_type_cstring(cord_http_request_t *request) {
     static char *GET = "GET";
     static char *POST = "POST";
-    if (request->type == HTTP_GET) {
-        return GET;
-    } else if (request->type == HTTP_POST) {
-        return POST;
+    switch (request->type) {
+        case HTTP_GET: return GET;
+        case HTTP_POST: return POST;
+        default: return NULL;
     }
-    return NULL;
 }
 
 static void prepare_request_options(cord_http_client_t *client,

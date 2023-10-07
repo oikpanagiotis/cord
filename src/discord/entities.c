@@ -210,31 +210,6 @@ void cord_message_sticker_init(cord_message_sticker_t *message_sticker,
     message_sticker->allocator = allocator;
 }
 
-void cord_message_init(cord_message_t *message, cord_bump_t *allocator) {
-    message->id = NULL;
-    message->channel_id = NULL;
-    message->guild_id = NULL;
-    message->author = NULL;
-    message->member = NULL;
-    message->content = NULL;
-    message->timestamp = NULL;
-    message->edited_timestamp = NULL;
-    message->tts = false;
-    message->mention_everyone = false;
-
-    message->nonce = NULL;
-    message->pinned = false;
-    message->webhook_id = NULL;
-    message->type = -1; // 0 is used by the API so we initialize type to 0
-    message->activity = NULL;
-    message->application = NULL;
-    message->message_reference = NULL;
-    message->flags = 0;
-    message->referenced_message = NULL;
-
-    message->allocator = allocator;
-}
-
 void cord_message_set_content(cord_message_t *message, const char *content) {
     cord_strbuf_t *builder = cord_strbuf_create();
     if (!builder) {

@@ -332,8 +332,8 @@ typedef struct cord_message_t {
     cord_strbuf_t *content;
     cord_strbuf_t *timestamp;
     cord_strbuf_t *edited_timestamp;
-    bool tts;
-    bool mention_everyone;
+    bool *tts;
+    bool *mention_everyone;
 
     cord_array_t *mentions;
     cord_array_t *mention_roles;
@@ -343,13 +343,13 @@ typedef struct cord_message_t {
     cord_array_t *reactions;
 
     cord_strbuf_t *nonce;
-    bool pinned;
+    bool *pinned;
     cord_strbuf_t *webhook_id;
-    i32 type;
+    i32 *type;
     cord_message_activity_t *activity;
     cord_message_application_t *application;
     cord_message_reference_t *message_reference;
-    i32 flags;              // combined as a bitfield
+    i32 *flags;              // combined as a bitfield
     cord_array_t *stickers; // cord_message_sticker_t[]
 
     /*
@@ -364,7 +364,6 @@ typedef struct cord_message_t {
     cord_bump_t *allocator;
 } cord_message_t;
 
-void cord_message_init(cord_message_t *message, cord_bump_t *allocator);
 void cord_message_set_content(cord_message_t *message, const char *content);
 
 typedef struct cord_guild_t {

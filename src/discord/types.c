@@ -40,30 +40,8 @@
     } while (0)
 
 static bool has_serialization_error(cord_serialize_result_t result) {
-    return result.error == CORD_OK;
+    return result.error != CORD_OK;
 }
-
-typedef enum property_type {
-    PROPERTY_INT,
-    PROPERTY_FLOAT,
-    PROPERTY_BOOL,
-    PROPERTY_STRING,
-    PROPERTY_ARRAY,
-    PROPERTY_OBJ
-} property_type;
-
-typedef struct property_t {
-    property_type type;
-    bool empty;
-    union {
-        i64 int_value;
-        f64 float_value;
-        bool bool_value;
-        cord_str_t string_value;
-        cord_array_t array_value;
-        void *object_value;
-    };
-} property_t;
 
 static cord_serialize_result_t serialized(void *obj) {
     return (cord_serialize_result_t){obj, CORD_OK};
@@ -807,14 +785,36 @@ static void message_strings(cord_message_t *message, string_ref key, string_ref 
 }
 
 static void message_booleans(cord_message_t *message, string_ref key, bool value) {
-    map_property(message, tts, "tts", key, value);
-    map_property(message, mention_everyone, "mention_everyone", key, value);
-    map_property(message, pinned, "pinned", key, value);
+    bool *boolean = balloc(message->allocator, sizeof(bool));
+    *boolean = value;
+
+    map_property(message, tts, "tts", key, boolean);
+    map_property(message, mention_everyone, "mention_everyone", key, boolean);
+    map_property(message, pinned, "pinned", key, boolean);
 }
 
 static void message_numbers(cord_message_t *message, string_ref key, i32 value) {
-    map_property(message, type, "type", key, value);
-    map_property(message, flags, "flags", key, value);
+    i32 *number = balloc(message->allocator, sizeof(i32));
+    *number = value;
+
+    map_property(message, type, "type", key, number);
+    map_property(message, flags, "flags", key, number);
+}
+
+static void message_arrays(cord_message_t *message, string_ref key, json_t *value) {
+    /*
+    map_property_array(message, mentions, "mentions", key, value, message->allocator,
+                       cord_user_t, cord_user_serialize);
+    */
+}
+
+static void message_objects(cord_message_t *message, string_ref key, json_t *value) {
+    map_property_object(message, author, "author", key, value, message->allocator,
+                        cord_user_t, cord_user_serialize);
+
+    char *temp = json_dumps(value, 0);
+    logger_debug("Message object %s", temp);
+    free(temp);
 }
 
 cord_serialize_result_t cord_message_serialize(json_t *json_message,
@@ -825,7 +825,9 @@ cord_serialize_result_t cord_message_serialize(json_t *json_message,
         return serialize_error(CORD_ERR_MALLOC);
     }
 
-    cord_message_init(message, allocator);
+    memset(message, 0, sizeof(cord_message_t));
+    message->allocator = allocator;
+
     string_ref key = NULL;
     json_t *value = NULL;
     json_object_foreach(json_message, key, value) {
@@ -836,9 +838,12 @@ cord_serialize_result_t cord_message_serialize(json_t *json_message,
         } else if (json_is_integer(value)) {
             message_numbers(message, key, (i32)json_integer_value(value));
         } else if (json_is_array(value)) {
-            // TODO: Add these
+            message_arrays(message, key, value);
         } else if (json_is_object(value)) {
-            // TODO: Add these
+            message_objects(message, key, value);
+        } else {
+            // TODO: Should this return error or fallthrough?
+            // return serialize_error(CORD_ERR_OBJ_SERIALIZE);
         }
     }
     return serialized(message);

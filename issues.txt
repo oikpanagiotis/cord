@@ -1,7 +1,6 @@
 Issues
 -------
 
--- High --
 * Refactor object serialization implementation
 We should be able to serialize discord json objects into 
 structs. We can do it in one of two ways:
@@ -9,7 +8,6 @@ structs. We can do it in one of two ways:
 2. Create wrapper type cord_optional_t{type, value, exists}
 
 
--- Medium --
 * Write json utility functions
 We should create some more abstract functions for handling JSON with jansson
 library and test them througly for memory leaks. Additionally we should
@@ -17,18 +15,15 @@ set the default allocator to be used by the library to a "permanent"
 bump allocator.
 
 
--- Medium --
 * Print backtrace on crash while in debug mode
 We should print a stacktrace if we crash while in debug mode so we
 can identify what caused it. This must only be used under GCC
 
 
--- Low --
 * Implement Discord's REST APIs
 We should implement all the REST APIs in discord 
 
 
--- Low --
 * Abstract web socket operations
 We should abstract web socket structures and functions into our own
 so we can easily swap the implementation in the future

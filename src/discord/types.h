@@ -29,7 +29,6 @@
         if (has_serialization_error(__result)) {                                         \
             logger_error("Failed to serialize " #type ": %s",                            \
                          cord_error(__result.error));                                    \
-            continue;                                                                    \
         }                                                                                \
         object->property = __result.obj;                                                 \
     }

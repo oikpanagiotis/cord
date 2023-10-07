@@ -208,7 +208,7 @@ void on_message_create(cord_client_t *client, json_t *data, char *event) {
         cord_message_serialize(data, client->message_lifecycle_allocator);
 
     if (message.error) {
-        logger_error("Failed to serialize message: %s", cord_error(message.error));
+        log_err("Failed to serialize message: %s", cord_error(message.error));
         return;
     }
 
