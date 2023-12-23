@@ -5,6 +5,16 @@
 #include <stdlib.h>
 #include <string.h>
 
+typedef enum optional_type_t {
+    OPTIONAL_BOOL,
+    OPTIONAL_STRING,
+    OPTIONAL_NUMBER,
+    OPTIONAL_PTR,
+    OPTIONAL_JSON,
+
+    OPTIONAL_COUNT
+} optional_type_t;
+
 cord_array_t *cord_array_create(cord_bump_t *allocator, size_t element_size) {
     assert(allocator);
     assert(element_size > 0);

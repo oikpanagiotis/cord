@@ -48,10 +48,7 @@ static bool copy_i64_to_string(char *format, i64 value) {
     }
 
     i32 rc = snprintf(format, MAX_FORMAT_BUFFER_LENGTH, "%ld", value);
-    if (is_posix_error(rc)) {
-        return false;
-    }
-    return true;
+    return !is_posix_error(rc);
 }
 
 cord_json_writer_t cord_json_writer_create(cord_bump_t *allocator) {
@@ -142,9 +139,9 @@ bool cord_json_writer_write_array(cord_json_writer_t writer, cord_str_t key,
 
 char *cord_message_to_json(cord_json_writer_t writer, cord_message_t *message) {
     cord_json_writer_start(writer);
-    {
-        serialize_string(writer, "content", message, content);
-    }
+
+    serialize_string(writer, "content", message, content);
+
     cord_json_writer_end(writer);
     return cstring_of(writer.buffer, writer.allocator);
 }

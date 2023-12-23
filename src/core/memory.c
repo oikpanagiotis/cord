@@ -11,6 +11,12 @@
 
 #define DEFAULT_SIZE KB(4)
 
+
+typedef struct block_data_t {
+    cord_bump_t *block;
+    size_t idx;
+} block_data_t;
+
 cord_bump_t *cord_bump_create_with_size(size_t size) {
     assert(size > 0 && "size must be a positive integer");
 
@@ -57,27 +63,21 @@ void cord_bump_pop(cord_bump_t *bump, size_t size) {
     bump->used -= safe_size;
 }
 
-static cord_bump_t *find_last_block(cord_bump_t *bump) {
-    cord_bump_t *last = bump;
-    while (last->next) {
-        last = last->next;
-    }
-    return last;
-}
-
-static size_t find_last_block_idx(cord_bump_t *bump) {
+static block_data_t find_last_block(cord_bump_t *bump) {
     size_t last_block_idx = 0;
     cord_bump_t *last = bump;
     while (last->next) {
         last_block_idx++;
         last = last->next;
     }
-    return last_block_idx;
+    return (block_data_t){.block = last, .idx = last_block_idx};
 }
 
 static size_t cord_bump_remaining_memory(cord_bump_t *bump) {
     // We can only allocate memory in the latest block
-    cord_bump_t *last = find_last_block(bump);
+    block_data_t last_bdata = find_last_block(bump);
+    cord_bump_t *last = last_bdata.block;
+
     return last->capacity - last->used;
 }
 
@@ -95,7 +95,8 @@ void *balloc(cord_bump_t *bump, size_t size) {
         }
     }
 
-    cord_bump_t *last = find_last_block(bump);
+    block_data_t last_bdata = find_last_block(bump);
+    cord_bump_t *last = last_bdata.block;
     assert((last->used + size) < last->capacity);
 
     void *memory = &last->data[last->used];
@@ -106,21 +107,20 @@ void *balloc(cord_bump_t *bump, size_t size) {
 }
 
 cord_temp_memory_t cord_temp_memory_start(cord_bump_t *bump) {
-    size_t last_block_idx = find_last_block_idx(bump);
-    cord_bump_t *last_block = find_last_block(bump);
+    block_data_t last_bdata = find_last_block(bump);
 
     return (cord_temp_memory_t){
         .allocator = bump,
         .allocated = 0,
-        .block_idx = last_block_idx,
-        .block_off = last_block->used
+        .block_idx = last_bdata.idx,
+        .block_off = last_bdata.block->used
     };
 }
 
 void cord_temp_memory_end(cord_temp_memory_t temp_memory) {
-    size_t last_block_idx = find_last_block_idx(temp_memory.allocator);
+    block_data_t last_bdata = find_last_block(temp_memory.allocator);
 
-    if (last_block_idx == temp_memory.block_idx) {
+    if (last_bdata.idx == temp_memory.block_idx) {
         cord_bump_pop(temp_memory.allocator, temp_memory.allocated);
     } else {
         // Find block of temp memory start

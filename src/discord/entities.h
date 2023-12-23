@@ -335,6 +335,8 @@ typedef struct cord_message_t {
     bool *tts;
     bool *mention_everyone;
 
+    // BUG: cord_array_t is supposed to store POD
+    // We can't allow resizing of the bump
     cord_array_t *mentions;
     cord_array_t *mention_roles;
     cord_array_t *mention_channels;
@@ -349,8 +351,8 @@ typedef struct cord_message_t {
     cord_message_activity_t *activity;
     cord_message_application_t *application;
     cord_message_reference_t *message_reference;
-    i32 *flags;              // combined as a bitfield
-    cord_array_t *stickers; // cord_message_sticker_t[]
+    i32 *flags;
+    cord_array_t *stickers;
 
     /*
     This field is only returned for messages with a type of 19 (REPLY).

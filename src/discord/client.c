@@ -175,16 +175,6 @@ static void on_heartbeat(struct uwsc_client *ws_client, json_t *data) {
     }
 }
 
-static i32 send_to_gateway(cord_client_t *client, json_t *payload) {
-    char *buffer = json_dumps(payload, 0);
-    size_t length = strlen(buffer);
-
-    i32 rc = client->ws_client->send(client->ws_client, buffer, length, UWSC_OP_TEXT);
-
-    free(buffer);
-    return rc;
-}
-
 static i32 default_intents(void) {
     const i32 MESSAGE_CONTENT_EVENT = (1 << 15);
     const i32 GUILDS_EVENT = (1 << 0);
@@ -204,10 +194,10 @@ static json_t *json_make_child(json_t *obj, const char *key) {
 static void send_identify(struct uwsc_client *ws_client) {
     cord_client_t *client = ws_client->ext;
 
-    json_t *payload = json_object();
-    json_object_set_new(payload, PAYLOAD_KEY_OPCODE, json_integer(OP_IDENTIFY));
+    json_t *payload_json = json_object();
+    json_object_set_new(payload_json, PAYLOAD_KEY_OPCODE, json_integer(OP_IDENTIFY));
 
-    json_t *d = json_make_child(payload, PAYLOAD_KEY_DATA);
+    json_t *d = json_make_child(payload_json, PAYLOAD_KEY_DATA);
     json_object_set_new(d, "token", json_string(client->identity.token));
     json_object_set_new(d, "intents", json_integer(default_intents()));
     json_object_set_new(d, "large_threshold", json_integer(50));
@@ -218,11 +208,18 @@ static void send_identify(struct uwsc_client *ws_client) {
     json_object_set_new(properties, "browser", json_string(client->identity.library));
     json_object_set_new(properties, "device", json_string(client->identity.device));
 
-    send_to_gateway(client, payload);
-    json_decref(payload);
+    payload_t payload = payload_from_json(payload_json);
+    if (!is_valid_payload(payload)) {
+        logger_error("Failed to parse identity json payload");
+        json_decref(payload_json);
+        return;
+    }
+
+    send_payload(client, payload);
+    payload_destroy(payload);
 }
 
-typedef struct gateway_payload {
+typedef struct gateway_payload_t {
     i32 op;    // opcode
     i32 s;     // sequence
     char *t;   // event
@@ -287,7 +284,6 @@ static const char *resolve_message_url(cord_temp_memory_t memory, cord_message_t
 void cord_client_send_message(cord_client_t *client, cord_message_t *msg) {
     assert(msg);
     // TODO: Prefix the channel and ids based on our cache
-    // TODO: BUG: This may cause a bug when using temporary memory. Try and see
     cord_temp_memory_t memory = cord_temp_memory_start(client->persistent_allocator);
     assert(memory.allocator);
     cord_json_writer_t writer = cord_json_writer_create(memory.allocator);

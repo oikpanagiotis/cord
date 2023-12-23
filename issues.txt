@@ -28,3 +28,6 @@ We should implement all the REST APIs in discord
 We should abstract web socket structures and functions into our own
 so we can easily swap the implementation in the future
 
+
+* Implement logger
+Implement pretty logging functions for objects
