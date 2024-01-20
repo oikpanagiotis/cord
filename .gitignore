@@ -2,5 +2,5 @@
 .idea
 .cache                  
 .ccls-cache
-.issues.txt
+issues.txt
 build/
