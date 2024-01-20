@@ -802,6 +802,9 @@ static void message_numbers(cord_message_t *message, string_ref key, i32 value) 
 }
 
 static void message_arrays(cord_message_t *message, string_ref key, json_t *value) {
+    (void)message;
+    (void)key;
+    (void)value;
     /*
     map_property_array(message, mentions, "mentions", key, value, message->allocator,
                        cord_user_t, cord_user_serialize);

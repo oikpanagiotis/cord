@@ -23,10 +23,10 @@ typedef i32 cord_allocator_id_t;
 
 typedef struct cord_t {
     cord_client_t *gateway_client;
-    cord_http_client_t *http_client;
     cord_logger_t *logger;
     cord_bump_t *user_allocators[MAX_USER_ALLOCATORS];
     i32 allocator_count;
+    cord_bump_t *permanent_allocator;
     void *user_data;
 } cord_t;
 
@@ -45,5 +45,6 @@ void cord_on_message(cord_t *cord,
 
 void cord_send_text(cord_t *cord, cord_strbuf_t *guild_id, char *message);
 void cord_send_message(cord_t *cord, cord_message_t *message);
+
 
 #endif

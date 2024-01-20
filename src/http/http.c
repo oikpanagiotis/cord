@@ -16,6 +16,10 @@ static const char *curl_error(CURLcode code) {
     return curl_easy_strerror(code);
 }
 
+bool cord_http_is_success(cord_http_result_t result) {
+    return result.status == 200;
+}
+
 cord_url_builder_t cord_url_builder_create(cord_bump_t *allocator) {
     return (cord_url_builder_t){.string_builder = cord_strbuf_create(),
                                 .allocator = allocator};
@@ -105,23 +109,32 @@ static cord_http_request_t *cord_http_request_create(cord_temp_memory_t memory, 
     return request;
 }
 
-// TODO: Write unit test for these
-// static void log_request(cord_http_request_t *request) {
-//     static const char *types[] = {"GET", "POST", "DELETE"};
-
-//     logger_debug("Performing HTTP %s to %s with %s", types[request->type],
-//                  not_null_cstring_dash(request->url),
-//                  not_null_cstring_dash(request->body));
-// }
-
 static char *get_request_type_cstring(cord_http_request_t *request) {
     static char *GET = "GET";
     static char *POST = "POST";
+    static char *DELETE = "DELETE";
+    static char *PATCH = "PATCH";
     switch (request->type) {
-        case HTTP_GET: return GET;
-        case HTTP_POST: return POST;
-        default: return NULL;
+        case HTTP_GET:
+            return GET;
+        case HTTP_POST:
+            return POST;
+        case HTTP_DELETE:
+            return DELETE;
+        case HTTP_PATCH:
+            return PATCH;
+        default:
+            return NULL;
     }
+}
+
+// FIXME (BUG): Fix this. we need to implement raw string appending or create 
+// another function for string builder to accept nmemb + size
+static size_t write_cb(void *data, size_t size, size_t nmemb, cord_http_result_t *result) {
+    assert(nmemb == 1);
+
+    cord_strbuf_append(result->body, cstr((char *)data));
+    return size * nmemb;
 }
 
 static void prepare_request_options(cord_http_client_t *client,
@@ -133,42 +146,53 @@ static void prepare_request_options(cord_http_client_t *client,
     curl_easy_setopt(client->curl, CURLOPT_CUSTOMREQUEST, request_type);
     curl_easy_setopt(client->curl, CURLOPT_URL, request->url);
     curl_easy_setopt(client->curl, CURLOPT_HTTPHEADER, request->header);
+
+    curl_easy_setopt(client->curl, CURLOPT_WRITEFUNCTION, write_cb);
+    curl_easy_setopt(client->curl, CURLOPT_WRITEDATA, request->result);
+
     if (request->type == HTTP_POST) {
         curl_easy_setopt(client->curl, CURLOPT_POSTFIELDS, request->body);
     }
 }
 
-static cord_error_t perform(cord_http_client_t *client, cord_http_request_t *request) {
+static cord_http_result_t perform(cord_http_client_t *client, cord_http_request_t *request) {
     prepare_request_options(client, request);
     CURLcode rc = curl_easy_perform(client->curl);
     if (is_curl_error(rc)) {
         logger_error("HTTP %s Request failed: %s", curl_error(rc));
-        return CORD_ERR_HTTP_REQUEST;
     }
-    return is_curl_error(rc) ? CORD_ERR_HTTP_REQUEST : CORD_OK;
+    return request->result;
 }
 
-cord_error_t cord_http_get(cord_http_client_t *client, const char *url) {
+cord_http_result_t cord_http_get(cord_http_client_t *client, const char *url) {
     cord_temp_memory_t memory = cord_temp_memory_start(client->allocator);
-    cord_error_t result =
+    cord_http_result_t result =
         perform(client, cord_http_request_create(memory, HTTP_GET, url, NULL));
     cord_temp_memory_end(memory);
     return result;
 }
 
-cord_error_t cord_http_post(cord_http_client_t *client, const char *url,
+cord_http_result_t cord_http_post(cord_http_client_t *client, const char *url,
                             const char *body) {
     cord_temp_memory_t memory = cord_temp_memory_start(client->allocator);
-    cord_error_t result =
+    cord_http_result_t result =
         perform(client, cord_http_request_create(memory, HTTP_POST, url, body));
     cord_temp_memory_end(memory);
     return result;
 }
 
-cord_error_t cord_http_delete(cord_http_client_t *client, const char *url) {
+cord_http_result_t cord_http_delete(cord_http_client_t *client, const char *url) {
     cord_temp_memory_t memory = cord_temp_memory_start(client->allocator);
-    cord_error_t result =
+    cord_http_result_t result =
         perform(client, cord_http_request_create(memory, HTTP_DELETE, url, NULL));
+    cord_temp_memory_end(memory);
+    return result;
+}
+
+cord_http_result_t cord_http_patch(cord_http_client_t *client, const char *url) {
+    cord_temp_memory_t memory = cord_temp_memory_start(client->allocator);
+    cord_http_result_t result =
+        perform(client, cord_http_request_create(memory, HTTP_PATCH, url, NULL));
     cord_temp_memory_end(memory);
     return result;
 }

@@ -14,10 +14,11 @@ cord_t *cord_create(void) {
 
     cord_t *cord = malloc(sizeof(cord_t));
     cord->allocator_count = 0;
-    for (i32 i = 0; i < cord->allocator_count; i++) {
+    for (i32 i = 0; i < MAX_USER_ALLOCATORS; i++) {
         cord->user_allocators[i] = NULL;
     }
     cord->gateway_client = cord_client_create();
+    cord->permanent_allocator = cord_bump_create();
     cord->gateway_client->user_data = cord;
     return cord;
 }
@@ -28,9 +29,13 @@ void cord_connect(cord_t *cord, const char *url) {
 
 void cord_destroy(cord_t *cord) {
     if (cord) {
-        if (cord->gateway_client) {
-            discord_destroy(cord->gateway_client);
+        for (i32 i = 0; i < cord->allocator_count; i++) {
+            cord_bump_destroy(cord->user_allocators[i]);
         }
+
+        cord_client_destroy(cord->gateway_client);
+        // Permanent allocator must
+        cord_bump_destroy(cord->permanent_allocator);
         free(cord);
     }
     global_logger_destroy();

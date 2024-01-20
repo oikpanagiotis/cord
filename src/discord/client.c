@@ -1,4 +1,5 @@
 #include "client.h"
+#include "../cord/cord.h"
 #include "../core/errors.h"
 #include "../core/log.h"
 #include "../core/typedefs.h"
@@ -14,6 +15,10 @@
 #include <stdlib.h>
 #include <string.h>
 #include <uwsc/config.h>
+#include <uwsc/uwsc.h>
+
+static char *DISCORD_API_URL = "https://discordapp.com/api";
+static char *DISCORD_WS_URL = "wss://gateway.discord.gg";
 
 static void load_identity_info(identity_info_t *identity) {
     identity->token = getenv("CORD_APPLICATION_TOKEN");
@@ -120,28 +125,16 @@ static void heartbeat_cb(struct ev_loop *loop, ev_timer *timer, i32 revents) {
     logger_debug("Heartbeat");
 }
 
+typedef struct cord_t cord_t;
+
 static void sigint_cb(struct ev_loop *loop, ev_signal *signal, i32 revents) {
     (void)revents;
 
-    cord_client_t *client = signal->data;
-
-    // 1. Close any open log files
-    // ...
-
-    // 2. Destroy arenas
-    cord_bump_destroy(client->temporary_allocator);
-    cord_bump_destroy(client->message_allocator);
-    cord_bump_destroy(client->persistent_allocator);
-    cord_bump_destroy(client->message_lifecycle_allocator);
-
-    // 3. Break out of the loop
+    // Break out of the loop
     if (signal->signum == SIGINT) {
         ev_break(loop, EVBREAK_ALL);
     }
     ev_default_destroy();
-
-    // 4. Destroy cord_t context
-    // ...
 }
 
 static void on_open(struct uwsc_client *ws_client) {
@@ -268,9 +261,6 @@ i32 parse_gatway_payload(json_t *payload_json, gateway_payload_t *payload) {
     return 0;
 }
 
-static char *DISCORD_API_URL = "https://discordapp.com/api";
-static char *DISCORD_WS_URL = "wss://gateway.discord.gg";
-
 static const char *resolve_message_url(cord_temp_memory_t memory, cord_message_t *msg) {
     // This returns misaligned error which is usually caused by uninitial;ized members?
     cord_url_builder_t url_builder = cord_url_builder_create(memory.allocator);
@@ -283,7 +273,7 @@ static const char *resolve_message_url(cord_temp_memory_t memory, cord_message_t
 
 void cord_client_send_message(cord_client_t *client, cord_message_t *msg) {
     assert(msg);
-    // TODO: Prefix the channel and ids based on our cache
+
     cord_temp_memory_t memory = cord_temp_memory_start(client->persistent_allocator);
     assert(memory.allocator);
     cord_json_writer_t writer = cord_json_writer_create(memory.allocator);
@@ -423,6 +413,7 @@ cord_client_t *cord_client_create(void) {
 
     return client;
 }
+
 static void report_memory(struct ev_loop *loop, ev_timer *timer, i32 revents) {
     (void)loop;
     (void)revents;
@@ -472,7 +463,6 @@ static void client_init(cord_client_t *client, const char *url) {
     client->temporary_allocator = cord_bump_create_with_size(MB(1));
     client->message_lifecycle_allocator = cord_bump_create_with_size(KB(16));
 
-    // TODO: Abstract these to client->on_xxxx
     client->ws_client->onopen = on_open;
     client->ws_client->onmessage = on_message;
     client->ws_client->onerror = on_error;
@@ -487,11 +477,17 @@ static void client_reconnect_to(cord_client_t *client, const char *url) {
 
     // Stop heartbeat timer
     ev_timer_stop(client->loop, client->hb_watcher);
-    free(client->hb_watcher);
     free(client->ws_client);
 
-    client_init(client, url);
+    client->loop = ev_default_loop(0);
+    client->ws_client = uwsc_new(client->loop, url, ping_interval, NULL);
+    if (!client->ws_client) {
+        log_err("Failed to initialize websocket client");
+        exit(1);
+    }
+
     ev_run(client->loop, 0);
+    ev_timer_start(client->loop, client->hb_watcher);
 }
 
 static void check_reconnect_cb(struct ev_loop *loop, ev_check *w, i32 revents) {
@@ -518,6 +514,7 @@ static void setup_event_watchers(cord_client_t *client) {
      * the latest possible time.
      * If not just move the allocator to cord_t
      */
+    // FIXME (Memory leak): Allocate these using cord_t->allocator
     struct ev_check *reconnect_watcher = malloc(sizeof(struct ev_check));
     reconnect_watcher->data = client;
     ev_check_init(reconnect_watcher, check_reconnect_cb);
@@ -534,6 +531,7 @@ static void setup_event_watchers(cord_client_t *client) {
     ev_init(health_report_timer, report_memory);
     health_report_timer->repeat = 360;
     health_report_timer->data = client;
+    client->health_report_scheduler = health_report_timer;
 }
 
 i32 cord_client_connect(cord_client_t *client, const char *url) {
@@ -544,7 +542,7 @@ i32 cord_client_connect(cord_client_t *client, const char *url) {
     return ev_run(client->loop, 0);
 }
 
-void discord_destroy(cord_client_t *client) {
+void cord_client_destroy(cord_client_t *client) {
     if (client) {
         if (client->ws_client) {
             free(client->ws_client);
@@ -558,6 +556,11 @@ void discord_destroy(cord_client_t *client) {
         if (client->http) {
             cord_http_client_destroy(client->http);
         }
+
+        cord_bump_destroy(client->temporary_allocator);
+        cord_bump_destroy(client->message_lifecycle_allocator);
+        cord_bump_destroy(client->message_allocator);
+        cord_bump_destroy(client->persistent_allocator);
         free(client);
     }
 }
