@@ -15,9 +15,6 @@
                                       : __FILE__)
 #endif
 
-// TODO: Add support for logger_get(name) so we can log the module that produces
-// the log
-
 #define MAX_LOGGER_OUTPUT_STREAMS 8
 
 typedef enum cord_log_level {

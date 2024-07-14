@@ -106,6 +106,12 @@ void *balloc(cord_bump_t *bump, size_t size) {
     return memory;
 }
 
+void *cord_bump_index(cord_bump_t *bump, size_t index) {
+    size_t alignment = alignof(max_align_t);
+    size_t aligned_size = (index +  alignment - 1) & ~(alignment - 1);
+    return bump->data + aligned_size;
+}
+
 cord_temp_memory_t cord_temp_memory_start(cord_bump_t *bump) {
     block_data_t last_bdata = find_last_block(bump);
 

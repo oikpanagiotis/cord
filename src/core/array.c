@@ -5,16 +5,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-typedef enum optional_type_t {
-    OPTIONAL_BOOL,
-    OPTIONAL_STRING,
-    OPTIONAL_NUMBER,
-    OPTIONAL_PTR,
-    OPTIONAL_JSON,
-
-    OPTIONAL_COUNT
-} optional_type_t;
-
 cord_array_t *cord_array_create(cord_bump_t *allocator, size_t element_size) {
     assert(allocator);
     assert(element_size > 0);
@@ -28,7 +18,7 @@ cord_array_t *cord_array_create(cord_bump_t *allocator, size_t element_size) {
     array->num_elements = 0;
     array->allocator = allocator;
 
-    const int default_capacity = 16;
+    const i32 default_capacity = 16;
     array->capacity = default_capacity;
 
     const size_t initial_array_size = element_size * (size_t)array->capacity;
@@ -64,4 +54,3 @@ void *cord_array_get(cord_array_t *array, int index) {
 
     return array->data + array->element_size * index;
 }
-

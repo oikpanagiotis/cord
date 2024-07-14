@@ -46,6 +46,7 @@ cord_bump_t *cord_bump_create_with_size(size_t size);
 void cord_bump_destroy(cord_bump_t *bump);
 void cord_bump_clear(cord_bump_t *bump);
 void cord_bump_pop(cord_bump_t *bump, size_t size);
+void *cord_bump_index(cord_bump_t *bump, size_t index);
 void *balloc(cord_bump_t *bump, size_t size);
 
 /*

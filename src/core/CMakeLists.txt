@@ -10,6 +10,7 @@ set(Sources
     memory.c
     strings.c
     log.c
+    hashmap.c
 )
 
 add_library(core SHARED ${Sources})

@@ -17,6 +17,7 @@
 #include <uwsc/config.h>
 #include <uwsc/uwsc.h>
 
+//static char *DISCORD_API_URL = "https://discord.com/api/v10";
 static char *DISCORD_API_URL = "https://discordapp.com/api";
 static char *DISCORD_WS_URL = "wss://gateway.discord.gg";
 
