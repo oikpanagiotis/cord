@@ -6,11 +6,10 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
-#include <string.h>
 #include <stdlib.h>
+#include <string.h>
 
 #define DEFAULT_SIZE KB(4)
-
 
 typedef struct block_data_t {
     cord_bump_t *block;
@@ -83,7 +82,7 @@ static size_t cord_bump_remaining_memory(cord_bump_t *bump) {
 
 void *balloc(cord_bump_t *bump, size_t size) {
     size_t alignment = alignof(max_align_t);
-    size_t aligned_size = (size +  alignment - 1) & ~(alignment - 1);
+    size_t aligned_size = (size + alignment - 1) & ~(alignment - 1);
 
     if (aligned_size > cord_bump_remaining_memory(bump)) {
         size_t bump_size = max(DEFAULT_SIZE, aligned_size);
@@ -108,19 +107,17 @@ void *balloc(cord_bump_t *bump, size_t size) {
 
 void *cord_bump_index(cord_bump_t *bump, size_t index) {
     size_t alignment = alignof(max_align_t);
-    size_t aligned_size = (index +  alignment - 1) & ~(alignment - 1);
+    size_t aligned_size = (index + alignment - 1) & ~(alignment - 1);
     return bump->data + aligned_size;
 }
 
 cord_temp_memory_t cord_temp_memory_start(cord_bump_t *bump) {
     block_data_t last_bdata = find_last_block(bump);
 
-    return (cord_temp_memory_t){
-        .allocator = bump,
-        .allocated = 0,
-        .block_idx = last_bdata.idx,
-        .block_off = last_bdata.block->used
-    };
+    return (cord_temp_memory_t){.allocator = bump,
+                                .allocated = 0,
+                                .block_idx = last_bdata.idx,
+                                .block_off = last_bdata.block->used};
 }
 
 void cord_temp_memory_end(cord_temp_memory_t temp_memory) {
@@ -147,4 +144,3 @@ void cord_temp_memory_end(cord_temp_memory_t temp_memory) {
         }
     }
 }
-

@@ -3,9 +3,9 @@
 #include "../core/errors.h"
 #include "../core/log.h"
 #include "../core/typedefs.h"
+#include "client.h"
 #include "events.h"
 #include "serialization.h"
-#include "types.h"
 
 #include <assert.h>
 #include <ev.h>
@@ -17,14 +17,32 @@
 #include <uwsc/config.h>
 #include <uwsc/uwsc.h>
 
-//static char *DISCORD_API_URL = "https://discord.com/api/v10";
-static char *DISCORD_API_URL = "https://discordapp.com/api";
-static char *DISCORD_WS_URL = "wss://gateway.discord.gg";
+const i32 GUILDS = (1 << 0);
+const i32 GUILD_MODERATION = (1 << 2);
+const i32 GUILD_EMOJIS_AND_STICKERS = (1 << 3);
+const i32 GUILD_INTEGRATIONS = (1 << 4);
+const i32 GUILD_WEBHOOKS = (1 << 5);
+const i32 GUILD_INVITES = (1 << 6);
+const i32 GUILD_MESSAGES = (1 << 9);
+const i32 GUILD_MESSAGE_REACTIONS = (1 << 10);
+const i32 GUILD_MESSAGE_TYPING = (1 << 11);
+
+const i32 DIRECT_MESSAGES = (1 << 12);
+const i32 DIRECT_MESSAGE_REACTIONS = (1 << 13);
+const i32 DIRECT_MESSAGE_TYPING = (1 << 14);
+const i32 MESSAGE_CONTENT = (1 << 15);
+
+const i32 GUILD_SCHEDULE_EVENTS = (1 << 16);
+const i32 AUTO_MODERATION_CONFIGURATION = (1 << 20);
+const i32 AUTO_MODERATION_EXECUTION = (1 << 21);
+const i32 GUILD_MESSAGE_POLLS = (1 << 24);
+const i32 DIRECT_MESSAGE_POLLS = (1 << 25);
 
 static void load_identity_info(identity_info_t *identity) {
     identity->token = getenv("CORD_APPLICATION_TOKEN");
     if (!identity->token) {
-        log_err("Bot token not found. Please set CORD_APPLICATION_TOKEN envar");
+        logger_error(
+            "Bot token not found. Please set CORD_APPLICATION_TOKEN envar");
         exit(1);
     }
 
@@ -36,9 +54,7 @@ static void load_identity_info(identity_info_t *identity) {
 /*
  * Assumes that sequence is initialized to -1
  */
-static bool is_valid_sequence(i32 s) {
-    return s >= 0;
-}
+static bool is_valid_sequence(i32 s) { return s >= 0; }
 
 static f64 heartbeat_to_double(i32 interval) {
     i32 decimal = interval / 1000;
@@ -98,13 +114,13 @@ static json_t *heartbeat_json_create(i32 sequence) {
 static void send_heartbeat(cord_client_t *client) {
     json_t *heartbeat_json = heartbeat_json_create(client->sequence);
     if (!heartbeat_json) {
-        log_err("Failed to create heartbeat json object");
+        logger_error("Failed to create heartbeat json object");
         return;
     }
 
     payload_t heartbeat = payload_from_json(heartbeat_json);
     if (!is_valid_payload(heartbeat)) {
-        log_err("Failed to create json payload for heartbeat");
+        logger_error("Failed to create json payload for heartbeat");
         return;
     }
     send_payload(client, heartbeat);
@@ -148,7 +164,7 @@ static void on_heartbeat(struct uwsc_client *ws_client, json_t *data) {
 
     json_t *hb_interval_json = json_object_get(data, "heartbeat_interval");
     if (!hb_interval_json) {
-        log_err("Failed to get heartbeat object");
+        logger_error("Failed to get heartbeat object");
         return;
     }
     client->hb_interval = (int)json_integer_value(hb_interval_json);
@@ -170,12 +186,19 @@ static void on_heartbeat(struct uwsc_client *ws_client, json_t *data) {
 }
 
 static i32 default_intents(void) {
-    const i32 MESSAGE_CONTENT_EVENT = (1 << 15);
-    const i32 GUILDS_EVENT = (1 << 0);
-    const i32 GUILD_MESSAGE_TYPING_EVENT = (1 << 11);
-    const i32 GUILD_MESSAGES_EVENT = (1 << 9);
-    const i32 intents = GUILDS_EVENT | MESSAGE_CONTENT_EVENT |
-                        GUILD_MESSAGE_TYPING_EVENT | GUILD_MESSAGES_EVENT;
+    const i32 guild_intents = GUILDS | GUILD_MODERATION |
+                              GUILD_EMOJIS_AND_STICKERS | GUILD_INTEGRATIONS |
+                              GUILD_WEBHOOKS | GUILD_INVITES | GUILD_MESSAGES |
+                              GUILD_MESSAGE_REACTIONS;
+
+    const i32 message_intents =
+        DIRECT_MESSAGES | DIRECT_MESSAGE_REACTIONS | MESSAGE_CONTENT;
+
+    const i32 schedule_intents =
+        GUILD_SCHEDULE_EVENTS | AUTO_MODERATION_CONFIGURATION |
+        AUTO_MODERATION_EXECUTION | GUILD_MESSAGE_POLLS | DIRECT_MESSAGE_POLLS;
+
+    const i32 intents = guild_intents | message_intents | schedule_intents;
     return intents;
 }
 
@@ -189,7 +212,8 @@ static void send_identify(struct uwsc_client *ws_client) {
     cord_client_t *client = ws_client->ext;
 
     json_t *payload_json = json_object();
-    json_object_set_new(payload_json, PAYLOAD_KEY_OPCODE, json_integer(OP_IDENTIFY));
+    json_object_set_new(payload_json, PAYLOAD_KEY_OPCODE,
+                        json_integer(OP_IDENTIFY));
 
     json_t *d = json_make_child(payload_json, PAYLOAD_KEY_DATA);
     json_object_set_new(d, "token", json_string(client->identity.token));
@@ -199,8 +223,10 @@ static void send_identify(struct uwsc_client *ws_client) {
 
     json_t *properties = json_make_child(d, "properties");
     json_object_set_new(properties, "os", json_string(client->identity.os));
-    json_object_set_new(properties, "browser", json_string(client->identity.library));
-    json_object_set_new(properties, "device", json_string(client->identity.device));
+    json_object_set_new(properties, "browser",
+                        json_string(client->identity.library));
+    json_object_set_new(properties, "device",
+                        json_string(client->identity.device));
 
     payload_t payload = payload_from_json(payload_json);
     if (!is_valid_payload(payload)) {
@@ -230,7 +256,7 @@ void gateway_payload_init(gateway_payload_t *payload) {
 i32 parse_gatway_payload(json_t *payload_json, gateway_payload_t *payload) {
     json_t *opcode = json_object_get(payload_json, PAYLOAD_KEY_OPCODE);
     if (!opcode) {
-        log_err("Failed to get \"op\"");
+        logger_error("Failed to get \"op\"");
         return -1;
     }
 
@@ -240,7 +266,7 @@ i32 parse_gatway_payload(json_t *payload_json, gateway_payload_t *payload) {
     } else {
         json_t *t = json_object_get(payload_json, PAYLOAD_KEY_EVENT);
         if (!t) {
-            log_err("Failed to get \"t\"");
+            logger_error("Failed to get \"t\"");
             return -1;
         }
         payload->t = json_string_value(t) ? strdup(json_string_value(t)) : "";
@@ -254,7 +280,7 @@ i32 parse_gatway_payload(json_t *payload_json, gateway_payload_t *payload) {
 
     json_t *d = json_object_get(payload_json, PAYLOAD_KEY_DATA);
     if (!d) {
-        log_err("Failed to get \"d\"");
+        logger_error("Failed to get \"d\"");
         return -1;
     }
 
@@ -262,12 +288,13 @@ i32 parse_gatway_payload(json_t *payload_json, gateway_payload_t *payload) {
     return 0;
 }
 
-static const char *resolve_message_url(cord_temp_memory_t memory, cord_message_t *msg) {
-    // This returns misaligned error which is usually caused by uninitial;ized members?
+static const char *resolve_message_url(cord_temp_memory_t memory,
+                                       cord_message_t *msg) {
     cord_url_builder_t url_builder = cord_url_builder_create(memory.allocator);
     cord_url_builder_add_route(url_builder, cstr(DISCORD_API_URL));
     cord_url_builder_add_route(url_builder, cstr("channels"));
-    cord_url_builder_add_route(url_builder, cord_strbuf_to_str(*msg->channel_id));
+    cord_url_builder_add_route(url_builder,
+                               cord_strbuf_to_str(*msg->channel_id));
     cord_url_builder_add_route(url_builder, cstr("messages"));
     return cord_url_builder_build(url_builder);
 }
@@ -275,11 +302,13 @@ static const char *resolve_message_url(cord_temp_memory_t memory, cord_message_t
 void cord_client_send_message(cord_client_t *client, cord_message_t *msg) {
     assert(msg);
 
-    cord_temp_memory_t memory = cord_temp_memory_start(client->persistent_allocator);
+    cord_temp_memory_t memory =
+        cord_temp_memory_start(client->persistent_allocator);
     assert(memory.allocator);
     cord_json_writer_t writer = cord_json_writer_create(memory.allocator);
     char *json = cord_message_to_json(writer, msg);
-    cord_http_post(client->http, resolve_message_url(memory, msg), json);
+    cord_http_post(client->http, memory.allocator,
+                   resolve_message_url(memory, msg), json);
     cord_temp_memory_end(memory);
 }
 
@@ -308,7 +337,7 @@ static void on_message(struct uwsc_client *ws_client, void *data, size_t length,
 
     json_t *payload_json = json_loadb(data, length, 0, &err);
     if (!payload_json) {
-        log_err("Failed to serialize payload: %s", err.text);
+        logger_error("Failed to serialize payload: %s", err.text);
         return;
     }
 
@@ -319,7 +348,7 @@ static void on_message(struct uwsc_client *ws_client, void *data, size_t length,
 
     i32 rc = parse_gatway_payload(payload_json, payload);
     if (rc < 0) {
-        log_err("Failed to parse gateway payload");
+        logger_error("Failed to parse gateway payload");
     }
     json_decref(payload_json);
 
@@ -327,11 +356,12 @@ static void on_message(struct uwsc_client *ws_client, void *data, size_t length,
     switch (payload->op) {
         case OP_DISPATCH:
             if (!cstring_is_empty(event_name)) {
-                cord_gateway_event_t *event = get_gateway_event_from_cstring(event_name);
+                cord_gateway_event_t *event =
+                    get_gateway_event_from_cstring(event_name);
                 if (cord_gateway_event_has_handler(event)) {
                     event->handler(client, payload->d, event_name);
                 } else {
-                    logger_warn("No handler for event(%s)", event);
+                    logger_warn("No handler for event: %s", event);
                 }
             }
             break;
@@ -358,7 +388,7 @@ static void on_message(struct uwsc_client *ws_client, void *data, size_t length,
             client->heartbeat_acknowledged = true;
             break;
         default: // fallthrough
-            log_err("Default switch case sentinel");
+            logger_error("Default switch case sentinel");
             break;
     }
 
@@ -370,7 +400,7 @@ static void on_message(struct uwsc_client *ws_client, void *data, size_t length,
 static void on_error(struct uwsc_client *ws_client, i32 err, const char *msg) {
     (void)ws_client;
 
-    log_err("Connection error (%d): %s", err, msg);
+    logger_error("Connection error (%d): %s", err, msg);
 }
 
 static void on_close(struct uwsc_client *ws_client, i32 code, const char *msg) {
@@ -384,19 +414,19 @@ cord_client_t *cord_client_create(void) {
 
     cord_client_t *client = malloc(sizeof(cord_client_t));
     if (!client) {
-        log_err("Failed to allocate discord context");
+        logger_error("Failed to allocate discord context");
         return NULL;
     }
 
     client->http = cord_http_client_create(identity.token);
     if (!client->http->bot_token) {
-        log_err("Failed to create bot token");
+        logger_error("Failed to create bot token");
         free(client);
         return NULL;
     }
 
     if (!client->http) {
-        log_err("Failed to create http client");
+        logger_error("Failed to create http client");
         free(client);
         return NULL;
     }
@@ -423,13 +453,17 @@ static void report_memory(struct ev_loop *loop, ev_timer *timer, i32 revents) {
 
     logger_info("Memory Report");
     f64 message_allocator_used = (f64)client->message_allocator->used / MB(1);
-    f64 temporary_allocator_used = (f64)client->temporary_allocator->used / MB(1);
-    f64 persistent_allocator_used = (f64)client->persistent_allocator->used / MB(1);
+    f64 temporary_allocator_used =
+        (f64)client->temporary_allocator->used / MB(1);
+    f64 persistent_allocator_used =
+        (f64)client->persistent_allocator->used / MB(1);
     f64 message_lifecycle_allocator_used =
         (f64)client->message_lifecycle_allocator->used / MB(1);
 
-    f64 message_allocator_capacity = (f64)client->message_allocator->capacity / MB(1);
-    f64 temporary_allocator_capacity = (f64)client->temporary_allocator->capacity / MB(1);
+    f64 message_allocator_capacity =
+        (f64)client->message_allocator->capacity / MB(1);
+    f64 temporary_allocator_capacity =
+        (f64)client->temporary_allocator->capacity / MB(1);
     f64 persistent_allocator_capacity =
         (f64)client->persistent_allocator->capacity / MB(1);
     f64 message_lifecycle_allocator_capacity =
@@ -437,12 +471,13 @@ static void report_memory(struct ev_loop *loop, ev_timer *timer, i32 revents) {
 
     logger_info("  Message Allocator (%.2f / %.2f)MB", message_allocator_used,
                 message_allocator_capacity);
-    logger_info("  Temporary Allocator (%.2f / %.2f)MB", temporary_allocator_used,
-                temporary_allocator_capacity);
-    logger_info("  Persistent Allocator (%.2f / %.2f)MB", persistent_allocator_used,
-                persistent_allocator_capacity);
+    logger_info("  Temporary Allocator (%.2f / %.2f)MB",
+                temporary_allocator_used, temporary_allocator_capacity);
+    logger_info("  Persistent Allocator (%.2f / %.2f)MB",
+                persistent_allocator_used, persistent_allocator_capacity);
     logger_info("  Message Lifecycle Allocator (%.2f / %.2f)MB",
-                message_lifecycle_allocator_used, message_lifecycle_allocator_capacity);
+                message_lifecycle_allocator_used,
+                message_lifecycle_allocator_capacity);
 
     ev_timer_again(loop, timer);
 }
@@ -455,7 +490,7 @@ static void client_init(cord_client_t *client, const char *url) {
     client->loop = ev_default_loop(0);
     client->ws_client = uwsc_new(client->loop, url, ping_interval, NULL);
     if (!client->ws_client) {
-        log_err("Failed to initialize websocket client");
+        logger_error("Failed to initialize websocket client");
         exit(1);
     }
 
@@ -483,7 +518,7 @@ static void client_reconnect_to(cord_client_t *client, const char *url) {
     client->loop = ev_default_loop(0);
     client->ws_client = uwsc_new(client->loop, url, ping_interval, NULL);
     if (!client->ws_client) {
-        log_err("Failed to initialize websocket client");
+        logger_error("Failed to initialize websocket client");
         exit(1);
     }
 
@@ -535,10 +570,10 @@ static void setup_event_watchers(cord_client_t *client) {
     client->health_report_scheduler = health_report_timer;
 }
 
-i32 cord_client_connect(cord_client_t *client, const char *url) {
+i32 cord_client_connect(cord_client_t *client) {
     logger_debug("Attempting to connect to gateway");
 
-    client_init(client, url);
+    client_init(client, DISCORD_WS_URL);
     setup_event_watchers(client);
     return ev_run(client->loop, 0);
 }

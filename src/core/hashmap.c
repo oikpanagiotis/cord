@@ -5,12 +5,15 @@
 #include <assert.h>
 #include <string.h>
 
-static const cord_hash_item_t EMPTY_ITEM =
-    (cord_hash_item_t){.key = "", .value = NULL, .next = NULL, .deleted = false};
+static const cord_hash_item_t EMPTY_ITEM = (cord_hash_item_t){
+    .key = "", .value = NULL, .next = NULL, .deleted = false};
 
 static u64 hash(char *key) {
-    u64 length = strlen(key);
-    return length;
+    u64 hash = 0;
+    for (size_t i = 0; i < key[i] != '\0'; i++) {
+        hash = hash * 31 + key[i];
+    }
+    return hash;
 }
 
 cord_hashmap_t *cord_hashmap_create(cord_bump_t *allocator,
@@ -24,7 +27,8 @@ cord_hashmap_t *cord_hashmap_create(cord_bump_t *allocator,
     }
 
     const u32 default_capacity = 64;
-    hashmap->items = balloc(allocator, default_capacity * sizeof(cord_hash_item_t));
+    hashmap->items =
+        balloc(allocator, default_capacity * sizeof(cord_hash_item_t));
     if (!hashmap->items) {
         return NULL;
     }

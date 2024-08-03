@@ -12,9 +12,7 @@ void test_teardown(void) {
     // ...
 }
 
-MU_TEST(test_my_assert) {
-    mu_assert(in == 1, "in should be 1");
-}
+MU_TEST(test_my_assert) { mu_assert(in == 1, "in should be 1"); }
 
 MU_TEST_SUITE(test_suite) {
     MU_SUITE_CONFIGURE(&test_setup, &test_teardown);

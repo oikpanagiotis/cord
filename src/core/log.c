@@ -91,7 +91,7 @@ void logger_info(const char *fmt, ...) {
             if (g_logger->verbose) {
                 fprintf(g_logger->stream[i],
                         tblue "[ " tgreen "INFO  " tblue "]" tnormal " %s:%d: ",
-                        __FILE__, __LINE__);
+                        __FILENAME__, __LINE__);
             } else {
                 fprintf(g_logger->stream[i],
                         tblue "[ " tgreen "INFO  " tblue "]" tnormal " ");
@@ -116,7 +116,7 @@ static void log_debug_label_vewrbose(FILE *stream) {
     if (stream) {
         fprintf(stream,
                 tblue "[ " tpurple "DEBUG " tblue "]" tnormal " %s:%d: ",
-                __FILE__, __LINE__);
+                __FILENAME__, __LINE__);
     }
 }
 
@@ -157,7 +157,7 @@ void logger_warn(const char *fmt, ...) {
                 fprintf(g_logger->stream[i],
                         tblue "[ " tyellow "WARN  " tblue "]" tnormal
                               " %s:%d: ",
-                        __FILE__, __LINE__);
+                        __FILENAME__, __LINE__);
             } else {
                 fprintf(g_logger->stream[i],
                         tblue "[ " tyellow "WARN  " tblue "]" tnormal " ");
@@ -181,7 +181,7 @@ void logger_error(const char *fmt, ...) {
 
             fprintf(g_logger->stream[i],
                     tblue "[ " tred "ERROR " tblue "]" tnormal " (%s:%d): ",
-                    __FILE__, __LINE__);
+                    __FILENAME__, __LINE__);
 
             va_list args;
             va_start(args, fmt);

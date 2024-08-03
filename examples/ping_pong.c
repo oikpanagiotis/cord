@@ -24,7 +24,7 @@ int main(void) {
     cord_t *cord = cord_create();
     cord_on_message(cord, on_message);
 
-    cord_connect(cord, "wss://gateway.discord.gg");
+    cord_connect(cord);
     cord_destroy(cord);
     return 0;
 }

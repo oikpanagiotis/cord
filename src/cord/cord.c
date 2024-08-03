@@ -3,6 +3,8 @@
 #include "../core/log.h"
 #include "../core/memory.h"
 #include "../discord/client.h"
+#include "../discord/serialization.h"
+#include "../http/rest.h"
 
 #include <assert.h>
 #include <jansson.h>
@@ -17,15 +19,13 @@ cord_t *cord_create(void) {
     for (i32 i = 0; i < MAX_USER_ALLOCATORS; i++) {
         cord->user_allocators[i] = NULL;
     }
-    cord->gateway_client = cord_client_create();
+    cord->client = cord_client_create();
     cord->permanent_allocator = cord_bump_create();
-    cord->gateway_client->user_data = cord;
+    cord->client->user_data = cord;
     return cord;
 }
 
-void cord_connect(cord_t *cord, const char *url) {
-    cord_client_connect(cord->gateway_client, url);
-}
+void cord_connect(cord_t *cord) { cord_client_connect(cord->client); }
 
 void cord_destroy(cord_t *cord) {
     if (cord) {
@@ -33,7 +33,7 @@ void cord_destroy(cord_t *cord) {
             cord_bump_destroy(cord->user_allocators[i]);
         }
 
-        cord_client_destroy(cord->gateway_client);
+        cord_client_destroy(cord->client);
         // Permanent allocator must
         cord_bump_destroy(cord->permanent_allocator);
         free(cord);
@@ -43,8 +43,9 @@ void cord_destroy(cord_t *cord) {
 
 static bool is_valid_allocator_id(cord_t *cord, i32 allocator_id) {
     bool is_empty = false;
-    bool is_valid_index = !(allocator_id < 0 || allocator_id >= MAX_USER_ALLOCATORS);
-    
+    bool is_valid_index =
+        !(allocator_id < 0 || allocator_id >= MAX_USER_ALLOCATORS);
+
     if (is_valid_index) {
         is_empty = cord->user_allocators[allocator_id] != NULL;
     }
@@ -53,13 +54,14 @@ static bool is_valid_allocator_id(cord_t *cord, i32 allocator_id) {
 
 i32 cord_get_allocator(cord_t *cord) {
     if (cord->allocator_count == MAX_USER_ALLOCATORS) {
-        log_err("Failed to create user allocator");
+        logger_error("Failed to create user allocator");
         return -1;
     }
 
     cord_bump_t *allocator = cord_bump_create_with_size(KB(4));
     if (!allocator) {
-        log_err("Can not create more than %d user allocators", MAX_USER_ALLOCATORS);
+        logger_error("Can not create more than %d user allocators",
+                     MAX_USER_ALLOCATORS);
         return -1;
     }
 
@@ -71,23 +73,24 @@ i32 cord_get_allocator(cord_t *cord) {
 
 void *cord_alloc(cord_t *cord, i32 allocator_id, size_t size) {
     if (!is_valid_allocator_id(cord, allocator_id)) {
-        log_err("allocator with id %d does not exist", allocator_id);
+        logger_error("allocator with id %d does not exist", allocator_id);
         return NULL;
     }
 
     cord_bump_t *allocator = cord->user_allocators[allocator_id];
     void *memory = balloc(allocator, size);
     if (!memory) {
-        log_err("allocator with id %d does not have enough free space", allocator_id);
+        logger_error("allocator with id %d does not have enough free space",
+                     allocator_id);
         return NULL;
     }
 
-    return memory;    
+    return memory;
 }
 
 void cord_pop_allocator(cord_t *cord, i32 allocator_id, size_t size) {
     if (!is_valid_allocator_id(cord, allocator_id)) {
-        log_err("allocator with id %d does not exist", allocator_id);
+        logger_error("allocator with id %d does not exist", allocator_id);
         return;
     }
 
@@ -97,13 +100,13 @@ void cord_pop_allocator(cord_t *cord, i32 allocator_id, size_t size) {
 
 void cord_clear_allocator(cord_t *cord, i32 allocator_id) {
     if (!is_valid_allocator_id(cord, allocator_id)) {
-        log_err("allocator with id %d does not exist", allocator_id);
+        logger_error("allocator with id %d does not exist", allocator_id);
         return;
     }
 
     cord_bump_t *allocator = cord->user_allocators[allocator_id];
     if (!allocator) {
-        log_err("Failed to clear user allocator with id %d", allocator_id);
+        logger_error("Failed to clear user allocator with id %d", allocator_id);
         return;
     }
 
@@ -112,7 +115,7 @@ void cord_clear_allocator(cord_t *cord, i32 allocator_id) {
 
 void cord_destroy_allocator(cord_t *cord, i32 allocator_id) {
     if (!is_valid_allocator_id(cord, allocator_id)) {
-        log_err("allocator with id %d does not exist", allocator_id);
+        logger_error("allocator with id %d does not exist", allocator_id);
         return;
     }
 
@@ -126,28 +129,52 @@ void cord_destroy_allocator(cord_t *cord, i32 allocator_id) {
         for (u32 i = 0; i < (u32)allocator_reorder_count; i++) {
             u32 empty_slot_index = allocator_id + i;
             u32 current_index = allocator_id + i + 1;
-            cord->user_allocators[empty_slot_index] = cord->user_allocators[current_index];
+            cord->user_allocators[empty_slot_index] =
+                cord->user_allocators[current_index];
         }
         cord->allocator_count--;
     }
 }
 
 void cord_on_message(cord_t *cord,
-                     void (*on_message_cb)(cord_t *ctx, cord_message_t *message)) {
-    cord->gateway_client->event_callbacks.on_message_cb = on_message_cb;
+                     void (*on_message_cb)(cord_t *ctx,
+                                           cord_message_t *message)) {
+    cord->client->event_callbacks.on_message_cb = on_message_cb;
 }
 
 void cord_send_text(cord_t *cord, cord_strbuf_t *channel_id, char *message) {
-    cord_bump_t *allocator = cord->gateway_client->message_lifecycle_allocator;
+    cord_bump_t *allocator = cord->client->message_lifecycle_allocator;
 
     cord_message_t *msg = balloc(allocator, sizeof(cord_message_t));
     cord_strbuf_t *content = cord_strbuf_create();
     cord_strbuf_append(content, cstr(message));
     msg->content = content;
     msg->channel_id = channel_id;
-    cord_client_send_message(cord->gateway_client, msg);
+    cord_client_send_message(cord->client, msg);
 }
 
 void cord_send_message(cord_t *cord, cord_message_t *message) {
-    cord_client_send_message(cord->gateway_client, message);
+    cord_client_send_message(cord->client, message);
+}
+
+cord_user_t *cord_get_current_user(cord_t *cord) {
+    cord_temp_memory_t memory =
+        cord_temp_memory_start(cord->client->temporary_allocator);
+    cord_http_result_t result =
+        cord_http_get_current_user(cord->client->http, memory.allocator);
+    if (result.error) {
+        logger_error("Failed to get current user");
+        return NULL;
+    }
+
+    cord_bump_t *serialize_bump = cord_bump_create();
+    cord_serialize_result_t user =
+        cord_user_serialize(result.body, serialize_bump);
+    if (user.error) {
+        logger_error("Failed to create object: %s", cord_error(user.error));
+        cord_bump_destroy(serialize_bump);
+        return NULL;
+    }
+
+    cord_temp_memory_end(memory);
 }

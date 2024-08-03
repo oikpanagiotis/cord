@@ -70,8 +70,10 @@ MU_TEST(test_cord_str_first_char_and_last_char) {
     cord_str_t string = cstr("abcdef");
     char first = cord_str_first_char(string);
     char last = cord_str_last_char(string);
-    mu_assert(first == 'a', "The first character of the string should be equal to a");
-    mu_assert(last == 'f', "The last character of the string should be equal to a");
+    mu_assert(first == 'a',
+              "The first character of the string should be equal to a");
+    mu_assert(last == 'f',
+              "The last character of the string should be equal to a");
 }
 
 MU_TEST(test_cord_str_pop_first_split) {
@@ -85,8 +87,10 @@ MU_TEST(test_cord_str_pop_first_split) {
     cord_str_t year = cord_str_pop_first_split(&date, cstr("/"));
 
     mu_assert(cord_str_equals(day, expected_day), "Day should be equal to 24");
-    mu_assert(cord_str_equals(month, expected_month), "Month should be equal to 12");
-    mu_assert(cord_str_equals(year, expected_year), "Year should be equal to 2022");
+    mu_assert(cord_str_equals(month, expected_month),
+              "Month should be equal to 12");
+    mu_assert(cord_str_equals(year, expected_year),
+              "Year should be equal to 2022");
 }
 
 /*
@@ -96,11 +100,13 @@ MU_TEST(test_cord_strbuf_create) {
     cord_strbuf_t *builder = cord_strbuf_create_with_size(TEST_SIZE);
     bool result = cord_strbuf_valid(builder);
     bool expected = true;
-    mu_assert(result == expected, "After creation string builder should not be null");
+    mu_assert(result == expected,
+              "After creation string builder should not be null");
 
     cord_strbuf_t invalid = (cord_strbuf_t){NULL, 0, 0};
     mu_assert(cord_strbuf_valid(&invalid) == false,
-              "Passing invalid string builder to cord_strbuf_valid should return false");
+              "Passing invalid string builder to cord_strbuf_valid should "
+              "return false");
 }
 
 MU_TEST(test_cord_strbuf_append) {
@@ -110,17 +116,18 @@ MU_TEST(test_cord_strbuf_append) {
 
     cord_strbuf_append(builder, cstr("Hello"));
     cord_str_t result_string = cord_strbuf_to_str(*builder);
-    mu_assert(cord_str_equals(result_string, expected1),
-              "Converting string builder to string view should result in \"Hello\"");
+    mu_assert(
+        cord_str_equals(result_string, expected1),
+        "Converting string builder to string view should result in \"Hello\"");
 
     cord_strbuf_append(builder, cstr(" "));
     cord_strbuf_append(builder, cstr("world"));
     result_string = cord_strbuf_to_str(*builder);
 
     mu_assert_int_eq(expected2.length, result_string.length);
-    mu_assert(
-        cord_str_equals(result_string, expected2),
-        "Converting string builder to string view should result in \"Hello world\"");
+    mu_assert(cord_str_equals(result_string, expected2),
+              "Converting string builder to string view should result in "
+              "\"Hello world\"");
 }
 
 MU_TEST(test_cord_strbuf_to_str) {
@@ -131,8 +138,9 @@ MU_TEST(test_cord_strbuf_to_str) {
 
     cord_str_t string = cord_strbuf_to_str(*builder);
     mu_assert_int_eq(expected.length, string.length);
-    mu_assert(cord_str_equals(string, expected),
-              "Converting string builder to string view should result in \"Hello\"");
+    mu_assert(
+        cord_str_equals(string, expected),
+        "Converting string builder to string view should result in \"Hello\"");
 }
 
 MU_TEST(test_cord_strbuf_to_cstring) {
@@ -185,8 +193,8 @@ MU_TEST(test_cstring_is_null_or_empty) {
 
     bool expected = true;
     bool result = cstring_is_null_or_empty(empty);
-    mu_assert(expected == result,
-              "cstring_is_null_or_empty should return true when passing empty string");
+    mu_assert(expected == result, "cstring_is_null_or_empty should return true "
+                                  "when passing empty string");
 
     expected = true;
     result = cstring_is_null_or_empty(null);
@@ -195,8 +203,8 @@ MU_TEST(test_cstring_is_null_or_empty) {
 
     expected = false;
     result = cstring_is_null_or_empty(normal);
-    mu_assert(expected == result,
-              "cstring_is_null_or_empty should return false when passing normal string");
+    mu_assert(expected == result, "cstring_is_null_or_empty should return "
+                                  "false when passing normal string");
 }
 
 MU_TEST(test_bool_to_cstring) {

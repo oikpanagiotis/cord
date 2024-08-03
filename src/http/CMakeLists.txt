@@ -6,6 +6,7 @@ cmake_minimum_required(VERSION 3.21)
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra")
 set(Sources
     http.c
+    rest.c
 )
 
 set(Libraries

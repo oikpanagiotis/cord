@@ -83,13 +83,17 @@ MU_TEST(test_cord_array_push) {
 MU_TEST(test_cord_array_get) {
     init_four_users();
 
-    mu_assert(user_equals(cord_array_get(users_list, 0), &(user){1, "User 1", 30.32f}),
+    mu_assert(user_equals(cord_array_get(users_list, 0),
+                          &(user){1, "User 1", 30.32f}),
               "Users should be equal");
-    mu_assert(user_equals(cord_array_get(users_list, 1), &(user){2, "User 2", 2.26f}),
+    mu_assert(
+        user_equals(cord_array_get(users_list, 1), &(user){2, "User 2", 2.26f}),
+        "Users should be equal");
+    mu_assert(user_equals(cord_array_get(users_list, 2),
+                          &(user){3, "User 3", 58.63f}),
               "Users should be equal");
-    mu_assert(user_equals(cord_array_get(users_list, 2), &(user){3, "User 3", 58.63f}),
-              "Users should be equal");
-    mu_assert(user_equals(cord_array_get(users_list, 3), &(user){4, "User 4", 11.97f}),
+    mu_assert(user_equals(cord_array_get(users_list, 3),
+                          &(user){4, "User 4", 11.97f}),
               "Users should be equal");
 }
 
@@ -107,9 +111,11 @@ MU_TEST(test_cord_array_resize) {
     }
     user_set(my_user1, mock1);
 
-    mu_assert(user_equals(cord_array_get(users_list, 19), &(user){1, "User 1", 30.32f}),
+    mu_assert(user_equals(cord_array_get(users_list, 19),
+                          &(user){1, "User 1", 30.32f}),
               "Users should be equal");
-    mu_assert(user_equals(cord_array_get(users_list, 14), &(user){4, "User 4", 11.97f}),
+    mu_assert(user_equals(cord_array_get(users_list, 14),
+                          &(user){4, "User 4", 11.97f}),
               "Users should be equal");
 }
 

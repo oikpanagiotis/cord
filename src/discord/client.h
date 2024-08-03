@@ -3,7 +3,7 @@
 
 #include "../core/memory.h"
 #include "../http/http.h"
-#include "types.h"
+#include "entities.h"
 
 #include <ev.h>
 #include <jansson.h>
@@ -11,22 +11,27 @@
 #include <stdlib.h>
 #include <uwsc/uwsc.h>
 
+#define DISCORD_API_URL "https://discord.com/api/v10"
+#define DISCORD_WS_URL "wss://gateway.discord.gg"
+
 #define PAYLOAD_KEY_OPCODE "op"
 #define PAYLOAD_KEY_DATA "d"
 #define PAYLOAD_KEY_SEQUENCE "s"
 #define PAYLOAD_KEY_EVENT "t"
 
-#define OP_DISPATCH 0
-#define OP_HEARTBEAT 1
-#define OP_IDENTIFY 2
-#define OP_PRESENCE_UPDATE 3
-#define OP_VOICE_STATUS_UPDATE 4
-#define OP_RESUME 6
-#define OP_RECONNECT 7
-#define OP_REQUEST_GUILD_MEMBERS 8
-#define OP_INVALID_SESSION 9
-#define OP_HELLO 10
-#define OP_HEARTBEAT_ACK 11
+typedef enum operations {
+    OP_DISPATCH = 0,
+    OP_HEARTBEAT = 1,
+    OP_IDENTIFY = 2,
+    OP_PRESENCE_UPDATE = 3,
+    OP_VOICE_STATUS_UPDATE = 4,
+    OP_RESUME = 6,
+    OP_RECONNECT = 7,
+    OP_REQUEST_GUILD_MEMBERS = 8,
+    OP_INVALID_SESSION = 9,
+    OP_HELLO = 10,
+    OP_HEARTBEAT_ACK = 11
+} operations;
 
 enum {
     ACTION_NONE,
@@ -39,6 +44,7 @@ typedef struct cord_t cord_t;
 
 typedef struct cord_gateway_event_callbacks_t {
     void (*on_message_cb)(cord_t *ctx, cord_message_t *message);
+    // add more
 } cord_gateway_event_callbacks_t;
 
 typedef struct identity_info_t {
@@ -86,7 +92,7 @@ typedef struct cord_client_t {
 
 cord_client_t *cord_client_create(void);
 
-i32 cord_client_connect(cord_client_t *client, const char *url);
+i32 cord_client_connect(cord_client_t *client);
 void cord_client_destroy(cord_client_t *client);
 
 void cord_client_send_message(cord_client_t *client, cord_message_t *message);

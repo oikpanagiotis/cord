@@ -92,7 +92,8 @@ cord_str_t cord_str_trim(cord_str_t string) {
 }
 
 cord_str_t cord_str_remove_prefix(cord_str_t string, cord_str_t prefix) {
-    if ((string.data[0] != prefix.data[0]) || (string.length <= prefix.length)) {
+    if ((string.data[0] != prefix.data[0]) ||
+        (string.length <= prefix.length)) {
         return string;
     }
     ssize_t index = 0;
@@ -101,7 +102,8 @@ cord_str_t cord_str_remove_prefix(cord_str_t string, cord_str_t prefix) {
     }
 
     ssize_t offset = (index == prefix.length) ? index : 0;
-    cord_str_t clean = (cord_str_t){string.data + offset, string.length - offset};
+    cord_str_t clean =
+        (cord_str_t){string.data + offset, string.length - offset};
     return cord_str_remove_prefix(clean, prefix);
 }
 
@@ -113,7 +115,8 @@ cord_str_t cord_str_remove_suffix(cord_str_t string, cord_str_t suffix) {
 
     ssize_t matches = 0;
     for (ssize_t i = 0; i < suffix.length; i++) {
-        if (string.data[string.length - i - 1] == suffix.data[suffix.length - i - 1]) {
+        if (string.data[string.length - i - 1] ==
+            suffix.data[suffix.length - i - 1]) {
             matches++;
         }
     }
@@ -158,9 +161,7 @@ cord_str_t cord_str_pop_first_split(cord_str_t *string, cord_str_t split_by) {
     return first_split;
 }
 
-char cord_str_first_char(cord_str_t string) {
-    return string.data[0];
-}
+char cord_str_first_char(cord_str_t string) { return string.data[0]; }
 
 char cord_str_last_char(cord_str_t string) {
     return string.data[string.length - 1];

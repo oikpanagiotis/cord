@@ -6,9 +6,7 @@ static const size_t f64_size = sizeof(f64);
 static const size_t SIZE = KB(1);
 static cord_bump_t *bump_allocator = NULL;
 
-void test_setup(void) {
-    bump_allocator = cord_bump_create_with_size(SIZE);
-}
+void test_setup(void) { bump_allocator = cord_bump_create_with_size(SIZE); }
 
 void test_teardown(void) {
     cord_bump_destroy(bump_allocator);

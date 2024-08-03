@@ -7,7 +7,6 @@ set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra -ggdb")
 set(Sources
     client.c
     events.c
-    types.c
     entities.c
     serialization.c
 )

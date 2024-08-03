@@ -110,7 +110,8 @@ typedef struct cord_guild_member_t {
     cord_bump_t *allocator;
 } cord_guild_member_t;
 
-void cord_guild_member_init(cord_guild_member_t *member, cord_bump_t *allocator);
+void cord_guild_member_init(cord_guild_member_t *member,
+                            cord_bump_t *allocator);
 
 // https://discord.com/developers/docs/resources/channel#channel-mention-object
 typedef struct cord_channel_mention_t {
@@ -122,7 +123,8 @@ typedef struct cord_channel_mention_t {
     cord_bump_t *allocator;
 } cord_channel_mention_t;
 
-void cord_channel_mention_init(cord_channel_mention_t *mention, cord_bump_t *allocator);
+void cord_channel_mention_init(cord_channel_mention_t *mention,
+                               cord_bump_t *allocator);
 
 // https://discord.com/developers/docs/resources/channel#attachment-object
 typedef struct cord_attachment_t {
@@ -137,7 +139,8 @@ typedef struct cord_attachment_t {
     cord_bump_t *allocator;
 } cord_attachment_t;
 
-void cord_attachment_init(cord_attachment_t *attachment, cord_bump_t *allocator);
+void cord_attachment_init(cord_attachment_t *attachment,
+                          cord_bump_t *allocator);
 
 // https://discord.com/developers/docs/resources/channel#embed-object-embed-footer-structure
 typedef struct cord_embed_footer_t {
@@ -148,7 +151,8 @@ typedef struct cord_embed_footer_t {
     cord_bump_t *allocator;
 } cord_embed_footer_t;
 
-void cord_embed_footer_init(cord_embed_footer_t *efooter, cord_bump_t *allocator);
+void cord_embed_footer_init(cord_embed_footer_t *efooter,
+                            cord_bump_t *allocator);
 
 // https://discord.com/developers/docs/resources/channel#embed-object-embed-image-structure
 typedef struct cord_embed_image_t {
@@ -194,7 +198,8 @@ typedef struct cord_embed_provider_t {
     cord_bump_t *allocator;
 } cord_embed_provider_t;
 
-void cord_embed_provider_init(cord_embed_provider_t *eprovider, cord_bump_t *allocator);
+void cord_embed_provider_init(cord_embed_provider_t *eprovider,
+                              cord_bump_t *allocator);
 
 // https://discord.com/developers/docs/resources/channel#embed-object-embed-author-structure
 typedef struct cord_embed_author_t {
@@ -206,7 +211,8 @@ typedef struct cord_embed_author_t {
     cord_bump_t *allocator;
 } cord_embed_author_t;
 
-void cord_embed_author_init(cord_embed_author_t *eauthor, cord_bump_t *allocator);
+void cord_embed_author_init(cord_embed_author_t *eauthor,
+                            cord_bump_t *allocator);
 
 // https://discord.com/developers/docs/resources/channel#embed-object-embed-field-structure
 typedef struct cord_embed_field_t {
@@ -319,7 +325,8 @@ typedef struct cord_message_sticker_t {
     cord_bump_t *allocator;
 } cord_message_sticker_t;
 
-void cord_message_sticker_init(cord_message_sticker_t *msticker, cord_bump_t *allocator);
+void cord_message_sticker_init(cord_message_sticker_t *msticker,
+                               cord_bump_t *allocator);
 
 // (Message) -
 // https://discord.com/developers/docs/resources/channel#message-object

@@ -28,7 +28,4 @@ char *cord_error(int type) {
     return errors[type].message;
 }
 
-bool is_posix_error(i32 code) {
-    return code < (i32)0;
-}
-
+bool is_posix_error(i32 code) { return code < (i32)0; }

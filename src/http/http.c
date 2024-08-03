@@ -9,9 +9,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-static bool is_curl_error(CURLcode code) {
-    return code != CURLE_OK;
-}
+static bool is_curl_error(CURLcode code) { return code != CURLE_OK; }
 
 static const char *curl_error(CURLcode code) {
     return curl_easy_strerror(code);
@@ -22,10 +20,12 @@ bool cord_http_is_success(cord_http_result_t result) {
 }
 
 cord_url_builder_t cord_url_builder_create(cord_bump_t *allocator) {
-    return (cord_url_builder_t){.string_builder = cord_strbuf_create(), .allocator = allocator};
+    return (cord_url_builder_t){.string_builder = cord_strbuf_create(),
+                                .allocator = allocator};
 }
 
-void cord_url_builder_add_route(cord_url_builder_t url_builder, cord_str_t route) {
+void cord_url_builder_add_route(cord_url_builder_t url_builder,
+                                cord_str_t route) {
     cord_strbuf_t *builder = url_builder.string_builder;
     bool is_first_route = builder->length == 0;
 
@@ -93,7 +93,8 @@ struct curl_slist *discord_api_headers(const char *bot_token) {
     return list;
 }
 
-static cord_http_request_t *cord_http_request_create(cord_bump_t *bump, int type, const char *url,
+static cord_http_request_t *cord_http_request_create(cord_bump_t *bump,
+                                                     int type, const char *url,
                                                      const char *body) {
 
     cord_http_request_t *request = balloc(bump, sizeof(cord_http_request_t));
@@ -106,7 +107,8 @@ static cord_http_request_t *cord_http_request_create(cord_bump_t *bump, int type
     request->header = NULL;
     request->type = type;
     request->body = body;
-    request->result = (cord_http_result_t){.body = cord_strbuf_create(), .status = 0};
+    request->result =
+        (cord_http_result_t){.body = NULL, .status = 0, .error = false};
     return request;
 }
 
@@ -129,18 +131,20 @@ static char *get_request_type_cstring(cord_http_request_t *request) {
     }
 }
 
-static size_t write_cb(void *data, size_t size, size_t nmemb, cord_http_result_t *result) {
+static size_t write_cb(void *data, size_t size, size_t nmemb,
+                       cord_http_result_t *result) {
     assert(result);
     assert(result->body);
 
     size_t string_size = nmemb * size;
-    char *cstring = calloc(1, string_size + 1);
-    cord_strbuf_append(result->body, cstr(cstring));
-    free(cstring);
+    result->body = calloc(1, string_size + 1);
+    memcpy(result->body, data, string_size);
+
     return size * nmemb;
 }
 
-static void prepare_request_options(cord_http_client_t *client, cord_http_request_t *request) {
+static void prepare_request_options(cord_http_client_t *client,
+                                    cord_http_request_t *request) {
     char *request_type = get_request_type_cstring(request);
     assert(request_type && "Request type can not be null");
 
@@ -158,27 +162,49 @@ static void prepare_request_options(cord_http_client_t *client, cord_http_reques
     }
 }
 
-static cord_http_result_t perform(cord_http_client_t *client, cord_http_request_t *request) {
+static cord_http_result_t perform(cord_http_client_t *client,
+                                  cord_http_request_t *request) {
     prepare_request_options(client, request);
     CURLcode rc = curl_easy_perform(client->curl);
+    curl_easy_getinfo(client->curl, CURLINFO_RESPONSE_CODE,
+                      &request->result.status);
+    if (request->result.status != HTTP_OK) {
+        request->result.error = true;
+    }
+
     if (is_curl_error(rc)) {
-        logger_error("HTTP %s Request failed: %s", curl_error(rc));
+        logger_error("Could not perform HTTP %s request: %s", curl_error(rc));
     }
     return request->result;
 }
 
-cord_http_result_t cord_http_get(cord_http_client_t *client, const char *url) {
-    return perform(client, cord_http_request_create(client->allocator, HTTP_GET, url, NULL));
+cord_http_result_t cord_http_get(cord_http_client_t *client,
+                                 cord_bump_t *allocator, const char *url) {
+    cord_http_result_t result = perform(
+        client, cord_http_request_create(allocator, HTTP_GET, url, NULL));
+
+    if (result.error) {
+        logger_error("GET request to %s returned (%d)", url, result.status);
+    }
+
+    return result;
 }
 
-cord_http_result_t cord_http_post(cord_http_client_t *client, const char *url, const char *body) {
-    return perform(client, cord_http_request_create(client->allocator, HTTP_POST, url, body));
+cord_http_result_t cord_http_post(cord_http_client_t *client,
+                                  cord_bump_t *allocator, const char *url,
+                                  const char *body) {
+    return perform(client,
+                   cord_http_request_create(allocator, HTTP_POST, url, body));
 }
 
-cord_http_result_t cord_http_delete(cord_http_client_t *client, const char *url) {
-    return perform(client, cord_http_request_create(client->allocator, HTTP_DELETE, url, NULL));
+cord_http_result_t cord_http_delete(cord_http_client_t *client,
+                                    const char *url) {
+    return perform(client, cord_http_request_create(client->allocator,
+                                                    HTTP_DELETE, url, NULL));
 }
 
-cord_http_result_t cord_http_patch(cord_http_client_t *client, const char *url) {
-    return perform(client, cord_http_request_create(client->allocator, HTTP_PATCH, url, NULL));
+cord_http_result_t cord_http_patch(cord_http_client_t *client,
+                                   const char *url) {
+    return perform(client, cord_http_request_create(client->allocator,
+                                                    HTTP_PATCH, url, NULL));
 }
