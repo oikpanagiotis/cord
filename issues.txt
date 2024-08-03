@@ -1,3 +1,5 @@
+# cord_strbuf_t should take in an allocator instead of using malloc/free
+
 # Move all malloc/frees to corresponding allocators
 Watchers, temporary variables, etc. GREP for malloc/free calls
 

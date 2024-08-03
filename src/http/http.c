@@ -1,6 +1,7 @@
 #include "http.h"
 #include "../core/errors.h"
 #include "../core/log.h"
+#include "../string.h"
 
 #include <assert.h>
 #include <curl/curl.h>
@@ -21,8 +22,7 @@ bool cord_http_is_success(cord_http_result_t result) {
 }
 
 cord_url_builder_t cord_url_builder_create(cord_bump_t *allocator) {
-    return (cord_url_builder_t){.string_builder = cord_strbuf_create(),
-                                .allocator = allocator};
+    return (cord_url_builder_t){.string_builder = cord_strbuf_create(), .allocator = allocator};
 }
 
 void cord_url_builder_add_route(cord_url_builder_t url_builder, cord_str_t route) {
@@ -93,10 +93,10 @@ struct curl_slist *discord_api_headers(const char *bot_token) {
     return list;
 }
 
-static cord_http_request_t *cord_http_request_create(cord_temp_memory_t memory, int type,
-                                                     const char *url, const char *body) {
+static cord_http_request_t *cord_http_request_create(cord_bump_t *bump, int type, const char *url,
+                                                     const char *body) {
 
-    cord_http_request_t *request = balloc(memory.allocator, sizeof(cord_http_request_t));
+    cord_http_request_t *request = balloc(bump, sizeof(cord_http_request_t));
     if (!request) {
         logger_error("Failed to allocate http request");
         return NULL;
@@ -106,6 +106,7 @@ static cord_http_request_t *cord_http_request_create(cord_temp_memory_t memory, 
     request->header = NULL;
     request->type = type;
     request->body = body;
+    request->result = (cord_http_result_t){.body = cord_strbuf_create(), .status = 0};
     return request;
 }
 
@@ -128,17 +129,18 @@ static char *get_request_type_cstring(cord_http_request_t *request) {
     }
 }
 
-// FIXME (BUG): Fix this. we need to implement raw string appending or create 
-// another function for string builder to accept nmemb + size
 static size_t write_cb(void *data, size_t size, size_t nmemb, cord_http_result_t *result) {
-    assert(nmemb == 1);
+    assert(result);
+    assert(result->body);
 
-    cord_strbuf_append(result->body, cstr((char *)data));
+    size_t string_size = nmemb * size;
+    char *cstring = calloc(1, string_size + 1);
+    cord_strbuf_append(result->body, cstr(cstring));
+    free(cstring);
     return size * nmemb;
 }
 
-static void prepare_request_options(cord_http_client_t *client,
-                                    cord_http_request_t *request) {
+static void prepare_request_options(cord_http_client_t *client, cord_http_request_t *request) {
     char *request_type = get_request_type_cstring(request);
     assert(request_type && "Request type can not be null");
 
@@ -147,8 +149,9 @@ static void prepare_request_options(cord_http_client_t *client,
     curl_easy_setopt(client->curl, CURLOPT_URL, request->url);
     curl_easy_setopt(client->curl, CURLOPT_HTTPHEADER, request->header);
 
+    assert(&request->result.body);
     curl_easy_setopt(client->curl, CURLOPT_WRITEFUNCTION, write_cb);
-    curl_easy_setopt(client->curl, CURLOPT_WRITEDATA, request->result);
+    curl_easy_setopt(client->curl, CURLOPT_WRITEDATA, &request->result);
 
     if (request->type == HTTP_POST) {
         curl_easy_setopt(client->curl, CURLOPT_POSTFIELDS, request->body);
@@ -165,34 +168,17 @@ static cord_http_result_t perform(cord_http_client_t *client, cord_http_request_
 }
 
 cord_http_result_t cord_http_get(cord_http_client_t *client, const char *url) {
-    cord_temp_memory_t memory = cord_temp_memory_start(client->allocator);
-    cord_http_result_t result =
-        perform(client, cord_http_request_create(memory, HTTP_GET, url, NULL));
-    cord_temp_memory_end(memory);
-    return result;
+    return perform(client, cord_http_request_create(client->allocator, HTTP_GET, url, NULL));
 }
 
-cord_http_result_t cord_http_post(cord_http_client_t *client, const char *url,
-                            const char *body) {
-    cord_temp_memory_t memory = cord_temp_memory_start(client->allocator);
-    cord_http_result_t result =
-        perform(client, cord_http_request_create(memory, HTTP_POST, url, body));
-    cord_temp_memory_end(memory);
-    return result;
+cord_http_result_t cord_http_post(cord_http_client_t *client, const char *url, const char *body) {
+    return perform(client, cord_http_request_create(client->allocator, HTTP_POST, url, body));
 }
 
 cord_http_result_t cord_http_delete(cord_http_client_t *client, const char *url) {
-    cord_temp_memory_t memory = cord_temp_memory_start(client->allocator);
-    cord_http_result_t result =
-        perform(client, cord_http_request_create(memory, HTTP_DELETE, url, NULL));
-    cord_temp_memory_end(memory);
-    return result;
+    return perform(client, cord_http_request_create(client->allocator, HTTP_DELETE, url, NULL));
 }
 
 cord_http_result_t cord_http_patch(cord_http_client_t *client, const char *url) {
-    cord_temp_memory_t memory = cord_temp_memory_start(client->allocator);
-    cord_http_result_t result =
-        perform(client, cord_http_request_create(memory, HTTP_PATCH, url, NULL));
-    cord_temp_memory_end(memory);
-    return result;
+    return perform(client, cord_http_request_create(client->allocator, HTTP_PATCH, url, NULL));
 }

@@ -816,7 +816,7 @@ static void message_objects(cord_message_t *message, string_ref key, json_t *val
                         cord_user_t, cord_user_serialize);
 
     char *temp = json_dumps(value, 0);
-    logger_debug("Message object %s", temp);
+    //logger_debug("Message object %s", temp);
     free(temp);
 }
 
