@@ -1,8 +1,0 @@
-# cord_strbuf_t should take in an allocator instead of using malloc/free
-
-# Move all malloc/frees to corresponding allocators
-Watchers, temporary variables, etc. GREP for malloc/free calls
-
-# Reconnect code does not take into account anything other than websocket clinet and heartbeat timer
-Destroy only what's hb watcher / ws client and when reinitialize only those.
-
