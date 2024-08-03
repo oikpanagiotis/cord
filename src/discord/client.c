@@ -54,7 +54,9 @@ static void load_identity_info(identity_info_t *identity) {
 /*
  * Assumes that sequence is initialized to -1
  */
-static bool is_valid_sequence(i32 s) { return s >= 0; }
+static bool is_valid_sequence(i32 s) {
+    return s >= 0;
+}
 
 static f64 heartbeat_to_double(i32 interval) {
     i32 decimal = interval / 1000;

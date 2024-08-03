@@ -197,4 +197,6 @@ void global_logger_init(void) {
     logger_use(logger);
 }
 
-void global_logger_destroy(void) { logger_destroy(g_logger); }
+void global_logger_destroy(void) {
+    logger_destroy(g_logger);
+}

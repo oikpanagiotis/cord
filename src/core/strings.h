@@ -67,7 +67,9 @@ typedef struct cord_strbuf_t {
 } cord_strbuf_t;
 
 #define cord_strbuf_null                                                       \
-    (cord_strbuf_t) { NULL, 0, 0, NULL }
+    (cord_strbuf_t) {                                                          \
+        NULL, 0, 0, NULL                                                       \
+    }
 
 cord_strbuf_t *cord_strbuf_create(void);
 void cord_strbuf_destroy(cord_strbuf_t *builder);

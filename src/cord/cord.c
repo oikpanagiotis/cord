@@ -25,7 +25,9 @@ cord_t *cord_create(void) {
     return cord;
 }
 
-void cord_connect(cord_t *cord) { cord_client_connect(cord->client); }
+void cord_connect(cord_t *cord) {
+    cord_client_connect(cord->client);
+}
 
 void cord_destroy(cord_t *cord) {
     if (cord) {

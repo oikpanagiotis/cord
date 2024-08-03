@@ -9,7 +9,9 @@
 #include <stdlib.h>
 #include <string.h>
 
-static bool is_curl_error(CURLcode code) { return code != CURLE_OK; }
+static bool is_curl_error(CURLcode code) {
+    return code != CURLE_OK;
+}
 
 static const char *curl_error(CURLcode code) {
     return curl_easy_strerror(code);

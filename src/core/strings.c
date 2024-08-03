@@ -161,7 +161,9 @@ cord_str_t cord_str_pop_first_split(cord_str_t *string, cord_str_t split_by) {
     return first_split;
 }
 
-char cord_str_first_char(cord_str_t string) { return string.data[0]; }
+char cord_str_first_char(cord_str_t string) {
+    return string.data[0];
+}
 
 char cord_str_last_char(cord_str_t string) {
     return string.data[string.length - 1];
