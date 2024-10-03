@@ -14,14 +14,17 @@
 cord_t *cord_create(void) {
     global_logger_init();
 
-    cord_t *cord = malloc(sizeof(cord_t));
+    cord_bump_t *application_allocator = cord_bump_create_with_size(MB(8));
+
+    cord_t *cord = balloc(application_allocator, sizeof(cord_t));
+    cord->permanent_allocator = application_allocator;
+    cord->client = cord_client_create(cord->permanent_allocator);
+    cord->client->user_data = cord;
+
     cord->allocator_count = 0;
     for (i32 i = 0; i < MAX_USER_ALLOCATORS; i++) {
         cord->user_allocators[i] = NULL;
     }
-    cord->client = cord_client_create();
-    cord->permanent_allocator = cord_bump_create();
-    cord->client->user_data = cord;
     return cord;
 }
 
@@ -30,17 +33,22 @@ void cord_connect(cord_t *cord) {
 }
 
 void cord_destroy(cord_t *cord) {
+    cord_bump_t *application_allocator = NULL;
+
     if (cord) {
+        application_allocator = cord->permanent_allocator;
+
         for (i32 i = 0; i < cord->allocator_count; i++) {
             cord_bump_destroy(cord->user_allocators[i]);
         }
 
         cord_client_destroy(cord->client);
-        // Permanent allocator must
-        cord_bump_destroy(cord->permanent_allocator);
         free(cord);
     }
     global_logger_destroy();
+
+    // destroy permanent allocator last
+    cord_bump_destroy(cord->permanent_allocator);
 }
 
 static bool is_valid_allocator_id(cord_t *cord, i32 allocator_id) {
@@ -169,9 +177,13 @@ cord_user_t *cord_get_current_user(cord_t *cord) {
         return NULL;
     }
 
+    return NULL;
+    // Here we need to read JSON and then serialize user object
+    //
+    /*
     cord_bump_t *serialize_bump = cord_bump_create();
     cord_serialize_result_t user =
-        cord_user_serialize(result.body, serialize_bump);
+        cord_user_serialize(user.obj, serialize_bump);
     if (user.error) {
         logger_error("Failed to create object: %s", cord_error(user.error));
         cord_bump_destroy(serialize_bump);
@@ -179,4 +191,6 @@ cord_user_t *cord_get_current_user(cord_t *cord) {
     }
 
     cord_temp_memory_end(memory);
+    return user.obj;
+    */
 }

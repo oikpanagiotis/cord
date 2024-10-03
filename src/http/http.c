@@ -41,8 +41,9 @@ char *cord_url_builder_build(cord_url_builder_t url_builder) {
     return cord_strbuf_build(*url_builder.string_builder);
 }
 
-cord_http_client_t *cord_http_client_create(const char *bot_token) {
-    cord_http_client_t *client = malloc(sizeof(cord_http_client_t));
+cord_http_client_t *cord_http_client_create(cord_bump_t *allocator,
+                                            const char *bot_token) {
+    cord_http_client_t *client = balloc(allocator, sizeof(cord_http_client_t));
     if (!client) {
         logger_error("Failed to allocate http client");
         return NULL;
@@ -50,7 +51,7 @@ cord_http_client_t *cord_http_client_create(const char *bot_token) {
     client->allocator = cord_bump_create_with_size(KB(1));
     client->last_error = NULL;
 
-    client->bot_token = strdup(bot_token);
+    client->bot_token = balloc(allocator, strlen(bot_token));
     if (!client->bot_token) {
         logger_error("Failed to allocate bot_token");
         free(client);
@@ -75,11 +76,13 @@ void cord_http_client_destroy(cord_http_client_t *client) {
         if (client->curl) {
             curl_easy_cleanup(client->curl);
         }
-        if (client->bot_token) {
-            free(client->bot_token);
-        }
-        free(client);
     }
+
+    /*
+     * The rest of the allocated values are going to be freed all at once
+     * when permanent allocator is destroyed
+     */
+
     curl_global_cleanup();
 }
 

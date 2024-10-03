@@ -42,7 +42,8 @@ typedef struct cord_http_request_t {
     cord_http_result_t result;
 } cord_http_request_t;
 
-cord_http_client_t *cord_http_client_create(const char *bot_token);
+cord_http_client_t *cord_http_client_create(cord_bump_t *allocator,
+                                            const char *bot_token);
 void cord_http_client_destroy(cord_http_client_t *client);
 
 int cord_http_client_perform_request(cord_http_client_t *client,

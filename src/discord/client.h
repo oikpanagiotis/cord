@@ -70,7 +70,9 @@ typedef struct cord_client_t {
     struct ev_signal *sigint_watcher;
     struct ev_check *reconnect_watcher;
 
+    // points to application permanent allocator
     cord_bump_t *persistent_allocator;
+
     cord_bump_t *message_allocator;
     cord_bump_t *temporary_allocator;
     cord_bump_t *message_lifecycle_allocator;
@@ -90,7 +92,7 @@ typedef struct cord_client_t {
     void *user_data;
 } cord_client_t;
 
-cord_client_t *cord_client_create(void);
+cord_client_t *cord_client_create(cord_bump_t *allocator);
 
 i32 cord_client_connect(cord_client_t *client);
 void cord_client_destroy(cord_client_t *client);

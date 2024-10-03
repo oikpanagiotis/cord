@@ -68,34 +68,34 @@ static f64 heartbeat_to_double(i32 interval) {
     return decimal_d + floating_d;
 }
 
-typedef struct payload_t {
-    char *json;
+typedef struct buf {
+    char *data;
     size_t length;
-} payload_t;
+} buf;
 
-static bool is_valid_payload(payload_t payload) {
-    return payload.json && payload.length > 0;
+static bool is_valid_payload(buf payload) {
+    return payload.data && payload.length > 0;
 }
 
-static payload_t payload_from_json(json_t *json) {
+static buf buf_from_json(json_t *json) {
     char *json_string = json_dumps(json, 0);
     if (!json_string) {
-        return (payload_t){"", 0};
+        return (buf){"", 0};
     }
 
     size_t length = strlen(json_string);
-    return (payload_t){json_string, length};
+    return (buf){json_string, length};
 }
 
-static void payload_destroy(payload_t payload) {
-    if (payload.json) {
-        free(payload.json);
-        payload.json = NULL;
+static void buf_destroy(buf payload) {
+    if (payload.data) {
+        free(payload.data);
+        payload.data = NULL;
     }
 }
 
-static void send_payload(cord_client_t *client, payload_t payload) {
-    client->ws_client->send(client->ws_client, payload.json, payload.length,
+static void send_buf(cord_client_t *client, buf buffer) {
+    client->ws_client->send(client->ws_client, buffer.data, buffer.length,
                             UWSC_OP_TEXT);
 }
 
@@ -121,15 +121,15 @@ static void send_heartbeat(cord_client_t *client) {
         return;
     }
 
-    payload_t heartbeat = payload_from_json(heartbeat_json);
+    buf heartbeat = buf_from_json(heartbeat_json);
     if (!is_valid_payload(heartbeat)) {
         logger_error("Failed to create json payload for heartbeat");
         return;
     }
-    send_payload(client, heartbeat);
+    send_buf(client, heartbeat);
     client->heartbeat_acknowledged = false;
 
-    payload_destroy(heartbeat);
+    buf_destroy(heartbeat);
     json_decref(heartbeat_json);
 }
 
@@ -162,6 +162,8 @@ static void on_open(struct uwsc_client *ws_client) {
 }
 
 static void on_heartbeat(cord_client_t *client, json_t *data) {
+    cord_bump_t *allocator = client->persistent_allocator;
+
     json_t *hb_interval_json = json_object_get(data, "heartbeat_interval");
     if (!hb_interval_json) {
         logger_error("Failed to get heartbeat object");
@@ -174,9 +176,8 @@ static void on_heartbeat(cord_client_t *client, json_t *data) {
         logger_debug("Sent initial heartbeat");
         client->sent_initial_heartbeat = true;
 
-        struct ev_timer *timer_watcher = malloc(sizeof(struct ev_timer));
-        // Keep a reference to the watcher so we can free it later
-        client->hb_watcher = timer_watcher;
+        struct ev_timer *timer_watcher =
+            balloc(allocator, sizeof(struct ev_timer));
 
         ev_init(timer_watcher, heartbeat_cb);
         timer_watcher->data = client;
@@ -226,15 +227,15 @@ static void send_identify(cord_client_t *client) {
     json_object_set_new(properties, "device",
                         json_string(client->identity.device));
 
-    payload_t payload = payload_from_json(payload_json);
+    buf payload = buf_from_json(payload_json);
     if (!is_valid_payload(payload)) {
         logger_error("Failed to parse identity json payload");
         json_decref(payload_json);
         return;
     }
 
-    send_payload(client, payload);
-    payload_destroy(payload);
+    send_buf(client, payload);
+    buf_destroy(payload);
 }
 
 typedef struct gateway_payload_t {
@@ -406,7 +407,7 @@ static void on_message(struct uwsc_client *ws_client, void *data, size_t length,
 
     log_on_message_status(client);
     json_decref(payload_data);
-    //assert(payload_data->refcount <= 0);
+    // assert(payload_data->refcount <= 0);
     cord_bump_clear(client->temporary_allocator);
 }
 
@@ -421,17 +422,18 @@ static void on_close(struct uwsc_client *ws_client, i32 code, const char *msg) {
     logger_debug("Closing connection to gateway (%d): %s", code, msg);
 }
 
-cord_client_t *cord_client_create(void) {
+cord_client_t *cord_client_create(cord_bump_t *allocator) {
     identity_info_t identity = {};
     load_identity_info(&identity);
 
-    cord_client_t *client = malloc(sizeof(cord_client_t));
+    cord_client_t *client = balloc(allocator, sizeof(cord_client_t));
     if (!client) {
         logger_error("Failed to allocate discord context");
         return NULL;
     }
 
-    client->http = cord_http_client_create(identity.token);
+    client->persistent_allocator = allocator;
+    client->http = cord_http_client_create(allocator, identity.token);
     if (!client->http->bot_token) {
         logger_error("Failed to create bot token");
         free(client);
@@ -458,43 +460,6 @@ cord_client_t *cord_client_create(void) {
     return client;
 }
 
-static void report_memory(struct ev_loop *loop, ev_timer *timer, i32 revents) {
-    (void)loop;
-    (void)revents;
-
-    cord_client_t *client = timer->data;
-
-    logger_info("Memory Report");
-    f64 message_allocator_used = (f64)client->message_allocator->used / MB(1);
-    f64 temporary_allocator_used =
-        (f64)client->temporary_allocator->used / MB(1);
-    f64 persistent_allocator_used =
-        (f64)client->persistent_allocator->used / MB(1);
-    f64 message_lifecycle_allocator_used =
-        (f64)client->message_lifecycle_allocator->used / MB(1);
-
-    f64 message_allocator_capacity =
-        (f64)client->message_allocator->capacity / MB(1);
-    f64 temporary_allocator_capacity =
-        (f64)client->temporary_allocator->capacity / MB(1);
-    f64 persistent_allocator_capacity =
-        (f64)client->persistent_allocator->capacity / MB(1);
-    f64 message_lifecycle_allocator_capacity =
-        (f64)client->message_lifecycle_allocator->capacity / MB(1);
-
-    logger_info("  Message Allocator (%.2f / %.2f)MB", message_allocator_used,
-                message_allocator_capacity);
-    logger_info("  Temporary Allocator (%.2f / %.2f)MB",
-                temporary_allocator_used, temporary_allocator_capacity);
-    logger_info("  Persistent Allocator (%.2f / %.2f)MB",
-                persistent_allocator_used, persistent_allocator_capacity);
-    logger_info("  Message Lifecycle Allocator (%.2f / %.2f)MB",
-                message_lifecycle_allocator_used,
-                message_lifecycle_allocator_capacity);
-
-    ev_timer_again(loop, timer);
-}
-
 static const i32 ping_interval = 5;
 
 static void client_init(cord_client_t *client, const char *url) {
@@ -508,7 +473,6 @@ static void client_init(cord_client_t *client, const char *url) {
     }
 
     client->message_allocator = cord_bump_create_with_size(MB(10));
-    client->persistent_allocator = cord_bump_create_with_size(MB(4));
     client->temporary_allocator = cord_bump_create_with_size(MB(1));
     client->message_lifecycle_allocator = cord_bump_create_with_size(KB(16));
 
@@ -556,31 +520,21 @@ static void setup_event_watchers(cord_client_t *client) {
     cord_bump_t *allocator = client->persistent_allocator;
     assert(allocator && "allocator must not be null");
 
-    /*
-     * Keep these as malloc for now because persistent_allocator is
-     * destroyed before the loop closes and we crash.
-     * check if we can work around it by destroying the persistent allocator
-     * the latest possible time.
-     * If not just move the allocator to cord_t
-     */
-    // FIXME (Memory leak): Allocate these using cord_t->allocator
-    struct ev_check *reconnect_watcher = malloc(sizeof(struct ev_check));
+    struct ev_check *reconnect_watcher =
+        balloc(allocator, sizeof(struct ev_check));
     reconnect_watcher->data = client;
     ev_check_init(reconnect_watcher, check_reconnect_cb);
     ev_check_start(client->loop, reconnect_watcher);
     client->reconnect_watcher = reconnect_watcher;
 
-    struct ev_signal *sigint_watcher = malloc(sizeof(struct ev_signal));
+    struct ev_signal *sigint_watcher =
+        balloc(allocator, sizeof(struct ev_signal));
     sigint_watcher->data = client;
     ev_signal_init(sigint_watcher, sigint_cb, SIGINT);
     ev_signal_start(client->loop, sigint_watcher);
     client->sigint_watcher = sigint_watcher;
 
-    struct ev_timer *health_report_timer = malloc(sizeof(struct ev_timer));
-    ev_init(health_report_timer, report_memory);
-    health_report_timer->repeat = 360;
-    health_report_timer->data = client;
-    client->health_report_scheduler = health_report_timer;
+    client->health_report_scheduler = NULL;
 }
 
 i32 cord_client_connect(cord_client_t *client) {
@@ -609,7 +563,6 @@ void cord_client_destroy(cord_client_t *client) {
         cord_bump_destroy(client->temporary_allocator);
         cord_bump_destroy(client->message_lifecycle_allocator);
         cord_bump_destroy(client->message_allocator);
-        cord_bump_destroy(client->persistent_allocator);
         free(client);
     }
 }
