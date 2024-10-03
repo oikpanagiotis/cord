@@ -74,7 +74,7 @@ typedef struct cord_serialize_result_t {
 } cord_serialize_result_t;
 
 bool cord_serialize_result_is_valid(cord_serialize_result_t result);
-cord_serialize_result_t cord_user_serialize(char *data, cord_bump_t *allocator);
+cord_serialize_result_t cord_user_serialize(json_t *data, cord_bump_t *allocator);
 cord_serialize_result_t cord_role_serialize(json_t *data,
                                             cord_bump_t *allocator,
                                             cord_role_t *array_slot);

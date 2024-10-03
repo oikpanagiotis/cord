@@ -136,7 +136,6 @@ static char *get_request_type_cstring(cord_http_request_t *request) {
 static size_t write_cb(void *data, size_t size, size_t nmemb,
                        cord_http_result_t *result) {
     assert(result);
-    assert(result->body);
 
     size_t string_size = nmemb * size;
     result->body = calloc(1, string_size + 1);
@@ -155,7 +154,7 @@ static void prepare_request_options(cord_http_client_t *client,
     curl_easy_setopt(client->curl, CURLOPT_URL, request->url);
     curl_easy_setopt(client->curl, CURLOPT_HTTPHEADER, request->header);
 
-    assert(&request->result.body);
+    assert(&request->result.body != NULL);
     curl_easy_setopt(client->curl, CURLOPT_WRITEFUNCTION, write_cb);
     curl_easy_setopt(client->curl, CURLOPT_WRITEDATA, &request->result);
 

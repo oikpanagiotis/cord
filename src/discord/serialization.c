@@ -8,6 +8,12 @@
 #include <jansson.h>
 #include <stdio.h>
 
+static void debug_json(json_t *value) {
+    char *string = json_dumps(value, 0);
+    logger_debug("JSON object: %s", string);
+    free(string);
+}
+
 static void append_quote(cord_json_writer_t writer) {
     cord_strbuf_append(writer.buffer, cstr("\""));
 }
@@ -234,13 +240,13 @@ static void user_read_integer_json_field(cord_user_t *user, string_ref key,
     map_property(user, public_flags, "public_flags", key, value);
 }
 
-cord_serialize_result_t cord_user_serialize(char *json_cstring,
+cord_serialize_result_t cord_user_serialize(json_t *json_obj,
                                             cord_bump_t *allocator) {
 
-    json_t *json_obj = parse_json(json_cstring);
-    if (!json_obj) {
-        return serialize_error(CORD_ERR_OBJ_SERIALIZE);
-    }
+    //json_t *json_obj = parse_json(json_cstring);
+    //if (!json_obj) {
+    //    return serialize_error(CORD_ERR_OBJ_SERIALIZE);
+    //}
 
     cord_user_t *author = balloc(allocator, sizeof(cord_user_t));
     if (!author) {
@@ -265,6 +271,7 @@ cord_serialize_result_t cord_user_serialize(char *json_cstring,
         }
     }
 
+    assert(json_obj->refcount == 1 && "object is referenced more than once");
     json_decref(json_obj);
     return serialized(author);
 }
@@ -1004,12 +1011,6 @@ static void message_arrays(cord_message_t *message, string_ref key,
     map_property_array(message, mentions, "mentions", key, value,
     message->allocator, cord_user_t, cord_user_serialize);
     */
-}
-
-static void debug_message_json(json_t *value) {
-    char *string = json_dumps(value, 0);
-    logger_debug("Message object %s", string);
-    free(string);
 }
 
 static void message_objects(cord_message_t *message, string_ref key,

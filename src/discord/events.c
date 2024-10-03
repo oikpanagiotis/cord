@@ -5,6 +5,7 @@
 #include "serialization.h"
 
 #include <assert.h>
+#include <jansson.h>
 
 /*
  *  Dictionary of all the possible discord gateway events
@@ -216,6 +217,7 @@ void on_message_create(cord_client_t *client, json_t *data, char *event) {
 
     client->event_callbacks.on_message_cb(cord, message.obj);
     clear_message_lifecycle_allocator(client);
+    json_decref(data);
 }
 
 void on_message_update(cord_client_t *client, json_t *data, char *event) {

@@ -11,6 +11,7 @@
 #include <ev.h>
 #include <event.h>
 #include <jansson.h>
+#include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -135,8 +136,7 @@ static void send_heartbeat(cord_client_t *client) {
 static void heartbeat_cb(struct ev_loop *loop, ev_timer *timer, i32 revents) {
     (void)revents;
 
-    struct uwsc_client *ws_client = timer->data;
-    cord_client_t *client = ws_client->ext;
+    cord_client_t *client = timer->data;
 
     send_heartbeat(client);
     ev_timer_again(loop, timer);
@@ -161,9 +161,7 @@ static void on_open(struct uwsc_client *ws_client) {
     logger_debug("Connection established");
 }
 
-static void on_heartbeat(struct uwsc_client *ws_client, json_t *data) {
-    cord_client_t *client = ws_client->ext;
-
+static void on_heartbeat(cord_client_t *client, json_t *data) {
     json_t *hb_interval_json = json_object_get(data, "heartbeat_interval");
     if (!hb_interval_json) {
         logger_error("Failed to get heartbeat object");
@@ -181,9 +179,9 @@ static void on_heartbeat(struct uwsc_client *ws_client, json_t *data) {
         client->hb_watcher = timer_watcher;
 
         ev_init(timer_watcher, heartbeat_cb);
-        timer_watcher->data = ws_client;
+        timer_watcher->data = client;
         timer_watcher->repeat = heartbeat_to_double(client->hb_interval);
-        ev_timer_again(ws_client->loop, timer_watcher);
+        ev_timer_again(client->ws_client->loop, timer_watcher);
     }
 }
 
@@ -210,9 +208,7 @@ static json_t *json_make_child(json_t *obj, const char *key) {
     return child;
 }
 
-static void send_identify(struct uwsc_client *ws_client) {
-    cord_client_t *client = ws_client->ext;
-
+static void send_identify(cord_client_t *client) {
     json_t *payload_json = json_object();
     json_object_set_new(payload_json, PAYLOAD_KEY_OPCODE,
                         json_integer(OP_IDENTIFY));
@@ -255,7 +251,7 @@ void gateway_payload_init(gateway_payload_t *payload) {
     payload->d = NULL;
 }
 
-i32 parse_gatway_payload(json_t *payload_json, gateway_payload_t *payload) {
+i32 deserialize_payload(json_t *payload_json, gateway_payload_t *payload) {
     json_t *opcode = json_object_get(payload_json, PAYLOAD_KEY_OPCODE);
     if (!opcode) {
         logger_error("Failed to get \"op\"");
@@ -263,6 +259,8 @@ i32 parse_gatway_payload(json_t *payload_json, gateway_payload_t *payload) {
     }
 
     json_int_t num_opcode = json_integer_value(opcode);
+    payload->op = (int)num_opcode;
+
     if (num_opcode != OP_DISPATCH) {
         payload->t = "";
     } else {
@@ -273,7 +271,6 @@ i32 parse_gatway_payload(json_t *payload_json, gateway_payload_t *payload) {
         }
         payload->t = json_string_value(t) ? strdup(json_string_value(t)) : "";
     }
-    payload->op = (int)num_opcode;
 
     json_t *s = json_object_get(payload_json, PAYLOAD_KEY_SEQUENCE);
     if (s) {
@@ -330,17 +327,14 @@ static void log_on_message_status(cord_client_t *client) {
     }
 }
 
-static void on_message(struct uwsc_client *ws_client, void *data, size_t length,
-                       bool binary) {
-    (void)binary;
-
-    cord_client_t *client = ws_client->ext;
+static gateway_payload_t *parse_gateway_payload(cord_client_t *client,
+                                                void *data, size_t length) {
     json_error_t err = {};
 
     json_t *payload_json = json_loadb(data, length, 0, &err);
     if (!payload_json) {
         logger_error("Failed to serialize payload: %s", err.text);
-        return;
+        return NULL;
     }
 
     gateway_payload_t *payload =
@@ -348,20 +342,36 @@ static void on_message(struct uwsc_client *ws_client, void *data, size_t length,
 
     gateway_payload_init(payload);
 
-    i32 rc = parse_gatway_payload(payload_json, payload);
+    i32 rc = deserialize_payload(payload_json, payload);
     if (rc < 0) {
         logger_error("Failed to parse gateway payload");
+        json_decref(payload_json);
+        return NULL;
     }
+
+    assert(payload_json->refcount == 1 && "payload referenced more than once");
     json_decref(payload_json);
+    return payload;
+}
+
+static void on_message(struct uwsc_client *ws_client, void *data, size_t length,
+                       bool binary) {
+    (void)binary;
+
+    cord_client_t *client = ws_client->ext;
+    gateway_payload_t *payload = parse_gateway_payload(client, data, length);
 
     char *event_name = payload->t;
+    json_t *payload_data = json_deep_copy(payload->d);
+    json_decref(payload->d);
+
     switch (payload->op) {
         case OP_DISPATCH:
             if (!cstring_is_empty(event_name)) {
                 cord_gateway_event_t *event =
                     get_gateway_event_from_cstring(event_name);
                 if (cord_gateway_event_has_handler(event)) {
-                    event->handler(client, payload->d, event_name);
+                    event->handler(client, payload_data, event_name);
                 } else {
                     logger_warn("No handler for event: %s", event);
                 }
@@ -369,7 +379,7 @@ static void on_message(struct uwsc_client *ws_client, void *data, size_t length,
             break;
         case OP_HEARTBEAT:
             logger_debug("Server is requesting Hearbeat");
-            on_heartbeat(ws_client, payload->d);
+            on_heartbeat(client, payload_data);
             break;
         case OP_RECONNECT:
             logger_debug("Server is requesting Reconnect");
@@ -380,10 +390,10 @@ static void on_message(struct uwsc_client *ws_client, void *data, size_t length,
             break;
         case OP_HELLO:
             if (!client->sent_initial_heartbeat) {
-                on_heartbeat(ws_client, payload->d);
-                send_identify(ws_client);
+                on_heartbeat(client, payload_data);
+                send_identify(client);
             } else {
-                on_heartbeat(ws_client, payload->d);
+                on_heartbeat(client, payload_data);
             }
             break;
         case OP_HEARTBEAT_ACK:
@@ -395,7 +405,8 @@ static void on_message(struct uwsc_client *ws_client, void *data, size_t length,
     }
 
     log_on_message_status(client);
-    // json_decref(payload->d);
+    json_decref(payload_data);
+    //assert(payload_data->refcount <= 0);
     cord_bump_clear(client->temporary_allocator);
 }
 
