@@ -1,6 +1,5 @@
 #include "client.h"
 #include "../cord/cord.h"
-#include "../core/errors.h"
 #include "../core/log.h"
 #include "../core/typedefs.h"
 #include "client.h"
@@ -95,8 +94,8 @@ static void buf_destroy(buf payload) {
 }
 
 static void send_buf(cord_client_t *client, buf buffer) {
-    client->ws_client->send(client->ws_client, buffer.data, buffer.length,
-                            UWSC_OP_TEXT);
+    client->ws_client->send(
+        client->ws_client, buffer.data, buffer.length, UWSC_OP_TEXT);
 }
 
 static json_t *heartbeat_json_create(i32 sequence) {
@@ -211,8 +210,8 @@ static json_t *json_make_child(json_t *obj, const char *key) {
 
 static void send_identify(cord_client_t *client) {
     json_t *payload_json = json_object();
-    json_object_set_new(payload_json, PAYLOAD_KEY_OPCODE,
-                        json_integer(OP_IDENTIFY));
+    json_object_set_new(
+        payload_json, PAYLOAD_KEY_OPCODE, json_integer(OP_IDENTIFY));
 
     json_t *d = json_make_child(payload_json, PAYLOAD_KEY_DATA);
     json_object_set_new(d, "token", json_string(client->identity.token));
@@ -222,10 +221,10 @@ static void send_identify(cord_client_t *client) {
 
     json_t *properties = json_make_child(d, "properties");
     json_object_set_new(properties, "os", json_string(client->identity.os));
-    json_object_set_new(properties, "browser",
-                        json_string(client->identity.library));
-    json_object_set_new(properties, "device",
-                        json_string(client->identity.device));
+    json_object_set_new(
+        properties, "browser", json_string(client->identity.library));
+    json_object_set_new(
+        properties, "device", json_string(client->identity.device));
 
     buf payload = buf_from_json(payload_json);
     if (!is_valid_payload(payload)) {
@@ -307,8 +306,8 @@ void cord_client_send_message(cord_client_t *client, cord_message_t *msg) {
     assert(memory.allocator);
     cord_json_writer_t writer = cord_json_writer_create(memory.allocator);
     char *json = cord_message_to_json(writer, msg);
-    cord_http_post(client->http, memory.allocator,
-                   resolve_message_url(memory, msg), json);
+    cord_http_post(
+        client->http, memory.allocator, resolve_message_url(memory, msg), json);
     cord_temp_memory_end(memory);
 }
 
@@ -328,8 +327,8 @@ static void log_on_message_status(cord_client_t *client) {
     }
 }
 
-static gateway_payload_t *parse_gateway_payload(cord_client_t *client,
-                                                void *data, size_t length) {
+static gateway_payload_t *
+parse_gateway_payload(cord_client_t *client, void *data, size_t length) {
     json_error_t err = {};
 
     json_t *payload_json = json_loadb(data, length, 0, &err);
@@ -355,7 +354,9 @@ static gateway_payload_t *parse_gateway_payload(cord_client_t *client,
     return payload;
 }
 
-static void on_message(struct uwsc_client *ws_client, void *data, size_t length,
+static void on_message(struct uwsc_client *ws_client,
+                       void *data,
+                       size_t length,
                        bool binary) {
     (void)binary;
 

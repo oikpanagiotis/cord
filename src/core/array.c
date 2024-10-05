@@ -37,7 +37,8 @@ void *cord_array_push(cord_array_t *array) {
         }
 
         // Copy the contents into the new memory
-        memcpy(new_items, current_items,
+        memcpy(new_items,
+               current_items,
                array->num_elements * array->element_size);
         array->data = new_items;
         array->capacity *= 2;

@@ -17,6 +17,10 @@ void on_message(cord_t *cord, cord_message_t *message) {
         cord_send_text(cord, message->channel_id, "Pong!");
     }
 
+    if (strcmp(content, "me") == 0) {
+        cord_user_t *me = cord_get_current_user(cord);
+    }
+
     free(content);
 }
 

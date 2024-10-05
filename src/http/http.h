@@ -50,9 +50,11 @@ int cord_http_client_perform_request(cord_http_client_t *client,
                                      cord_http_request_t *request);
 
 cord_http_result_t cord_http_get(cord_http_client_t *client,
-                                 cord_bump_t *allocator, const char *url);
+                                 cord_bump_t *allocator,
+                                 const char *url);
 cord_http_result_t cord_http_post(cord_http_client_t *client,
-                                  cord_bump_t *allocator, const char *url,
+                                  cord_bump_t *allocator,
+                                  const char *url,
                                   const char *body);
 cord_http_result_t cord_http_delete(cord_http_client_t *client,
                                     const char *url);

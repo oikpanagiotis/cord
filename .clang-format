@@ -5,3 +5,5 @@ BreakBeforeBraces: Attach
 AllowShortIfStatementsOnASingleLine: false
 IndentCaseLabels: true
 AllowShortFunctionsOnASingleLine: None
+BinPackArguments: false
+BinPackParameters: false

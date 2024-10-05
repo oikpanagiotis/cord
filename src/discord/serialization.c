@@ -70,7 +70,8 @@ void cord_json_writer_end(cord_json_writer_t writer) {
     cord_strbuf_append(writer.buffer, cstr("}"));
 }
 
-bool cord_json_writer_write_string(cord_json_writer_t writer, cord_str_t key,
+bool cord_json_writer_write_string(cord_json_writer_t writer,
+                                   cord_str_t key,
                                    cord_str_t value) {
     append_key(writer, key);
     append_quote(writer);
@@ -80,8 +81,8 @@ bool cord_json_writer_write_string(cord_json_writer_t writer, cord_str_t key,
 }
 
 static bool copy_bool_to_string(char *format, bool value) {
-    i32 rc = snprintf(format, MAX_FORMAT_BUFFER_LENGTH, "%s",
-                      bool_to_cstring(value));
+    i32 rc = snprintf(
+        format, MAX_FORMAT_BUFFER_LENGTH, "%s", bool_to_cstring(value));
     if (is_posix_error(rc)) {
         logger_warn("Could not convert bool (%s) to string",
                     bool_to_cstring(value));
@@ -89,7 +90,8 @@ static bool copy_bool_to_string(char *format, bool value) {
     return is_posix_error(rc);
 }
 
-bool cord_json_writer_write_number(cord_json_writer_t writer, cord_str_t key,
+bool cord_json_writer_write_number(cord_json_writer_t writer,
+                                   cord_str_t key,
                                    i64 value) {
     append_key(writer, key);
     char format[MAX_FORMAT_BUFFER_LENGTH] = {0};
@@ -102,7 +104,8 @@ bool cord_json_writer_write_number(cord_json_writer_t writer, cord_str_t key,
     return true;
 }
 
-bool cord_json_writer_write_boolean(cord_json_writer_t writer, cord_str_t key,
+bool cord_json_writer_write_boolean(cord_json_writer_t writer,
+                                    cord_str_t key,
                                     bool value) {
     append_key(writer, key);
     char format[MAX_FORMAT_BUFFER_LENGTH] = {0};
@@ -122,7 +125,8 @@ bool cord_json_writer_write_null(cord_json_writer_t writer, cord_str_t key) {
     return true;
 }
 
-bool cord_json_writer_write_object(cord_json_writer_t writer, cord_str_t key,
+bool cord_json_writer_write_object(cord_json_writer_t writer,
+                                   cord_str_t key,
                                    json_t *object) {
     (void)object;
     append_key(writer, key);
@@ -132,7 +136,8 @@ bool cord_json_writer_write_object(cord_json_writer_t writer, cord_str_t key,
     return false;
 }
 
-bool cord_json_writer_write_array(cord_json_writer_t writer, cord_str_t key,
+bool cord_json_writer_write_array(cord_json_writer_t writer,
+                                  cord_str_t key,
                                   cord_array_t *array) {
     (void)writer;
     (void)key;
@@ -143,8 +148,8 @@ bool cord_json_writer_write_array(cord_json_writer_t writer, cord_str_t key,
 
 #define serialize_string(writer, string, obj, field)                           \
     if (obj->field) {                                                          \
-        cord_json_writer_write_string(writer, cstr(string),                    \
-                                      cord_strbuf_to_str(*((obj)->field)));    \
+        cord_json_writer_write_string(                                         \
+            writer, cstr(string), cord_strbuf_to_str(*((obj)->field)));        \
     }
 
 char *cord_message_to_json(cord_json_writer_t writer, cord_message_t *message) {
@@ -166,8 +171,8 @@ char *cord_message_to_json(cord_json_writer_t writer, cord_message_t *message) {
         }                                                                      \
     } while (0)
 
-#define map_property_array(object, property, property_str, key, value,         \
-                           allocator, type, serialize)                         \
+#define map_property_array(                                                    \
+    object, property, property_str, key, value, allocator, type, serialize)    \
     do {                                                                       \
         if (cstring_is_equal(key, property_str)) {                             \
             size_t __idx = 0;                                                  \
@@ -194,8 +199,8 @@ static json_t *parse_json(char *cstring) {
     json_error_t error = {};
     json_t *json_obj = json_loads(cstring, 0, &error);
     if (!json_obj) {
-        logger_error("Failed to parse json. (line:%d): %s", error.line,
-                     error.text);
+        logger_error(
+            "Failed to parse json. (line:%d): %s", error.line, error.text);
     }
     return json_obj;
 }
@@ -212,15 +217,16 @@ static cord_serialize_result_t serialize_error(cord_error_t error) {
     return (cord_serialize_result_t){NULL, error};
 }
 
-static void user_read_boolean_json_field(cord_user_t *author, const char *key,
-                                         bool value) {
+static void
+user_read_boolean_json_field(cord_user_t *author, const char *key, bool value) {
     map_property(author, bot, "bot", key, value);
     map_property(author, system_, "system", key, value);
     map_property(author, mfa_enabled, "mfa_enabled", key, value);
     map_property(author, verified, "varified", key, value);
 }
 
-static void user_read_string_json_field(cord_user_t *user, string_ref key,
+static void user_read_string_json_field(cord_user_t *user,
+                                        string_ref key,
                                         string_ref value) {
     cord_strbuf_t *field_value = cord_strbuf_create();
     cord_strbuf_append(field_value, cstr(value));
@@ -233,8 +239,8 @@ static void user_read_string_json_field(cord_user_t *user, string_ref key,
     map_property(user, email, "email", key, field_value);
 }
 
-static void user_read_integer_json_field(cord_user_t *user, string_ref key,
-                                         i64 value) {
+static void
+user_read_integer_json_field(cord_user_t *user, string_ref key, i64 value) {
     map_property(user, flags, "flags", key, value);
     map_property(user, premium_type, "premium_type", key, value);
     map_property(user, public_flags, "public_flags", key, value);
@@ -243,10 +249,10 @@ static void user_read_integer_json_field(cord_user_t *user, string_ref key,
 cord_serialize_result_t cord_user_serialize(json_t *json_obj,
                                             cord_bump_t *allocator) {
 
-    //json_t *json_obj = parse_json(json_cstring);
-    //if (!json_obj) {
-    //    return serialize_error(CORD_ERR_OBJ_SERIALIZE);
-    //}
+    // json_t *json_obj = parse_json(json_cstring);
+    // if (!json_obj) {
+    //     return serialize_error(CORD_ERR_OBJ_SERIALIZE);
+    // }
 
     cord_user_t *author = balloc(allocator, sizeof(cord_user_t));
     if (!author) {
@@ -276,14 +282,15 @@ cord_serialize_result_t cord_user_serialize(json_t *json_obj,
     return serialized(author);
 }
 
-static void guild_member_booleans(cord_guild_member_t *member, string_ref key,
-                                  bool value) {
+static void
+guild_member_booleans(cord_guild_member_t *member, string_ref key, bool value) {
     map_property(member, deaf, "deaf", key, value);
     map_property(member, mute, "mute", key, value);
     map_property(member, pending, "pending", key, value);
 }
 
-static void guild_member_strings(cord_guild_member_t *member, string_ref key,
+static void guild_member_strings(cord_guild_member_t *member,
+                                 string_ref key,
                                  string_ref cstring) {
     cord_strbuf_t *builder = cord_strbuf_create();
     cord_strbuf_append(builder, cstr(cstring));
@@ -293,10 +300,17 @@ static void guild_member_strings(cord_guild_member_t *member, string_ref key,
     map_property(member, premium_since, "premium_since", key, builder);
 }
 
-static void guild_member_arrays(cord_guild_member_t *member, string_ref key,
+static void guild_member_arrays(cord_guild_member_t *member,
+                                string_ref key,
                                 json_t *value) {
-    map_property_array(member, roles, "roles", key, value, member->allocator,
-                       cord_role_t, cord_role_serialize);
+    map_property_array(member,
+                       roles,
+                       "roles",
+                       key,
+                       value,
+                       member->allocator,
+                       cord_role_t,
+                       cord_role_serialize);
 }
 
 cord_serialize_result_t cord_guild_member_serialize(json_t *json_message,
@@ -338,8 +352,8 @@ cord_serialize_result_t cord_guild_member_serialize(json_t *json_message,
     return serialized(member);
 }
 
-static void role_strings(cord_role_t *role, string_ref key,
-                         string_ref cstring) {
+static void
+role_strings(cord_role_t *role, string_ref key, string_ref cstring) {
     cord_strbuf_t *builder = cord_strbuf_create();
     cord_strbuf_append(builder, cstr(cstring));
 
@@ -410,25 +424,32 @@ cord_serialize_result_t cord_role_serialize(json_t *json_message,
     return serialized(role);
 }
 
-static void role_tag_strings(cord_role_tag_t *role_tag, string_ref key,
+static void role_tag_strings(cord_role_tag_t *role_tag,
+                             string_ref key,
                              string_ref cstring) {
     cord_strbuf_t *builder = cord_strbuf_create();
     cord_strbuf_append(builder, cstr(cstring));
 
     map_property(role_tag, bot_id, "bot_id", key, builder);
     map_property(role_tag, integration_id, "integration_id", key, builder);
-    map_property(role_tag, subscription_listing_id, "subscription_listing_id",
-                 key, builder);
+    map_property(role_tag,
+                 subscription_listing_id,
+                 "subscription_listing_id",
+                 key,
+                 builder);
 }
 
-static void role_tag_booleans(cord_role_tag_t *role_tag, string_ref key,
-                              bool builder) {
-    map_property(role_tag, premium_subscriber, "premium_subscriber", key,
+static void
+role_tag_booleans(cord_role_tag_t *role_tag, string_ref key, bool builder) {
+    map_property(
+        role_tag, premium_subscriber, "premium_subscriber", key, builder);
+    map_property(role_tag,
+                 available_for_purchase,
+                 "available_for_purchase",
+                 key,
                  builder);
-    map_property(role_tag, available_for_purchase, "available_for_purchase",
-                 key, builder);
-    map_property(role_tag, guild_connections, "guild_connections", key,
-                 builder);
+    map_property(
+        role_tag, guild_connections, "guild_connections", key, builder);
 }
 
 cord_serialize_result_t cord_role_tag_serialize(json_t *json_role_tag,
@@ -460,7 +481,8 @@ cord_serialize_result_t cord_role_tag_serialize(json_t *json_role_tag,
 }
 
 static void channel_mention_strings(cord_channel_mention_t *mention,
-                                    string_ref key, string_ref value) {
+                                    string_ref key,
+                                    string_ref value) {
     cord_strbuf_t *string_buffer = cord_strbuf_create();
     cord_strbuf_append(string_buffer, cstr(value));
 
@@ -470,7 +492,8 @@ static void channel_mention_strings(cord_channel_mention_t *mention,
 }
 
 static void channel_mention_numbers(cord_channel_mention_t *mention,
-                                    string_ref key, i64 value) {
+                                    string_ref key,
+                                    i64 value) {
     map_property(mention, type, "type", key, value);
 }
 
@@ -500,7 +523,8 @@ cord_serialize_result_t cord_channel_mention_serialize(json_t *json_mention,
     return serialized(mention);
 }
 
-static void attachment_strings(cord_attachment_t *attachment, string_ref key,
+static void attachment_strings(cord_attachment_t *attachment,
+                               string_ref key,
                                string_ref cstring) {
     cord_strbuf_t *builder = cord_strbuf_create();
     cord_strbuf_append(builder, cstr(cstring));
@@ -511,8 +535,8 @@ static void attachment_strings(cord_attachment_t *attachment, string_ref key,
     map_property(attachment, proxy_url, "proxy_url", key, builder);
 }
 
-static void attachment_numbers(cord_attachment_t *attachment, string_ref key,
-                               i32 number) {
+static void
+attachment_numbers(cord_attachment_t *attachment, string_ref key, i32 number) {
     map_property(attachment, size, "size", key, number);
     map_property(attachment, height, "height", key, number);
     map_property(attachment, width, "width", key, number);
@@ -543,7 +567,8 @@ cord_serialize_result_t cord_attachment_serialize(json_t *json_attachment,
 }
 
 cord_serialize_result_t
-cord_embed_footer_serialize(json_t *json_embed_footer, cord_bump_t *allocator,
+cord_embed_footer_serialize(json_t *json_embed_footer,
+                            cord_bump_t *allocator,
                             cord_embed_footer_t *array_slot) {
     cord_embed_footer_t *embed_footer =
         array_slot ? array_slot
@@ -564,8 +589,8 @@ cord_embed_footer_serialize(json_t *json_embed_footer, cord_bump_t *allocator,
 
             map_property(embed_footer, text, "text", key, builder);
             map_property(embed_footer, icon_url, "icon_url", key, builder);
-            map_property(embed_footer, proxy_icon_url, "proxy_icon_url", key,
-                         builder);
+            map_property(
+                embed_footer, proxy_icon_url, "proxy_icon_url", key, builder);
         }
     }
 
@@ -573,7 +598,8 @@ cord_embed_footer_serialize(json_t *json_embed_footer, cord_bump_t *allocator,
 }
 
 cord_serialize_result_t
-cord_embed_image_serialize(json_t *json_embed_image, cord_bump_t *allocator,
+cord_embed_image_serialize(json_t *json_embed_image,
+                           cord_bump_t *allocator,
                            cord_embed_image_t *array_slot) {
     cord_embed_image_t *embed_image =
         array_slot ? array_slot : balloc(allocator, sizeof(cord_embed_image_t));
@@ -594,9 +620,15 @@ cord_embed_image_serialize(json_t *json_embed_image, cord_bump_t *allocator,
             map_property(embed_image, url, "url", key, builder);
             map_property(embed_image, proxy_url, "proxy_url", key, builder);
         } else if (json_is_integer(value)) {
-            map_property(embed_image, height, "height", key,
+            map_property(embed_image,
+                         height,
+                         "height",
+                         key,
                          (i32)json_integer_value(value));
-            map_property(embed_image, width, "width", key,
+            map_property(embed_image,
+                         width,
+                         "width",
+                         key,
                          (i32)json_integer_value(value));
         }
     }
@@ -629,9 +661,15 @@ cord_embed_thumbnail_serialize(json_t *json_embed_thumbnail,
             map_property(embed_thumbnail, url, "url", key, builder);
             map_property(embed_thumbnail, proxy_url, "proxy_url", key, builder);
         } else if (json_is_integer(value)) {
-            map_property(embed_thumbnail, height, "height", key,
+            map_property(embed_thumbnail,
+                         height,
+                         "height",
+                         key,
                          (i32)json_integer_value((value)));
-            map_property(embed_thumbnail, width, "width", key,
+            map_property(embed_thumbnail,
+                         width,
+                         "width",
+                         key,
                          (i32)json_integer_value((value)));
         }
     }
@@ -640,7 +678,8 @@ cord_embed_thumbnail_serialize(json_t *json_embed_thumbnail,
 }
 
 cord_serialize_result_t
-cord_embed_video_serialize(json_t *json_embed_video, cord_bump_t *allocator,
+cord_embed_video_serialize(json_t *json_embed_video,
+                           cord_bump_t *allocator,
                            cord_embed_video_t *array_slot) {
     cord_embed_video_t *embed_video =
         array_slot ? array_slot : balloc(allocator, sizeof(cord_embed_video_t));
@@ -660,9 +699,15 @@ cord_embed_video_serialize(json_t *json_embed_video, cord_bump_t *allocator,
 
             map_property(embed_video, url, "url", key, builder);
         } else if (json_is_integer(value)) {
-            map_property(embed_video, height, "height", key,
+            map_property(embed_video,
+                         height,
+                         "height",
+                         key,
                          (i32)json_integer_value(value));
-            map_property(embed_video, width, "width", key,
+            map_property(embed_video,
+                         width,
+                         "width",
+                         key,
                          (i32)json_integer_value(value));
         }
     }
@@ -670,7 +715,8 @@ cord_embed_video_serialize(json_t *json_embed_video, cord_bump_t *allocator,
 }
 
 cord_serialize_result_t
-cord_embed_provider_serialize(json_t *json_message, cord_bump_t *allocator,
+cord_embed_provider_serialize(json_t *json_message,
+                              cord_bump_t *allocator,
                               cord_embed_provider_t *array_slot) {
     cord_embed_provider_t *embed_provider =
         array_slot ? array_slot
@@ -697,7 +743,8 @@ cord_embed_provider_serialize(json_t *json_message, cord_bump_t *allocator,
 }
 
 cord_serialize_result_t
-cord_embed_author_serialize(json_t *json_embed_author, cord_bump_t *allocator,
+cord_embed_author_serialize(json_t *json_embed_author,
+                            cord_bump_t *allocator,
                             cord_embed_author_t *array_slot) {
     cord_embed_author_t *embed_author =
         array_slot ? array_slot
@@ -719,15 +766,16 @@ cord_embed_author_serialize(json_t *json_embed_author, cord_bump_t *allocator,
             map_property(embed_author, name, "name", key, builder);
             map_property(embed_author, url, "url", key, builder);
             map_property(embed_author, icon_url, "icon_url", key, builder);
-            map_property(embed_author, proxy_icon_url, "proxy_icon_url", key,
-                         builder);
+            map_property(
+                embed_author, proxy_icon_url, "proxy_icon_url", key, builder);
         }
     }
     return serialized(embed_author);
 }
 
 cord_serialize_result_t
-cord_embed_field_serialize(json_t *json_embed_field, cord_bump_t *allocator,
+cord_embed_field_serialize(json_t *json_embed_field,
+                           cord_bump_t *allocator,
                            cord_embed_field_t *array_slot) {
     cord_embed_field_t *embed_field =
         array_slot ? array_slot : balloc(allocator, sizeof(cord_embed_field_t));
@@ -748,7 +796,10 @@ cord_embed_field_serialize(json_t *json_embed_field, cord_bump_t *allocator,
             map_property(embed_field, name, "name", key, builder);
             map_property(embed_field, value, "value", key, builder);
         } else if (json_is_boolean(value)) {
-            map_property(embed_field, inline_, "inline", key,
+            map_property(embed_field,
+                         inline_,
+                         "inline",
+                         key,
                          (bool)json_boolean_value(value));
         }
     }
@@ -778,35 +829,71 @@ cord_serialize_result_t cord_embed_serialize(json_t *json_embed,
             map_property(embed, url, "url", key, builder);
             map_property(embed, timestamp, "timestamp", key, builder);
         } else if (json_is_integer(value)) {
-            map_property(embed, color, "color", key,
-                         (i32)json_integer_value(value));
+            map_property(
+                embed, color, "color", key, (i32)json_integer_value(value));
         } else if (json_is_object(value)) {
-            map_property_object_collectible(embed, footer, "footer", key, value,
-                                            allocator, cord_embed_footer_t,
+            map_property_object_collectible(embed,
+                                            footer,
+                                            "footer",
+                                            key,
+                                            value,
+                                            allocator,
+                                            cord_embed_footer_t,
                                             cord_embed_footer_serialize);
 
-            map_property_object_collectible(embed, image, "image", key, value,
-                                            allocator, cord_embed_image_t,
+            map_property_object_collectible(embed,
+                                            image,
+                                            "image",
+                                            key,
+                                            value,
+                                            allocator,
+                                            cord_embed_image_t,
                                             cord_embed_image_serialize);
 
-            map_property_object_collectible(
-                embed, thumbnail, "thumbnail", key, value, allocator,
-                cord_embed_thumbnail_t, cord_embed_thumbnail_serialize);
+            map_property_object_collectible(embed,
+                                            thumbnail,
+                                            "thumbnail",
+                                            key,
+                                            value,
+                                            allocator,
+                                            cord_embed_thumbnail_t,
+                                            cord_embed_thumbnail_serialize);
 
-            map_property_object_collectible(
-                embed, video, "video", key, value, allocator,
-                cord_embed_video_serialize_t, cord_embed_video_serialize);
+            map_property_object_collectible(embed,
+                                            video,
+                                            "video",
+                                            key,
+                                            value,
+                                            allocator,
+                                            cord_embed_video_serialize_t,
+                                            cord_embed_video_serialize);
 
-            map_property_object_collectible(
-                embed, provider, "provider", key, value, allocator,
-                cord_embed_provider_t, cord_embed_provider_serialize);
+            map_property_object_collectible(embed,
+                                            provider,
+                                            "provider",
+                                            key,
+                                            value,
+                                            allocator,
+                                            cord_embed_provider_t,
+                                            cord_embed_provider_serialize);
 
-            map_property_object_collectible(embed, author, "author", key, value,
-                                            allocator, cord_embed_author_t,
+            map_property_object_collectible(embed,
+                                            author,
+                                            "author",
+                                            key,
+                                            value,
+                                            allocator,
+                                            cord_embed_author_t,
                                             cord_embed_author_serialize);
         } else if (json_is_array(value)) {
-            map_property_array(embed, fields, "fields", key, value, allocator,
-                               cord_embed_field_t, cord_embed_field_serialize);
+            map_property_array(embed,
+                               fields,
+                               "fields",
+                               key,
+                               value,
+                               allocator,
+                               cord_embed_field_t,
+                               cord_embed_field_serialize);
         }
     }
 
@@ -833,20 +920,44 @@ cord_serialize_result_t cord_emoji_serialize(json_t *json_emoji,
             map_property(emoji, id, "id", key, builder);
             map_property(emoji, name, "name", key, builder);
         } else if (json_is_boolean(value)) {
-            map_property(emoji, require_colons, "require_colons", key,
+            map_property(emoji,
+                         require_colons,
+                         "require_colons",
+                         key,
                          (bool)json_boolean_value(value));
-            map_property(emoji, managed, "managed", key,
+            map_property(emoji,
+                         managed,
+                         "managed",
+                         key,
                          (bool)json_boolean_value(value));
-            map_property(emoji, animated, "animated", key,
+            map_property(emoji,
+                         animated,
+                         "animated",
+                         key,
                          (bool)json_boolean_value(value));
-            map_property(emoji, available, "available", key,
+            map_property(emoji,
+                         available,
+                         "available",
+                         key,
                          (bool)json_boolean_value(value));
         } else if (json_is_object(value)) {
-            map_property_object(emoji, user, "user", key, value, allocator,
-                                cord_user_t, cord_user_serialize);
+            map_property_object(emoji,
+                                user,
+                                "user",
+                                key,
+                                value,
+                                allocator,
+                                cord_user_t,
+                                cord_user_serialize);
         } else if (json_is_array(value)) {
-            map_property_array(emoji, roles, "roles", key, value, allocator,
-                               cord_role_t, cord_role_serialize);
+            map_property_array(emoji,
+                               roles,
+                               "roles",
+                               key,
+                               value,
+                               allocator,
+                               cord_role_t,
+                               cord_role_serialize);
         }
     }
     return serialized(emoji);
@@ -865,14 +976,20 @@ cord_serialize_result_t cord_reaction_serialize(json_t *json_reaction,
 
     json_object_foreach(json_reaction, key, value) {
         if (json_is_integer(value)) {
-            map_property(reaction, count, "count", key,
-                         (i32)json_integer_value(value));
+            map_property(
+                reaction, count, "count", key, (i32)json_integer_value(value));
         } else if (json_is_boolean(value)) {
-            map_property(reaction, me, "me", key,
-                         (bool)json_boolean_value(value));
+            map_property(
+                reaction, me, "me", key, (bool)json_boolean_value(value));
         } else if (json_is_object(value)) {
-            map_property_object(reaction, emoji, "emoji", key, value, allocator,
-                                cord_emoji_t, cord_emoji_serialize);
+            map_property_object(reaction,
+                                emoji,
+                                "emoji",
+                                key,
+                                value,
+                                allocator,
+                                cord_emoji_t,
+                                cord_emoji_serialize);
         }
     }
     return serialized(reaction);
@@ -893,7 +1010,10 @@ cord_message_activity_serialize(json_t *json_message_activity,
 
     json_object_foreach(json_message_activity, key, value) {
         if (json_is_integer(value)) {
-            map_property(message_activity, type, "type", key,
+            map_property(message_activity,
+                         type,
+                         "type",
+                         key,
                          (i32)json_integer_value(value));
         } else if (json_is_string(value)) {
             cord_strbuf_t *builder = cord_strbuf_create();
@@ -954,22 +1074,25 @@ cord_message_sticker_serialize(json_t *json_message_sticker,
             map_property(message_sticker, id, "id", key, builder);
             map_property(message_sticker, pack_id, "pack_id", key, builder);
             map_property(message_sticker, name, "name", key, builder);
-            map_property(message_sticker, description, "description", key,
-                         builder);
+            map_property(
+                message_sticker, description, "description", key, builder);
             map_property(message_sticker, tags, "tags", key, builder);
             map_property(message_sticker, asset, "asset", key, builder);
-            map_property(message_sticker, preview_asset, "preview_asset", key,
-                         builder);
+            map_property(
+                message_sticker, preview_asset, "preview_asset", key, builder);
         } else if (json_is_integer(value)) {
-            map_property(message_sticker, format_type, "format_type", key,
+            map_property(message_sticker,
+                         format_type,
+                         "format_type",
+                         key,
                          (i32)json_integer_value(value));
         }
     }
     return serialized(message_sticker);
 }
 
-static void message_strings(cord_message_t *message, string_ref key,
-                            string_ref cstring) {
+static void
+message_strings(cord_message_t *message, string_ref key, string_ref cstring) {
     cord_strbuf_t *builder = cord_strbuf_create();
     cord_strbuf_append(builder, cstr(cstring));
 
@@ -983,8 +1106,8 @@ static void message_strings(cord_message_t *message, string_ref key,
     map_property(message, webhook_id, "webhook_id", key, builder);
 }
 
-static void message_booleans(cord_message_t *message, string_ref key,
-                             bool value) {
+static void
+message_booleans(cord_message_t *message, string_ref key, bool value) {
     bool *boolean = balloc(message->allocator, sizeof(bool));
     *boolean = value;
 
@@ -993,8 +1116,8 @@ static void message_booleans(cord_message_t *message, string_ref key,
     map_property(message, pinned, "pinned", key, boolean);
 }
 
-static void message_numbers(cord_message_t *message, string_ref key,
-                            i32 value) {
+static void
+message_numbers(cord_message_t *message, string_ref key, i32 value) {
     i32 *number = balloc(message->allocator, sizeof(i32));
     *number = value;
 
@@ -1002,8 +1125,8 @@ static void message_numbers(cord_message_t *message, string_ref key,
     map_property(message, flags, "flags", key, number);
 }
 
-static void message_arrays(cord_message_t *message, string_ref key,
-                           json_t *value) {
+static void
+message_arrays(cord_message_t *message, string_ref key, json_t *value) {
     (void)message;
     (void)key;
     (void)value;
@@ -1013,10 +1136,16 @@ static void message_arrays(cord_message_t *message, string_ref key,
     */
 }
 
-static void message_objects(cord_message_t *message, string_ref key,
-                            json_t *value) {
-    map_property_object(message, author, "author", key, value,
-                        message->allocator, cord_user_t, cord_user_serialize);
+static void
+message_objects(cord_message_t *message, string_ref key, json_t *value) {
+    map_property_object(message,
+                        author,
+                        "author",
+                        key,
+                        value,
+                        message->allocator,
+                        cord_user_t,
+                        cord_user_serialize);
 }
 
 cord_serialize_result_t cord_message_serialize(json_t *json_message,
@@ -1071,8 +1200,8 @@ cord_serialize_result_t cord_guild_serialize(json_t *json_message,
             map_property(guild, name, "name", key, builder);
             map_property(guild, icon, "icon", key, builder);
             map_property(guild, splash, "splash", key, builder);
-            map_property(guild, discovery_splash, "discovery_splash", key,
-                         builder);
+            map_property(
+                guild, discovery_splash, "discovery_splash", key, builder);
         }
     }
     return serialized(guild);

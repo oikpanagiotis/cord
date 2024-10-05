@@ -68,16 +68,22 @@ static void set_date_time(char *buffer) {
     time_t timer;
     time(&timer);
     struct tm tm = *localtime(&timer);
-    sprintf(buffer, "%02d/%02d/%02d %02d:%02d:%02d", tm.tm_mday, tm.tm_mon + 1,
-            tm.tm_year + 1900, tm.tm_hour, tm.tm_min, tm.tm_sec);
+    sprintf(buffer,
+            "%02d/%02d/%02d %02d:%02d:%02d",
+            tm.tm_mday,
+            tm.tm_mon + 1,
+            tm.tm_year + 1900,
+            tm.tm_hour,
+            tm.tm_min,
+            tm.tm_sec);
 }
 
 static void log_date_time(FILE *stream) {
     if (stream) {
         char date_time[24] = {0};
         set_date_time(date_time);
-        fprintf(stream, tyellow "[" tnormal "%s" tyellow "]" tnormal,
-                date_time);
+        fprintf(
+            stream, tyellow "[" tnormal "%s" tyellow "]" tnormal, date_time);
     }
 }
 
@@ -91,7 +97,8 @@ void logger_info(const char *fmt, ...) {
             if (g_logger->verbose) {
                 fprintf(g_logger->stream[i],
                         tblue "[ " tgreen "INFO  " tblue "]" tnormal " %s:%d: ",
-                        __FILENAME__, __LINE__);
+                        __FILENAME__,
+                        __LINE__);
             } else {
                 fprintf(g_logger->stream[i],
                         tblue "[ " tgreen "INFO  " tblue "]" tnormal " ");
@@ -116,7 +123,8 @@ static void log_debug_label_vewrbose(FILE *stream) {
     if (stream) {
         fprintf(stream,
                 tblue "[ " tpurple "DEBUG " tblue "]" tnormal " %s:%d: ",
-                __FILENAME__, __LINE__);
+                __FILENAME__,
+                __LINE__);
     }
 }
 
@@ -157,7 +165,8 @@ void logger_warn(const char *fmt, ...) {
                 fprintf(g_logger->stream[i],
                         tblue "[ " tyellow "WARN  " tblue "]" tnormal
                               " %s:%d: ",
-                        __FILENAME__, __LINE__);
+                        __FILENAME__,
+                        __LINE__);
             } else {
                 fprintf(g_logger->stream[i],
                         tblue "[ " tyellow "WARN  " tblue "]" tnormal " ");
@@ -181,7 +190,8 @@ void logger_error(const char *fmt, ...) {
 
             fprintf(g_logger->stream[i],
                     tblue "[ " tred "ERROR " tblue "]" tnormal " (%s:%d): ",
-                    __FILENAME__, __LINE__);
+                    __FILENAME__,
+                    __LINE__);
 
             va_list args;
             va_start(args, fmt);

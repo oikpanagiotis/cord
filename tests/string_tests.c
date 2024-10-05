@@ -193,8 +193,9 @@ MU_TEST(test_cstring_is_null_or_empty) {
 
     bool expected = true;
     bool result = cstring_is_null_or_empty(empty);
-    mu_assert(expected == result, "cstring_is_null_or_empty should return true "
-                                  "when passing empty string");
+    mu_assert(expected == result,
+              "cstring_is_null_or_empty should return true "
+              "when passing empty string");
 
     expected = true;
     result = cstring_is_null_or_empty(null);
@@ -203,8 +204,9 @@ MU_TEST(test_cstring_is_null_or_empty) {
 
     expected = false;
     result = cstring_is_null_or_empty(normal);
-    mu_assert(expected == result, "cstring_is_null_or_empty should return "
-                                  "false when passing normal string");
+    mu_assert(expected == result,
+              "cstring_is_null_or_empty should return "
+              "false when passing normal string");
 }
 
 MU_TEST(test_bool_to_cstring) {

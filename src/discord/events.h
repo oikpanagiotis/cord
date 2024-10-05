@@ -65,11 +65,14 @@ void on_message_create(cord_client_t *client, json_t *data, char *event);
 void on_message_update(cord_client_t *client, json_t *data, char *event);
 void on_message_delete_bulk(cord_client_t *client, json_t *data, char *event);
 void on_message_reaction_add(cord_client_t *client, json_t *data, char *event);
-void on_message_reaction_remove(cord_client_t *client, json_t *data,
+void on_message_reaction_remove(cord_client_t *client,
+                                json_t *data,
                                 char *event);
-void on_message_reaction_remove_all(cord_client_t *client, json_t *data,
+void on_message_reaction_remove_all(cord_client_t *client,
+                                    json_t *data,
                                     char *event);
-void on_message_reaction_remove_emoji(cord_client_t *client, json_t *data,
+void on_message_reaction_remove_emoji(cord_client_t *client,
+                                      json_t *data,
                                       char *event);
 void on_presence_update(cord_client_t *client, json_t *data, char *event);
 

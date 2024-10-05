@@ -99,7 +99,8 @@ struct curl_slist *discord_api_headers(const char *bot_token) {
 }
 
 static cord_http_request_t *cord_http_request_create(cord_bump_t *bump,
-                                                     int type, const char *url,
+                                                     int type,
+                                                     const char *url,
                                                      const char *body) {
 
     cord_http_request_t *request = balloc(bump, sizeof(cord_http_request_t));
@@ -136,8 +137,8 @@ static char *get_request_type_cstring(cord_http_request_t *request) {
     }
 }
 
-static size_t write_cb(void *data, size_t size, size_t nmemb,
-                       cord_http_result_t *result) {
+static size_t
+write_cb(void *data, size_t size, size_t nmemb, cord_http_result_t *result) {
     assert(result);
 
     size_t string_size = nmemb * size;
@@ -170,8 +171,8 @@ static cord_http_result_t perform(cord_http_client_t *client,
                                   cord_http_request_t *request) {
     prepare_request_options(client, request);
     CURLcode rc = curl_easy_perform(client->curl);
-    curl_easy_getinfo(client->curl, CURLINFO_RESPONSE_CODE,
-                      &request->result.status);
+    curl_easy_getinfo(
+        client->curl, CURLINFO_RESPONSE_CODE, &request->result.status);
     if (request->result.status != HTTP_OK) {
         request->result.error = true;
     }
@@ -183,7 +184,8 @@ static cord_http_result_t perform(cord_http_client_t *client,
 }
 
 cord_http_result_t cord_http_get(cord_http_client_t *client,
-                                 cord_bump_t *allocator, const char *url) {
+                                 cord_bump_t *allocator,
+                                 const char *url) {
     cord_http_result_t result = perform(
         client, cord_http_request_create(allocator, HTTP_GET, url, NULL));
 
@@ -195,7 +197,8 @@ cord_http_result_t cord_http_get(cord_http_client_t *client,
 }
 
 cord_http_result_t cord_http_post(cord_http_client_t *client,
-                                  cord_bump_t *allocator, const char *url,
+                                  cord_bump_t *allocator,
+                                  const char *url,
                                   const char *body) {
     return perform(client,
                    cord_http_request_create(allocator, HTTP_POST, url, body));
@@ -203,12 +206,14 @@ cord_http_result_t cord_http_post(cord_http_client_t *client,
 
 cord_http_result_t cord_http_delete(cord_http_client_t *client,
                                     const char *url) {
-    return perform(client, cord_http_request_create(client->allocator,
-                                                    HTTP_DELETE, url, NULL));
+    return perform(
+        client,
+        cord_http_request_create(client->allocator, HTTP_DELETE, url, NULL));
 }
 
 cord_http_result_t cord_http_patch(cord_http_client_t *client,
                                    const char *url) {
-    return perform(client, cord_http_request_create(client->allocator,
-                                                    HTTP_PATCH, url, NULL));
+    return perform(
+        client,
+        cord_http_request_create(client->allocator, HTTP_PATCH, url, NULL));
 }

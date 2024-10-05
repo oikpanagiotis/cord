@@ -241,7 +241,8 @@ void on_message_reaction_add(cord_client_t *client, json_t *data, char *event) {
     (void)event;
 }
 
-void on_message_reaction_remove(cord_client_t *client, json_t *data,
+void on_message_reaction_remove(cord_client_t *client,
+                                json_t *data,
                                 char *event) {
     assert(false && "Not Implemented");
     (void)data;
@@ -249,7 +250,8 @@ void on_message_reaction_remove(cord_client_t *client, json_t *data,
     (void)event;
 }
 
-void on_message_reaction_remove_all(cord_client_t *client, json_t *data,
+void on_message_reaction_remove_all(cord_client_t *client,
+                                    json_t *data,
                                     char *event) {
     assert(false && "Not Implemented");
     (void)data;
@@ -257,7 +259,8 @@ void on_message_reaction_remove_all(cord_client_t *client, json_t *data,
     (void)event;
 }
 
-void on_message_reaction_remove_emoji(cord_client_t *client, json_t *data,
+void on_message_reaction_remove_emoji(cord_client_t *client,
+                                      json_t *data,
                                       char *event) {
     assert(false && "Not Implemented");
     (void)data;
