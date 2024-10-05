@@ -406,9 +406,8 @@ static void on_message(struct uwsc_client *ws_client,
             break;
     }
 
-    log_on_message_status(client);
     json_decref(payload_data);
-    // assert(payload_data->refcount <= 0);
+    log_on_message_status(client);
     cord_bump_clear(client->temporary_allocator);
 }
 

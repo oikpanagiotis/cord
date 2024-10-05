@@ -76,6 +76,12 @@ static void log_event(char *event) {
     logger_info("Received event: [%s]", event);
 }
 
+/**
+ * json_t *data is a borrowed reference
+ *
+ * The callback methods MUST NOT attempt to free/decref it
+ */
+
 void on_channel_create(cord_client_t *client, json_t *data, char *event) {
     assert(false && "Not Implemented");
     (void)data;
@@ -217,7 +223,6 @@ void on_message_create(cord_client_t *client, json_t *data, char *event) {
 
     client->event_callbacks.on_message_cb(cord, message.obj);
     clear_message_lifecycle_allocator(client);
-    json_decref(data);
 }
 
 void on_message_update(cord_client_t *client, json_t *data, char *event) {

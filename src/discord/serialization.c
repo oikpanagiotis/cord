@@ -1,7 +1,6 @@
 #include "serialization.h"
 #include "../core/errors.h"
 #include "../core/log.h"
-#include "../strings.h"
 #include "entities.h"
 
 #include <assert.h>
@@ -249,11 +248,6 @@ user_read_integer_json_field(cord_user_t *user, string_ref key, i64 value) {
 cord_serialize_result_t cord_user_serialize(json_t *json_obj,
                                             cord_bump_t *allocator) {
 
-    // json_t *json_obj = parse_json(json_cstring);
-    // if (!json_obj) {
-    //     return serialize_error(CORD_ERR_OBJ_SERIALIZE);
-    // }
-
     cord_user_t *author = balloc(allocator, sizeof(cord_user_t));
     if (!author) {
         json_decref(json_obj);
@@ -277,8 +271,6 @@ cord_serialize_result_t cord_user_serialize(json_t *json_obj,
         }
     }
 
-    assert(json_obj->refcount == 1 && "object is referenced more than once");
-    json_decref(json_obj);
     return serialized(author);
 }
 
@@ -1130,10 +1122,6 @@ message_arrays(cord_message_t *message, string_ref key, json_t *value) {
     (void)message;
     (void)key;
     (void)value;
-    /*
-    map_property_array(message, mentions, "mentions", key, value,
-    message->allocator, cord_user_t, cord_user_serialize);
-    */
 }
 
 static void

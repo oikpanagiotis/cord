@@ -190,7 +190,8 @@ cord_http_result_t cord_http_get(cord_http_client_t *client,
         client, cord_http_request_create(allocator, HTTP_GET, url, NULL));
 
     if (result.error) {
-        logger_error("GET request to %s returned (%d)", url, result.status);
+        logger_error("GET %s responded with status %d", url, result.status);
+        logger_debug("Error: %s", result.body);
     }
 
     return result;
