@@ -1,5 +1,4 @@
 #include <cord.h>
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -10,7 +9,7 @@ char *get_message_content(cord_t *cord, cord_message_t *message) {
     return memcpy(memory, content.data, content.length);
 }
 
-void on_message(cord_t *cord, cord_message_t *message) {
+void on_message(cord_t *cord, cord_bump_t *bump, cord_message_t *message) {
     char *content = get_message_content(cord, message);
 
     if (strcmp(content, "ping") == 0) {
@@ -18,7 +17,7 @@ void on_message(cord_t *cord, cord_message_t *message) {
     }
 
     if (strcmp(content, "me") == 0) {
-        cord_user_t *me = cord_get_current_user(cord);
+        cord_user_t *user = cord_get_current_user(cord, bump);
     }
 
     free(content);

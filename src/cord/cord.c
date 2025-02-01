@@ -33,11 +33,7 @@ void cord_connect(cord_t *cord) {
 }
 
 void cord_destroy(cord_t *cord) {
-    cord_bump_t *application_allocator = NULL;
-
     if (cord) {
-        application_allocator = cord->permanent_allocator;
-
         for (i32 i = 0; i < cord->allocator_count; i++) {
             cord_bump_destroy(cord->user_allocators[i]);
         }
@@ -148,49 +144,26 @@ void cord_destroy_allocator(cord_t *cord, i32 allocator_id) {
 
 void cord_on_message(cord_t *cord,
                      void (*on_message_cb)(cord_t *ctx,
+                                           cord_bump_t *bump,
                                            cord_message_t *message)) {
     cord->client->event_callbacks.on_message_cb = on_message_cb;
 }
 
 void cord_send_text(cord_t *cord, cord_strbuf_t *channel_id, char *message) {
-    cord_bump_t *allocator = cord->client->message_lifecycle_allocator;
-
-    cord_message_t *msg = balloc(allocator, sizeof(cord_message_t));
+    cord_bump_t *bump = cord_bump_create();
+    cord_message_t *msg = balloc(bump, sizeof(cord_message_t));
     cord_strbuf_t *content = cord_strbuf_create();
     cord_strbuf_append(content, cstr(message));
     msg->content = content;
     msg->channel_id = channel_id;
     cord_client_send_message(cord->client, msg);
+    cord_bump_destroy(bump);
 }
 
 void cord_send_message(cord_t *cord, cord_message_t *message) {
     cord_client_send_message(cord->client, message);
 }
 
-cord_user_t *cord_get_current_user(cord_t *cord) {
-    cord_temp_memory_t memory =
-        cord_temp_memory_start(cord->client->temporary_allocator);
-    cord_http_result_t result =
-        cord_http_get_current_user(cord->client->http, memory.allocator);
-    if (result.error) {
-        logger_error("Failed to get current user");
-        return NULL;
-    }
-
-    return NULL;
-    // Here we need to read JSON and then serialize user object
-    //
-    /*
-    cord_bump_t *serialize_bump = cord_bump_create();
-    cord_serialize_result_t user =
-        cord_user_serialize(user.obj, serialize_bump);
-    if (user.error) {
-        logger_error("Failed to create object: %s", cord_error(user.error));
-        cord_bump_destroy(serialize_bump);
-        return NULL;
-    }
-
-    cord_temp_memory_end(memory);
-    return user.obj;
-    */
+cord_user_t *cord_get_current_user(cord_t *cord, cord_bump_t *bump) {
+    return cord_api_get_current_user(cord->client->http, bump);
 }

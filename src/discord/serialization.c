@@ -7,12 +7,6 @@
 #include <jansson.h>
 #include <stdio.h>
 
-static void debug_json(json_t *value) {
-    char *string = json_dumps(value, 0);
-    logger_debug("JSON object: %s", string);
-    free(string);
-}
-
 static void append_quote(cord_json_writer_t writer) {
     cord_strbuf_append(writer.buffer, cstr("\""));
 }
@@ -190,20 +184,6 @@ char *cord_message_to_json(cord_json_writer_t writer, cord_message_t *message) {
         }                                                                      \
     } while (0)
 
-// TODO: Might have to move this to cord layer and call it before serialize
-// function because when jansson tierates over key value pairs it returns json_t
-// that cannot be passed to other serialize functions if we change the signature
-// to accepte a cstring
-static json_t *parse_json(char *cstring) {
-    json_error_t error = {};
-    json_t *json_obj = json_loads(cstring, 0, &error);
-    if (!json_obj) {
-        logger_error(
-            "Failed to parse json. (line:%d): %s", error.line, error.text);
-    }
-    return json_obj;
-}
-
 static bool has_serialization_error(cord_serialize_result_t result) {
     return result.error != CORD_OK;
 }
@@ -263,7 +243,7 @@ cord_serialize_result_t cord_user_serialize(json_t *json_obj,
             string_ref cstring = json_string_value(value);
             user_read_string_json_field(author, key, cstring);
         } else if (json_is_boolean(value)) {
-            bool builder = json_boolean_value(value);
+            bool builder = json_boolean(value);
             user_read_boolean_json_field(author, key, builder);
         } else if (json_is_integer(value)) {
             i64 builder = (i64)json_integer_value(value);
@@ -322,7 +302,7 @@ cord_serialize_result_t cord_guild_member_serialize(json_t *json_message,
         if (json_is_string(value)) {
             guild_member_strings(member, key, json_string_value(value));
         } else if (json_is_boolean(value)) {
-            guild_member_booleans(member, key, json_boolean_value(value));
+            guild_member_booleans(member, key, json_boolean(value));
         } else if (json_is_array(value)) {
             guild_member_arrays(member, key, value);
         } else if (json_is_object(value)) {
@@ -386,7 +366,7 @@ cord_serialize_result_t cord_role_serialize(json_t *json_message,
             string_ref cstring = json_string_value(value);
             role_strings(role, key, cstring);
         } else if (json_is_boolean(value)) {
-            bool builder = json_boolean_value(value);
+            bool builder = json_boolean(value);
             role_booleans(role, key, builder);
         } else if (json_is_integer(value)) {
             i32 number = (i32)json_integer_value(value);
@@ -464,7 +444,7 @@ cord_serialize_result_t cord_role_tag_serialize(json_t *json_role_tag,
             string_ref cstring = json_string_value(value);
             role_tag_strings(role_tag, key, cstring);
         } else if (json_is_boolean(value)) {
-            bool builder = json_boolean_value(value);
+            bool builder = json_boolean(value);
             role_tag_booleans(role_tag, key, builder);
         }
     }
@@ -788,11 +768,8 @@ cord_embed_field_serialize(json_t *json_embed_field,
             map_property(embed_field, name, "name", key, builder);
             map_property(embed_field, value, "value", key, builder);
         } else if (json_is_boolean(value)) {
-            map_property(embed_field,
-                         inline_,
-                         "inline",
-                         key,
-                         (bool)json_boolean_value(value));
+            map_property(
+                embed_field, inline_, "inline", key, (bool)json_boolean(value));
         }
     }
     return serialized(embed_field);
@@ -916,22 +893,13 @@ cord_serialize_result_t cord_emoji_serialize(json_t *json_emoji,
                          require_colons,
                          "require_colons",
                          key,
-                         (bool)json_boolean_value(value));
-            map_property(emoji,
-                         managed,
-                         "managed",
-                         key,
-                         (bool)json_boolean_value(value));
-            map_property(emoji,
-                         animated,
-                         "animated",
-                         key,
-                         (bool)json_boolean_value(value));
-            map_property(emoji,
-                         available,
-                         "available",
-                         key,
-                         (bool)json_boolean_value(value));
+                         (bool)json_boolean(value));
+            map_property(
+                emoji, managed, "managed", key, (bool)json_boolean(value));
+            map_property(
+                emoji, animated, "animated", key, (bool)json_boolean(value));
+            map_property(
+                emoji, available, "available", key, (bool)json_boolean(value));
         } else if (json_is_object(value)) {
             map_property_object(emoji,
                                 user,
@@ -971,8 +939,7 @@ cord_serialize_result_t cord_reaction_serialize(json_t *json_reaction,
             map_property(
                 reaction, count, "count", key, (i32)json_integer_value(value));
         } else if (json_is_boolean(value)) {
-            map_property(
-                reaction, me, "me", key, (bool)json_boolean_value(value));
+            map_property(reaction, me, "me", key, (bool)json_boolean(value));
         } else if (json_is_object(value)) {
             map_property_object(reaction,
                                 emoji,
@@ -1153,7 +1120,7 @@ cord_serialize_result_t cord_message_serialize(json_t *json_message,
         if (json_is_string(value)) {
             message_strings(message, key, json_string_value(value));
         } else if (json_is_boolean(value)) {
-            message_booleans(message, key, (bool)json_boolean_value(value));
+            message_booleans(message, key, (bool)json_boolean(value));
         } else if (json_is_integer(value)) {
             message_numbers(message, key, (i32)json_integer_value(value));
         } else if (json_is_array(value)) {

@@ -68,12 +68,8 @@ cord_gateway_event_t *get_gateway_event(gateway_event_t event) {
     return &gateway_events[event_table_index];
 }
 
-static void clear_message_lifecycle_allocator(cord_client_t *client) {
-    cord_bump_clear(client->message_lifecycle_allocator);
-}
-
 static void log_event(char *event) {
-    logger_info("Received event: [%s]", event);
+    logger_info("Received event: %s", event);
 }
 
 /**
@@ -212,17 +208,17 @@ void on_message_create(cord_client_t *client, json_t *data, char *event) {
     cord_t *cord = (cord_t *)client->user_data;
     log_event(event);
 
-    cord_serialize_result_t message =
-        cord_message_serialize(data, client->message_lifecycle_allocator);
+    cord_bump_t *bump = cord_bump_create();
+    cord_serialize_result_t message = cord_message_serialize(data, bump);
 
     if (message.error) {
-        logger_error("Failed to serialize message: %s",
-                     cord_error(message.error));
+        char *err = cord_error(message.error);
+        logger_error("Failed to serialize message: %s", err);
         return;
     }
 
-    client->event_callbacks.on_message_cb(cord, message.obj);
-    clear_message_lifecycle_allocator(client);
+    client->event_callbacks.on_message_cb(cord, bump, message.obj);
+    cord_bump_destroy(bump);
 }
 
 void on_message_update(cord_client_t *client, json_t *data, char *event) {

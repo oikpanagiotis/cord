@@ -8,7 +8,6 @@
 
 #include <assert.h>
 #include <ev.h>
-#include <event.h>
 #include <jansson.h>
 #include <signal.h>
 #include <stdio.h>
@@ -287,8 +286,8 @@ i32 deserialize_payload(json_t *payload_json, gateway_payload_t *payload) {
     return 0;
 }
 
-static const char *resolve_message_url(cord_temp_memory_t memory,
-                                       cord_message_t *msg) {
+static cord_str_t resolve_message_url(cord_temp_memory_t memory,
+                                      cord_message_t *msg) {
     cord_url_builder_t url_builder = cord_url_builder_create(memory.allocator);
     cord_url_builder_add_route(url_builder, cstr(DISCORD_API_URL));
     cord_url_builder_add_route(url_builder, cstr("channels"));
@@ -474,7 +473,6 @@ static void client_init(cord_client_t *client, const char *url) {
 
     client->message_allocator = cord_bump_create_with_size(MB(10));
     client->temporary_allocator = cord_bump_create_with_size(MB(1));
-    client->message_lifecycle_allocator = cord_bump_create_with_size(KB(16));
 
     client->ws_client->onopen = on_open;
     client->ws_client->onmessage = on_message;
@@ -561,7 +559,6 @@ void cord_client_destroy(cord_client_t *client) {
         }
 
         cord_bump_destroy(client->temporary_allocator);
-        cord_bump_destroy(client->message_lifecycle_allocator);
         cord_bump_destroy(client->message_allocator);
         free(client);
     }

@@ -26,7 +26,7 @@ typedef struct cord_url_builder_t {
 cord_url_builder_t cord_url_builder_create(cord_bump_t *allocator);
 void cord_url_builder_add_route(cord_url_builder_t url_builder,
                                 cord_str_t route);
-char *cord_url_builder_build(cord_url_builder_t url_builder);
+cord_str_t cord_url_builder_build(cord_url_builder_t url_builder);
 
 typedef struct cord_http_result_t {
     char *body;
@@ -51,13 +51,14 @@ int cord_http_client_perform_request(cord_http_client_t *client,
 
 cord_http_result_t cord_http_get(cord_http_client_t *client,
                                  cord_bump_t *allocator,
-                                 const char *url);
+                                 cord_str_t url);
+
 cord_http_result_t cord_http_post(cord_http_client_t *client,
                                   cord_bump_t *allocator,
-                                  const char *url,
+                                  cord_str_t url,
                                   const char *body);
-cord_http_result_t cord_http_delete(cord_http_client_t *client,
-                                    const char *url);
+
+cord_http_result_t cord_http_delete(cord_http_client_t *client, cord_str_t url);
 
 bool cord_http_is_success(cord_http_result_t result);
 

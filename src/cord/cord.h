@@ -41,11 +41,12 @@ void cord_destroy_allocator(cord_t *cord, cord_allocator_id_t id);
 
 void cord_on_message(cord_t *cord,
                      void (*on_message_cb)(cord_t *ctx,
+                                           cord_bump_t *bump,
                                            cord_message_t *message));
 
 void cord_send_text(cord_t *cord, cord_strbuf_t *guild_id, char *message);
 void cord_send_message(cord_t *cord, cord_message_t *message);
 
-cord_user_t *cord_get_current_user(cord_t *cord);
+cord_user_t *cord_get_current_user(cord_t *cord, cord_bump_t *bump);
 
 #endif

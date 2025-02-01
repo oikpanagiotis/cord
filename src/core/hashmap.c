@@ -10,7 +10,7 @@ static const cord_hash_item_t EMPTY_ITEM = (cord_hash_item_t){
 
 static u64 hash(char *key) {
     u64 hash = 0;
-    for (size_t i = 0; i < key[i] != '\0'; i++) {
+    for (size_t i = 0; key[i] != '\0'; i++) {
         hash = hash * 31 + key[i];
     }
     return hash;
@@ -66,8 +66,6 @@ void *cord_hashmap_put(cord_hashmap_t *map, char *key) {
     }
 
     size_t index = (size_t)hash(key) % map->capacity;
-    assert((index >= 0) && (index < map->capacity));
-
     cord_hash_item_t *found_item = map->items + index;
     if (found_item == &EMPTY_ITEM) {
         map->items[index] = *item;
@@ -107,8 +105,6 @@ void *cord_hashmap_get(cord_hashmap_t *map, char *key) {
     assert(strlen(key) <= MAX_HASHMAP_KEY_LEN);
 
     size_t index = (size_t)hash(key) % map->capacity;
-    assert(index >= 0 && index < map->capacity);
-
     cord_hash_item_t *head = map->items + index;
     if (head == &EMPTY_ITEM) {
         return NULL;

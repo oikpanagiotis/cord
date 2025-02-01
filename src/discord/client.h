@@ -43,7 +43,9 @@ enum {
 typedef struct cord_t cord_t;
 
 typedef struct cord_gateway_event_callbacks_t {
-    void (*on_message_cb)(cord_t *ctx, cord_message_t *message);
+    void (*on_message_cb)(cord_t *ctx,
+                          cord_bump_t *bump,
+                          cord_message_t *message);
     // add more
 } cord_gateway_event_callbacks_t;
 
@@ -75,7 +77,6 @@ typedef struct cord_client_t {
 
     cord_bump_t *message_allocator;
     cord_bump_t *temporary_allocator;
-    cord_bump_t *message_lifecycle_allocator;
 
     bool heartbeat_acknowledged;
     bool must_reconnect;
