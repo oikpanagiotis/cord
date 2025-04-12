@@ -36,11 +36,11 @@ cord_user_t *cord_api_get_current_user(cord_http_client_t *client,
         return NULL;
     }
 
-    cord_bump_t *serialize_bump = cord_bump_create();
-    cord_serialize_result_t user = cord_user_serialize(json, serialize_bump);
+    //cord_bump_t *serialize_bump = cord_bump_create();
+    cord_serialize_result_t user = cord_user_serialize(json, allocator);
     if (user.error) {
         logger_error("Failed to serialize user: %s", cord_error(user.error));
-        cord_bump_destroy(serialize_bump);
+        //cord_bump_destroy(serialize_bump);
         return NULL;
     }
 

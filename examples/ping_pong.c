@@ -1,26 +1,18 @@
 #include <cord.h>
-#include <stdlib.h>
-#include <string.h>
-
-// Function to get content of cord_message_t as a C string
-char *get_message_content(cord_t *cord, cord_message_t *message) {
-    cord_str_t content = cord_strbuf_to_str(*message->content);
-    char *memory = calloc(1, content.length + 1);
-    return memcpy(memory, content.data, content.length);
-}
 
 void on_message(cord_t *cord, cord_bump_t *bump, cord_message_t *message) {
-    char *content = get_message_content(cord, message);
+    cord_str_t content = cord_message_get_str(message);
 
-    if (strcmp(content, "ping") == 0) {
+    if (cord_str_equals(content, cstr("ping"))) {
         cord_send_text(cord, message->channel_id, "Pong!");
     }
 
-    if (strcmp(content, "me") == 0) {
+    if (cord_str_equals(content, cstr("me"))) {
         cord_user_t *user = cord_get_current_user(cord, bump);
+        char *id = cord_strbuf_to_cstring(*user->id);
+        char *username = cord_strbuf_to_cstring(*user->username);
+        logger_info("User{id: %s, name: %s}", id, username);
     }
-
-    free(content);
 }
 
 int main(void) {

@@ -167,3 +167,7 @@ void cord_send_message(cord_t *cord, cord_message_t *message) {
 cord_user_t *cord_get_current_user(cord_t *cord, cord_bump_t *bump) {
     return cord_api_get_current_user(cord->client->http, bump);
 }
+
+cord_str_t cord_message_get_str(cord_message_t *message) {
+    return cord_strbuf_to_str(*message->content);
+}

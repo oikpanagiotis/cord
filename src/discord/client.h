@@ -46,6 +46,7 @@ typedef struct cord_gateway_event_callbacks_t {
     void (*on_message_cb)(cord_t *ctx,
                           cord_bump_t *bump,
                           cord_message_t *message);
+
     // add more
 } cord_gateway_event_callbacks_t;
 
